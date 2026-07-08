@@ -54,12 +54,23 @@ export default function SettingsTab() {
       <h1 className="text-xl font-bold">Настройки сбора</h1>
 
       <div className="card space-y-4">
-        <label className="field-label">Название программы</label>
-        <input
-          className="field-input"
-          value={settings.programName}
-          onChange={(e) => patchSettings({ programName: e.target.value })}
-        />
+        <div>
+          <label className="field-label">Название программы</label>
+          <input
+            className="field-input"
+            value={settings.programName}
+            onChange={(e) => patchSettings({ programName: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className="field-label">Дата окончания сбора (для главной страницы)</label>
+          <input
+            type="date"
+            className="field-input max-w-[220px]"
+            value={settings.collectionEnd}
+            onChange={(e) => patchSettings({ collectionEnd: e.target.value })}
+          />
+        </div>
       </div>
 
       <div className="card space-y-4">

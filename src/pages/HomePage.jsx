@@ -1,15 +1,21 @@
 import { Link } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
+import StagePath from '../components/StagePath.jsx'
 import { groupsWithCounts } from '../lib/groups'
 import { GROUP_CAPACITY } from '../lib/constants'
+import { getCurrentStage, daysUntil } from '../lib/stage'
 
 export default function HomePage() {
   const { data } = useStore()
   const { settings, groups, interns } = data
+  const stage = getCurrentStage(groups, interns)
+  const days = daysUntil(settings.collectionEnd)
+
   const groupsInfo = groupsWithCounts(groups, interns).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
   )
   const openGroups = groupsInfo.filter((g) => g.isOpen && g.count < GROUP_CAPACITY)
+  const collectionOpen = openGroups.length > 0
 
   return (
     <div className="min-h-screen">
@@ -20,48 +26,71 @@ export default function HomePage() {
             Единое место сбора анкет, формирования учебных групп и сопровождения стажёров на протяжении всей
             программы адаптации.
           </p>
-          <div className="flex flex-wrap items-center gap-4 mt-4">
-            <Link to="/submit" className="btn-primary">
-              Заполнить анкету стажёра
-            </Link>
-            <Link to="/login" className="text-sm text-navy-200 underline hover:text-white">
-              Вход для тренеров
-            </Link>
-          </div>
+          <Link to="/login" className="inline-block mt-4 text-sm text-navy-200 underline hover:text-white">
+            Вход для тренеров
+          </Link>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <section className="card">
-          <h2 className="text-lg font-bold mb-4">Открытые группы</h2>
-          {openGroups.length === 0 ? (
-            <p className="text-navy-400">Сейчас нет открытых групп — приём анкет временно недоступен.</p>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {openGroups.map((g) => (
-                <div key={g.id} className="border border-navy-100 rounded-xl p-4 flex flex-col gap-3">
-                  <div>
-                    <div className="font-semibold">{g.name}</div>
-                    <div className="text-sm text-navy-500">
-                      {g.count}/{GROUP_CAPACITY} участников
-                    </div>
-                  </div>
-                  <Link to={`/submit?group=${g.id}`} className="btn-primary text-sm">
-                    Заполнить анкету
-                  </Link>
-                </div>
-              ))}
+          <StagePath current={stage} />
+        </section>
+
+        <section className="card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span
+                className={
+                  'inline-block w-2.5 h-2.5 rounded-full ' + (collectionOpen ? 'bg-success-500' : 'bg-danger-500')
+                }
+              />
+              <span className="font-semibold">{collectionOpen ? 'Сбор анкет открыт' : 'Сбор анкет закрыт'}</span>
             </div>
-          )}
+            {collectionOpen && settings.collectionEnd && (
+              <p className="text-sm text-navy-500 mt-1">
+                Окончание сбора: {settings.collectionEnd}
+                {days !== null && days >= 0 ? ` (осталось ${days} дн.)` : ''}
+              </p>
+            )}
+            {!collectionOpen && (
+              <p className="text-sm text-navy-500 mt-1">Сейчас нет открытых групп для приёма анкет.</p>
+            )}
+          </div>
+          <Link to="/submit" className="btn-primary">
+            Заполнить анкету
+          </Link>
+        </section>
+
+        <section className="grid sm:grid-cols-3 gap-4">
+          <div className="card">
+            <h3 className="font-semibold mb-2">Анкета стажёра</h3>
+            <p className="text-sm text-navy-500">
+              Анкету заполняет руководитель стажёра, а не сам стажёр — это ускоряет и упрощает сбор данных.
+            </p>
+          </div>
+          <div className="card">
+            <h3 className="font-semibold mb-2">Честное деление</h3>
+            <p className="text-sm text-navy-500">
+              Группы формируются автоматически и равномерно, с учётом подразделения и города каждого стажёра.
+            </p>
+          </div>
+          <div className="card">
+            <h3 className="font-semibold mb-2">Уведомление в WhatsApp</h3>
+            <p className="text-sm text-navy-500">
+              После формирования группы каждый стажёр получает приглашение и информацию через WhatsApp.
+            </p>
+          </div>
         </section>
 
         <section className="card">
-          <h2 className="text-lg font-bold mb-1">Стажёры</h2>
+          <h2 className="text-lg font-bold mb-1">Прогресс стажёров</h2>
           <p className="text-sm text-navy-500 mb-4">
-            Нажмите на стажёра, чтобы посмотреть его прогресс по адаптационной программе.
+            Руководитель может открыть карточку своего стажёра и посмотреть посещаемость, домашние задания и
+            результат экзамена — без входа в систему.
           </p>
-          {groupsInfo.length === 0 ? (
-            <p className="text-navy-400">Пока нет ни одной группы.</p>
+          {groupsInfo.every((g) => interns.filter((i) => i.groupId === g.id).length === 0) ? (
+            <p className="text-navy-400">Пока нет ни одного стажёра.</p>
           ) : (
             <div className="space-y-5">
               {groupsInfo.map((g) => {
@@ -100,27 +129,6 @@ export default function HomePage() {
               })}
             </div>
           )}
-        </section>
-
-        <section className="grid sm:grid-cols-3 gap-4">
-          <div className="card">
-            <h3 className="font-semibold mb-2">Анкета стажёра</h3>
-            <p className="text-sm text-navy-500">
-              Анкету заполняет руководитель стажёра, а не сам стажёр — это ускоряет и упрощает сбор данных.
-            </p>
-          </div>
-          <div className="card">
-            <h3 className="font-semibold mb-2">До 30 в группе</h3>
-            <p className="text-sm text-navy-500">
-              Можно одновременно вести несколько групп — каждая принимает анкеты независимо от других.
-            </p>
-          </div>
-          <div className="card">
-            <h3 className="font-semibold mb-2">Уведомление в WhatsApp</h3>
-            <p className="text-sm text-navy-500">
-              После набора группы каждый стажёр получает приглашение и информацию через WhatsApp.
-            </p>
-          </div>
         </section>
       </main>
     </div>
