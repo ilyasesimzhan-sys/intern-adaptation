@@ -14,8 +14,8 @@ export function makeDefaultTrainers() {
 export const DEFAULT_PROGRAM_RULES = `Правила адаптационной программы:
 
 1. Программа рассчитана на стажёров, впервые устраивающихся в компанию.
-2. Анкету заполняет руководитель стажёра до окончания срока сбора.
-3. После закрытия сбора участники автоматически и равномерно делятся на учебные группы.
+2. Анкету заполняет руководитель стажёра, пока группа открыта для приёма.
+3. В одной группе может быть до 30 участников.
 4. В течение обучения тренер отмечает посещаемость и статус домашних заданий по каждому занятию.
 5. Программа завершается итоговым экзаменом.`
 
@@ -30,17 +30,11 @@ export function makeDefaultData() {
   return {
     settings: {
       programName: 'Адаптационная программа стажёров',
-      collectionStart: '',
-      collectionEnd: '',
-      collectionOpen: false,
-      groupsFormed: false,
-      numGroups: 2,
-      examOpen: false,
       programRules: DEFAULT_PROGRAM_RULES,
       examRules: DEFAULT_EXAM_RULES,
-      lessons: [],
     },
     trainers: makeDefaultTrainers(),
+    groups: [],
     interns: [],
   }
 }

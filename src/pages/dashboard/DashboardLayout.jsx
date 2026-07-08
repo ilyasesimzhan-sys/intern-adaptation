@@ -6,7 +6,6 @@ const TABS = [
   { to: 'trainers', label: 'Тренеры' },
   { to: 'rules', label: 'Правила программы' },
   { to: 'interns', label: 'Список стажёров' },
-  { to: 'progress', label: 'Прогресс' },
   { to: 'exam', label: 'Итоговый экзамен' },
   { to: 'whatsapp', label: 'Рассылка WhatsApp' },
 ]

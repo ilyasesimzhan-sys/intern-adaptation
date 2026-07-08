@@ -1,7 +1,7 @@
-export function renderTemplate(template, intern) {
+export function renderTemplate(template, intern, groupName) {
   return (template || '')
     .replaceAll('{name}', `${intern.firstName} ${intern.lastName}`.trim())
-    .replaceAll('{group}', intern.groupNumber ? String(intern.groupNumber) : '')
+    .replaceAll('{group}', groupName || '')
     .replaceAll('{title}', intern.position || '')
 }
 

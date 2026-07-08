@@ -11,7 +11,7 @@ function examStatus(score) {
 
 export default function ExamTab() {
   const { data, update } = useStore()
-  const { settings, interns } = data
+  const { settings, groups, interns } = data
 
   function patchSettings(patch) {
     update((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
@@ -31,35 +31,6 @@ export default function ExamTab() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Итоговый экзамен</h1>
-
-      <div className="card space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium">Этап экзамена активен на главной странице</div>
-            <div className="text-sm text-navy-500">
-              «Путь стажёра» на главной перейдёт на 4-й этап. Доступно только после формирования группы.
-            </div>
-          </div>
-          <button
-            onClick={() => patchSettings({ examOpen: !settings.examOpen })}
-            disabled={!settings.groupsFormed}
-            className={
-              'relative w-12 h-7 rounded-full transition-colors shrink-0 ' +
-              (settings.examOpen ? 'bg-success-500' : 'bg-navy-200')
-            }
-          >
-            <span
-              className={
-                'absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ' +
-                (settings.examOpen ? 'translate-x-6' : 'translate-x-1')
-              }
-            />
-          </button>
-        </div>
-        {!settings.groupsFormed && (
-          <p className="text-xs text-warning-600">Сначала сформируйте группу во вкладке «Настройки сбора».</p>
-        )}
-      </div>
 
       <div className="card space-y-2">
         <h2 className="font-semibold">Правила экзамена</h2>
@@ -96,12 +67,13 @@ export default function ExamTab() {
             <tbody>
               {interns.map((i) => {
                 const status = examStatus(i.examScore)
+                const groupName = groups.find((g) => g.id === i.groupId)?.name ?? '—'
                 return (
                   <tr key={i.id} className="border-b border-navy-50 last:border-0">
                     <td className="py-2 pr-3 whitespace-nowrap">
                       {i.lastName} {i.firstName}
                     </td>
-                    <td className="py-2 pr-3">{i.groupNumber ?? '—'}</td>
+                    <td className="py-2 pr-3">{groupName}</td>
                     <td className="py-2 pr-3">
                       <input
                         type="number"

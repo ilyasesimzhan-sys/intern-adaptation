@@ -28,9 +28,4 @@ export const HOMEWORK_STATUSES = [
   { value: 'not_done', label: 'Не выполнено' },
 ]
 
-export const STAGES = [
-  { key: 'form', label: 'Анкета' },
-  { key: 'grouping', label: 'Формирование группы' },
-  { key: 'learning', label: 'Обучение и адаптация' },
-  { key: 'exam', label: 'Итоговый экзамен' },
-]
+export const GROUP_CAPACITY = 30

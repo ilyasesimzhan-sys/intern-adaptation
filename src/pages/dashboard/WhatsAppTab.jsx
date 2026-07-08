@@ -6,18 +6,18 @@ const DEFAULT_TEMPLATE =
 
 export default function WhatsAppTab() {
   const { data, update } = useStore()
-  const { settings, interns } = data
+  const { settings, groups, interns } = data
   const template = settings.whatsappTemplate ?? DEFAULT_TEMPLATE
 
   function setTemplate(value) {
     update((prev) => ({ ...prev, settings: { ...prev.settings, whatsappTemplate: value } }))
   }
 
-  if (!settings.groupsFormed) {
+  if (interns.length === 0) {
     return (
       <div className="space-y-6">
         <h1 className="text-xl font-bold">Рассылка WhatsApp</h1>
-        <p className="text-navy-400">Рассылка станет доступна после формирования группы.</p>
+        <p className="text-navy-400">Пока нет ни одного стажёра.</p>
       </div>
     )
   }
@@ -50,13 +50,14 @@ export default function WhatsAppTab() {
           </thead>
           <tbody>
             {interns.map((i) => {
-              const text = renderTemplate(template, i)
+              const groupName = groups.find((g) => g.id === i.groupId)?.name ?? '—'
+              const text = renderTemplate(template, i, groupName)
               return (
                 <tr key={i.id} className="border-b border-navy-50 last:border-0">
                   <td className="py-2 pr-3 whitespace-nowrap">
                     {i.lastName} {i.firstName}
                   </td>
-                  <td className="py-2 pr-3">{i.groupNumber ?? '—'}</td>
+                  <td className="py-2 pr-3">{groupName}</td>
                   <td className="py-2 pr-3 whitespace-nowrap">{i.phone}</td>
                   <td className="py-2 pr-3">
                     <a

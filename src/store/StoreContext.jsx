@@ -16,6 +16,7 @@ function loadLocalData() {
     return {
       settings: { ...defaults.settings, ...parsed.settings },
       trainers: parsed.trainers?.length ? parsed.trainers : defaults.trainers,
+      groups: parsed.groups || [],
       interns: parsed.interns || [],
     }
   } catch {
@@ -28,6 +29,7 @@ function mergeWithDefaults(remote) {
   return {
     settings: { ...defaults.settings, ...remote.settings },
     trainers: remote.trainers?.length ? remote.trainers : defaults.trainers,
+    groups: remote.groups || [],
     interns: remote.interns || [],
   }
 }
