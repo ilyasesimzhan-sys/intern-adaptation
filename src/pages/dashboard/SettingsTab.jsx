@@ -11,6 +11,10 @@ const COLUMNS = [
   { key: 'city', label: 'Город' },
 ]
 
+function today() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export default function SettingsTab() {
   const { data, update } = useStore()
   const { settings, groups, interns } = data
@@ -21,20 +25,36 @@ export default function SettingsTab() {
     update((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
   }
 
+  function patchGroup(groupId, patch) {
+    update((prev) => ({
+      ...prev,
+      groups: prev.groups.map((g) => (g.id === groupId ? { ...g, ...patch } : g)),
+    }))
+  }
+
   function createGroup() {
     const name = newGroupName.trim()
     if (!name) return
-    const group = { id: uid(), name, isOpen: true, lessons: [], createdAt: new Date().toISOString() }
+    const group = {
+      id: uid(),
+      name,
+      isOpen: false,
+      startDate: '',
+      endDate: '',
+      lessons: [],
+      createdAt: new Date().toISOString(),
+    }
     update((prev) => ({ ...prev, groups: [...prev.groups, group] }))
     setNewGroupName('')
     setExpandedId(group.id)
   }
 
-  function toggleGroupOpen(groupId) {
-    update((prev) => ({
-      ...prev,
-      groups: prev.groups.map((g) => (g.id === groupId ? { ...g, isOpen: !g.isOpen } : g)),
-    }))
+  function startGroup(group) {
+    patchGroup(group.id, { isOpen: true, startDate: group.startDate || today(), endDate: '' })
+  }
+
+  function stopGroup(group) {
+    patchGroup(group.id, { isOpen: false, endDate: group.endDate || today() })
   }
 
   function deleteGroup(groupId) {
@@ -62,21 +82,13 @@ export default function SettingsTab() {
             onChange={(e) => patchSettings({ programName: e.target.value })}
           />
         </div>
-        <div>
-          <label className="field-label">Дата окончания сбора (для главной страницы)</label>
-          <input
-            type="date"
-            className="field-input max-w-[220px]"
-            value={settings.collectionEnd}
-            onChange={(e) => patchSettings({ collectionEnd: e.target.value })}
-          />
-        </div>
       </div>
 
       <div className="card space-y-4">
         <h2 className="font-semibold">Группы</h2>
         <p className="text-sm text-navy-500">
-          Можно открыть сразу несколько групп — каждая принимает анкеты независимо, до {GROUP_CAPACITY} участников.
+          Можно вести сразу несколько групп — у каждой свой старт и стоп, до {GROUP_CAPACITY} участников. Даты
+          старта/стопа видны руководителям на главной странице.
         </p>
 
         <div className="flex flex-wrap gap-2 items-end">
@@ -114,56 +126,84 @@ export default function SettingsTab() {
                       </div>
                     </div>
                   </button>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span
-                      className={
-                        'px-2 py-1 rounded-full text-xs font-semibold ' +
-                        (g.isOpen ? 'bg-success-50 text-success-600' : 'bg-navy-100 text-navy-500')
-                      }
-                    >
-                      {g.isOpen ? 'Открыта' : 'Закрыта'}
-                    </span>
-                    <button onClick={() => toggleGroupOpen(g.id)} className="btn-secondary text-xs px-3 py-1.5">
-                      {g.isOpen ? 'Закрыть' : 'Открыть заново'}
-                    </button>
+                  <span
+                    className={
+                      'px-2 py-1 rounded-full text-xs font-semibold shrink-0 ' +
+                      (g.isOpen ? 'bg-success-50 text-success-600' : 'bg-navy-100 text-navy-500')
+                    }
+                  >
+                    {g.isOpen ? 'Открыта' : 'Закрыта'}
+                  </span>
+                </div>
+
+                <div className="border-t border-navy-100 p-4 space-y-3">
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div>
+                      <label className="field-label">Дата старта</label>
+                      <input
+                        type="date"
+                        className="field-input max-w-[170px]"
+                        value={g.startDate}
+                        onChange={(e) => patchGroup(g.id, { startDate: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="field-label">Дата стопа</label>
+                      <input
+                        type="date"
+                        className="field-input max-w-[170px]"
+                        value={g.endDate}
+                        onChange={(e) => patchGroup(g.id, { endDate: e.target.value })}
+                      />
+                    </div>
+                    {g.isOpen ? (
+                      <button onClick={() => stopGroup(g)} className="btn-secondary text-sm">
+                        Стоп
+                      </button>
+                    ) : (
+                      <button onClick={() => startGroup(g)} className="btn-success text-sm">
+                        Старт
+                      </button>
+                    )}
                     <button
                       onClick={() => deleteGroup(g.id)}
-                      className="text-danger-500 hover:text-danger-600 text-xs"
+                      className="text-danger-500 hover:text-danger-600 text-xs ml-auto"
                     >
                       Удалить
                     </button>
                   </div>
-                </div>
-                {expanded && (
-                  <div className="border-t border-navy-100 p-4 overflow-x-auto">
-                    {members.length === 0 ? (
-                      <p className="text-navy-400 text-sm">В группе пока нет стажёров.</p>
-                    ) : (
-                      <table className="w-full text-sm min-w-[400px]">
-                        <thead>
-                          <tr className="text-left text-navy-500 border-b border-navy-100">
-                            {COLUMNS.map((c) => (
-                              <th key={c.key} className="py-1.5 pr-3">
-                                {c.label}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {members.map((i) => (
-                            <tr key={i.id} className="border-b border-navy-50 last:border-0">
+
+                  {expanded && (
+                    <div className="overflow-x-auto pt-2 border-t border-navy-50">
+                      {members.length === 0 ? (
+                        <p className="text-navy-400 text-sm">В группе пока нет стажёров.</p>
+                      ) : (
+                        <table className="w-full text-sm min-w-[400px]">
+                          <thead>
+                            <tr className="text-left text-navy-500 border-b border-navy-100">
                               {COLUMNS.map((c) => (
-                                <td key={c.key} className="py-1.5 pr-3">
-                                  {i[c.key]}
-                                </td>
+                                <th key={c.key} className="py-1.5 pr-3">
+                                  {c.label}
+                                </th>
                               ))}
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                )}
+                          </thead>
+                          <tbody>
+                            {members.map((i) => (
+                              <tr key={i.id} className="border-b border-navy-50 last:border-0">
+                                {COLUMNS.map((c) => (
+                                  <td key={c.key} className="py-1.5 pr-3">
+                                    {i[c.key]}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )
           })}

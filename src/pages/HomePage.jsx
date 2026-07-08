@@ -3,13 +3,21 @@ import { useStore } from '../store/StoreContext.jsx'
 import StagePath from '../components/StagePath.jsx'
 import { groupsWithCounts } from '../lib/groups'
 import { GROUP_CAPACITY } from '../lib/constants'
-import { getCurrentStage, daysUntil } from '../lib/stage'
+import { getCurrentStage } from '../lib/stage'
+
+function formatWindow(g) {
+  if (g.isOpen) {
+    return g.startDate ? `Открыта с ${g.startDate}` : 'Открыта'
+  }
+  if (g.endDate) return `Закрыта ${g.endDate}`
+  if (g.startDate) return `Была открыта с ${g.startDate}`
+  return 'Закрыта'
+}
 
 export default function HomePage() {
   const { data } = useStore()
   const { settings, groups, interns } = data
   const stage = getCurrentStage(groups, interns)
-  const days = daysUntil(settings.collectionEnd)
 
   const groupsInfo = groupsWithCounts(groups, interns).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
@@ -47,15 +55,11 @@ export default function HomePage() {
               />
               <span className="font-semibold">{collectionOpen ? 'Сбор анкет открыт' : 'Сбор анкет закрыт'}</span>
             </div>
-            {collectionOpen && settings.collectionEnd && (
-              <p className="text-sm text-navy-500 mt-1">
-                Окончание сбора: {settings.collectionEnd}
-                {days !== null && days >= 0 ? ` (осталось ${days} дн.)` : ''}
-              </p>
-            )}
-            {!collectionOpen && (
-              <p className="text-sm text-navy-500 mt-1">Сейчас нет открытых групп для приёма анкет.</p>
-            )}
+            <p className="text-sm text-navy-500 mt-1">
+              {collectionOpen
+                ? `Открыто групп: ${openGroups.length}`
+                : 'Сейчас нет открытых групп для приёма анкет.'}
+            </p>
           </div>
           <Link to="/submit" className="btn-primary">
             Заполнить анкету
@@ -84,46 +88,50 @@ export default function HomePage() {
         </section>
 
         <section className="card">
-          <h2 className="text-lg font-bold mb-1">Прогресс стажёров</h2>
+          <h2 className="text-lg font-bold mb-1">Группы и прогресс стажёров</h2>
           <p className="text-sm text-navy-500 mb-4">
-            Руководитель может открыть карточку своего стажёра и посмотреть посещаемость, домашние задания и
-            результат экзамена — без входа в систему.
+            Здесь видно, когда каждая группа открылась и закроется. Руководитель может открыть карточку своего
+            стажёра и посмотреть посещаемость, домашние задания и результат экзамена — без входа в систему.
           </p>
-          {groupsInfo.every((g) => interns.filter((i) => i.groupId === g.id).length === 0) ? (
-            <p className="text-navy-400">Пока нет ни одного стажёра.</p>
+          {groupsInfo.length === 0 ? (
+            <p className="text-navy-400">Пока нет ни одной группы.</p>
           ) : (
             <div className="space-y-5">
               {groupsInfo.map((g) => {
                 const members = interns.filter((i) => i.groupId === g.id)
-                if (members.length === 0) return null
                 return (
                   <div key={g.id}>
-                    <h3 className="font-semibold text-navy-700 mb-2">
-                      {g.name}{' '}
+                    <h3 className="font-semibold text-navy-700 mb-2 flex flex-wrap items-center gap-2">
+                      {g.name}
                       <span
                         className={
-                          'ml-2 text-xs font-medium px-2 py-0.5 rounded-full ' +
+                          'text-xs font-medium px-2 py-0.5 rounded-full ' +
                           (g.isOpen ? 'bg-success-50 text-success-600' : 'bg-navy-100 text-navy-500')
                         }
                       >
-                        {g.isOpen ? 'набор открыт' : 'обучение'}
+                        {g.isOpen ? 'открыта' : 'закрыта'}
                       </span>
+                      <span className="text-xs text-navy-400 font-normal">{formatWindow(g)}</span>
                     </h3>
-                    <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {members.map((i) => (
-                        <li key={i.id}>
-                          <Link
-                            to={`/progress/${i.id}`}
-                            className="flex justify-between gap-2 rounded-lg border border-navy-100 px-3 py-2 text-sm hover:bg-navy-50"
-                          >
-                            <span>
-                              {i.lastName} {i.firstName}
-                            </span>
-                            <span className="text-navy-400">{i.city}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                    {members.length === 0 ? (
+                      <p className="text-sm text-navy-400">Пока нет стажёров в этой группе.</p>
+                    ) : (
+                      <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {members.map((i) => (
+                          <li key={i.id}>
+                            <Link
+                              to={`/progress/${i.id}`}
+                              className="flex justify-between gap-2 rounded-lg border border-navy-100 px-3 py-2 text-sm hover:bg-navy-50"
+                            >
+                              <span>
+                                {i.lastName} {i.firstName}
+                              </span>
+                              <span className="text-navy-400">{i.city}</span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )
               })}

@@ -30,7 +30,6 @@ export function makeDefaultData() {
   return {
     settings: {
       programName: 'Адаптационная программа стажёров',
-      collectionEnd: '',
       programRules: DEFAULT_PROGRAM_RULES,
       examRules: DEFAULT_EXAM_RULES,
     },
