@@ -19,7 +19,6 @@ export default function SettingsTab() {
   const { data, update } = useStore()
   const { settings, groups, interns } = data
   const [newGroupName, setNewGroupName] = useState('')
-  const [expandedId, setExpandedId] = useState(null)
 
   function patchSettings(patch) {
     update((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
@@ -46,7 +45,6 @@ export default function SettingsTab() {
     }
     update((prev) => ({ ...prev, groups: [...prev.groups, group] }))
     setNewGroupName('')
-    setExpandedId(group.id)
   }
 
   function startGroup(group) {
@@ -153,23 +151,16 @@ export default function SettingsTab() {
         <div className="space-y-3">
           {groupsInfo.length === 0 && <p className="text-navy-400">Групп пока нет.</p>}
           {groupsInfo.map((g) => {
-            const expanded = expandedId === g.id
             const members = interns.filter((i) => i.groupId === g.id)
             return (
               <div key={g.id} className="border border-navy-100 rounded-xl overflow-hidden">
                 <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-                  <button
-                    onClick={() => setExpandedId(expanded ? null : g.id)}
-                    className="flex items-center gap-3 text-left"
-                  >
-                    <span className={'text-navy-400 transition-transform ' + (expanded ? 'rotate-90' : '')}>▶</span>
-                    <div>
-                      <div className="font-semibold">{g.name}</div>
-                      <div className="text-sm text-navy-500">
-                        {g.count}/{GROUP_CAPACITY} участников
-                      </div>
+                  <div>
+                    <div className="font-semibold">{g.name}</div>
+                    <div className="text-sm text-navy-500">
+                      {g.count}/{GROUP_CAPACITY} участников
                     </div>
-                  </button>
+                  </div>
                   <span
                     className={
                       'px-2 py-1 rounded-full text-xs font-semibold shrink-0 ' +
@@ -217,36 +208,34 @@ export default function SettingsTab() {
                     </button>
                   </div>
 
-                  {expanded && (
-                    <div className="overflow-x-auto pt-2 border-t border-navy-50">
-                      {members.length === 0 ? (
-                        <p className="text-navy-400 text-sm">В группе пока нет стажёров.</p>
-                      ) : (
-                        <table className="w-full text-sm min-w-[400px]">
-                          <thead>
-                            <tr className="text-left text-navy-500 border-b border-navy-100">
+                  <div className="overflow-x-auto pt-2 border-t border-navy-50">
+                    {members.length === 0 ? (
+                      <p className="text-navy-400 text-sm">В группе пока нет стажёров.</p>
+                    ) : (
+                      <table className="w-full text-sm min-w-[400px]">
+                        <thead>
+                          <tr className="text-left text-navy-500 border-b border-navy-100">
+                            {COLUMNS.map((c) => (
+                              <th key={c.key} className="py-1.5 pr-3">
+                                {c.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {members.map((i) => (
+                            <tr key={i.id} className="border-b border-navy-50 last:border-0">
                               {COLUMNS.map((c) => (
-                                <th key={c.key} className="py-1.5 pr-3">
-                                  {c.label}
-                                </th>
+                                <td key={c.key} className="py-1.5 pr-3">
+                                  {i[c.key]}
+                                </td>
                               ))}
                             </tr>
-                          </thead>
-                          <tbody>
-                            {members.map((i) => (
-                              <tr key={i.id} className="border-b border-navy-50 last:border-0">
-                                {COLUMNS.map((c) => (
-                                  <td key={c.key} className="py-1.5 pr-3">
-                                    {i[c.key]}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-                  )}
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
                 </div>
               </div>
             )
