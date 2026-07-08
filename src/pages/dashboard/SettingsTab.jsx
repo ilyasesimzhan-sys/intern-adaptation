@@ -3,7 +3,7 @@ import { useStore } from '../../store/StoreContext.jsx'
 import { uid } from '../../store/defaultData'
 import { groupsWithCounts } from '../../lib/groups'
 import { GROUP_CAPACITY } from '../../lib/constants'
-import { isTrainerAdmin, visibleGroups } from '../../lib/roles'
+import { isTrainerAdmin, activeVisibleGroups } from '../../lib/roles'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -68,10 +68,20 @@ export default function SettingsTab() {
     update((prev) => ({ ...prev, groups: prev.groups.filter((g) => g.id !== groupId) }))
   }
 
-  const groupsInfo = groupsWithCounts(visibleGroups(groups, currentTrainer), interns)
+  function archiveGroup(groupId) {
+    if (!confirm('Отправить группу в архив? Она пропадёт из активных, но данные сохранятся в разделе «Архив».')) return
+    update((prev) => ({
+      ...prev,
+      groups: prev.groups.map((g) =>
+        g.id === groupId ? { ...g, archived: true, archivedAt: new Date().toISOString().slice(0, 10) } : g,
+      ),
+    }))
+  }
+
+  const groupsInfo = groupsWithCounts(activeVisibleGroups(groups, currentTrainer), interns)
 
   function ownerName(group) {
-    if (!admin) return null
+    if (!admin || !currentTrainer) return null
     if (group.ownerId === currentTrainer.id) return null
     if (!group.ownerId) return 'без владельца'
     return trainers.find((t) => t.id === group.ownerId)?.name || 'бывший тренер'
@@ -171,6 +181,11 @@ export default function SettingsTab() {
                     ) : (
                       <button onClick={() => startGroup(g)} className="btn-success text-sm">
                         Открыть приём
+                      </button>
+                    )}
+                    {!g.isOpen && (
+                      <button onClick={() => archiveGroup(g.id)} className="btn-secondary text-sm">
+                        Отправить в архив
                       </button>
                     )}
                     <button

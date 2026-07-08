@@ -9,6 +9,7 @@ const TABS = [
   { to: 'interns', label: 'Список стажёров' },
   { to: 'exam', label: 'Итоговый экзамен' },
   { to: 'whatsapp', label: 'Рассылка WhatsApp' },
+  { to: 'archive', label: 'Архив' },
 ]
 
 export default function DashboardLayout() {

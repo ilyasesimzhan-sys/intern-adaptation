@@ -15,3 +15,8 @@ export function visibleGroups(groups, currentTrainer) {
   if (isTrainerAdmin(currentTrainer)) return groups
   return groups.filter((g) => g.ownerId === currentTrainer?.id)
 }
+
+// Группы, которыми тренер сейчас управляет — свои (или все, если админ) и ещё не отправленные в архив.
+export function activeVisibleGroups(groups, currentTrainer) {
+  return visibleGroups(groups, currentTrainer).filter((g) => !g.archived)
+}
