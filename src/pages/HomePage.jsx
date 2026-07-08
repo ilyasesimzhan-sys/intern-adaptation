@@ -53,7 +53,7 @@ export default function HomePage() {
           src={logo}
           alt=""
           aria-hidden="true"
-          className="pointer-events-none select-none absolute right-[-5%] top-1/2 -translate-y-1/2 h-[220%] w-auto max-w-none opacity-40 mix-blend-multiply"
+          className="pointer-events-none select-none absolute right-[-5%] top-1/2 -translate-y-1/2 h-[240%] w-auto max-w-none opacity-80 mix-blend-multiply saturate-150 contrast-125"
         />
         <div className="relative max-w-5xl mx-auto px-4 py-8">
           <div>
