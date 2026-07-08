@@ -29,7 +29,7 @@ export default function LoginPage() {
         aria-hidden="true"
         className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[130%] max-w-none sm:w-[900px] opacity-90 mix-blend-multiply saturate-[2] contrast-125"
       />
-      <div className="relative card w-full max-w-sm">
+      <div className="relative card w-full max-w-sm !bg-white/80 backdrop-blur-md">
         <img src={logo} alt="Kazakhtelecom Corporate University" className="h-10 w-auto mb-4" />
         <h1 className="text-xl font-bold mb-1">Вход для тренеров</h1>
         <p className="text-navy-500 text-sm mb-6">Введите ваш логин и пароль.</p>
