@@ -20,9 +20,14 @@ export default function HomePage() {
             Единое место сбора анкет, формирования учебных групп и сопровождения стажёров на протяжении всей
             программы адаптации.
           </p>
-          <Link to="/login" className="inline-block mt-4 text-sm text-navy-200 underline hover:text-white">
-            Вход для тренеров
-          </Link>
+          <div className="flex flex-wrap items-center gap-4 mt-4">
+            <Link to="/submit" className="btn-primary">
+              Заполнить анкету стажёра
+            </Link>
+            <Link to="/login" className="text-sm text-navy-200 underline hover:text-white">
+              Вход для тренеров
+            </Link>
+          </div>
         </div>
       </header>
 
