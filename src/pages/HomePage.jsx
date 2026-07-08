@@ -106,7 +106,7 @@ export default function HomePage() {
                           (g.isOpen ? 'bg-success-50 text-success-600' : 'bg-navy-100 text-navy-500')
                         }
                       >
-                        {g.isOpen ? 'открыта' : 'закрыта'}
+                        {g.isOpen ? 'приём открыт' : 'сбор закрыт — идёт обучение'}
                       </span>
                       <span className="text-xs text-navy-400 font-normal">{formatWindow(g)}</span>
                     </h3>
