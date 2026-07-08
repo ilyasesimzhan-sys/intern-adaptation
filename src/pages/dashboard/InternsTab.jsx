@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { HOMEWORK_STATUSES } from '../../lib/constants'
 import { uid } from '../../store/defaultData'
+import { visibleGroups } from '../../lib/roles'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -16,11 +17,11 @@ const COLUMNS = [
 ]
 
 export default function InternsTab() {
-  const { data, update } = useStore()
+  const { data, update, currentTrainer } = useStore()
   const { groups, interns } = data
   const sortedGroups = useMemo(
-    () => [...groups].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-    [groups],
+    () => visibleGroups(groups, currentTrainer).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+    [groups, currentTrainer],
   )
   const [groupId, setGroupId] = useState(sortedGroups[0]?.id || '')
   const [search, setSearch] = useState('')

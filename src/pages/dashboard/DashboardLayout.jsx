@@ -1,9 +1,10 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useStore } from '../../store/StoreContext.jsx'
+import { isTrainerAdmin } from '../../lib/roles'
 
 const TABS = [
   { to: 'settings', label: 'Настройки сбора' },
-  { to: 'trainers', label: 'Тренеры' },
+  { to: 'trainers', label: 'Тренеры', adminOnly: true },
   { to: 'rules', label: 'Правила программы' },
   { to: 'interns', label: 'Список стажёров' },
   { to: 'exam', label: 'Итоговый экзамен' },
@@ -13,6 +14,8 @@ const TABS = [
 export default function DashboardLayout() {
   const { currentTrainer, logout } = useStore()
   const navigate = useNavigate()
+  const admin = isTrainerAdmin(currentTrainer)
+  const visibleTabs = TABS.filter((tab) => !tab.adminOnly || admin)
 
   function handleLogout() {
     logout()
@@ -27,7 +30,7 @@ export default function DashboardLayout() {
           <div className="text-sm text-navy-300">{currentTrainer?.name}</div>
         </div>
         <nav className="p-2 flex lg:flex-col gap-1 overflow-x-auto">
-          {TABS.map((tab) => (
+          {visibleTabs.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}

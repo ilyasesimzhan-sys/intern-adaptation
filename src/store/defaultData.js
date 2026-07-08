@@ -8,6 +8,7 @@ export function makeDefaultTrainers() {
     name: i === 0 ? 'Тренер 1' : `Тренер ${i + 1}`,
     login: i === 0 ? 'trainer1' : `trainer${i + 1}`,
     password: i === 0 ? 'password1' : '',
+    isAdmin: i === 0,
   }))
 }
 

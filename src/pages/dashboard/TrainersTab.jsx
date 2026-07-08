@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
+import { isTrainerAdmin } from '../../lib/roles'
 
 export default function TrainersTab() {
-  const { data, update } = useStore()
+  const { data, update, currentTrainer } = useStore()
   const [visiblePasswords, setVisiblePasswords] = useState({})
 
   function patchTrainer(id, patch) {
@@ -16,21 +17,31 @@ export default function TrainersTab() {
     setVisiblePasswords((v) => ({ ...v, [id]: !v[id] }))
   }
 
+  if (!isTrainerAdmin(currentTrainer)) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-xl font-bold">Тренеры</h1>
+        <p className="text-navy-400">Этот раздел доступен только главному логину.</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Тренеры</h1>
       <p className="text-sm text-navy-500">
         До 10 именных аккаунтов тренеров. Пароль — простая защита от случайного входа, не полноценная система
-        безопасности.
+        безопасности. Главный логин видит и может редактировать все группы всех тренеров, остальные — только свои.
       </p>
 
       <div className="card overflow-x-auto">
-        <table className="w-full text-sm min-w-[600px]">
+        <table className="w-full text-sm min-w-[700px]">
           <thead>
             <tr className="text-left text-navy-500 border-b border-navy-100">
               <th className="py-2 pr-4">Имя</th>
               <th className="py-2 pr-4">Логин</th>
               <th className="py-2 pr-4">Пароль</th>
+              <th className="py-2 pr-4">Главный логин</th>
             </tr>
           </thead>
           <tbody>
@@ -66,6 +77,14 @@ export default function TrainersTab() {
                       {visiblePasswords[t.id] ? 'Скрыть' : 'Показать'}
                     </button>
                   </div>
+                </td>
+                <td className="py-2 pr-4 text-center">
+                  <input
+                    type="checkbox"
+                    checked={isTrainerAdmin(t)}
+                    onChange={(e) => patchTrainer(t.id, { isAdmin: e.target.checked })}
+                    className="w-4 h-4"
+                  />
                 </td>
               </tr>
             ))}

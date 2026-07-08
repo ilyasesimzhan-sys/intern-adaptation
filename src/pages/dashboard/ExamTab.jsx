@@ -1,4 +1,5 @@
 import { useStore } from '../../store/StoreContext.jsx'
+import { visibleGroups } from '../../lib/roles'
 
 const PASS_THRESHOLD = 9
 
@@ -10,8 +11,12 @@ function examStatus(score) {
 }
 
 export default function ExamTab() {
-  const { data, update } = useStore()
-  const { settings, groups, interns } = data
+  const { data, update, currentTrainer } = useStore()
+  const { settings, groups, interns: allInterns } = data
+
+  const myGroups = visibleGroups(groups, currentTrainer)
+  const myGroupIds = new Set(myGroups.map((g) => g.id))
+  const interns = allInterns.filter((i) => myGroupIds.has(i.groupId))
 
   function patchSettings(patch) {
     update((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))

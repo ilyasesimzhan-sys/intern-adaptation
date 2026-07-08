@@ -3,6 +3,7 @@ import { useStore } from '../../store/StoreContext.jsx'
 import { uid } from '../../store/defaultData'
 import { groupsWithCounts } from '../../lib/groups'
 import { GROUP_CAPACITY } from '../../lib/constants'
+import { isTrainerAdmin, visibleGroups } from '../../lib/roles'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -16,9 +17,10 @@ function today() {
 }
 
 export default function SettingsTab() {
-  const { data, update } = useStore()
-  const { settings, groups, interns } = data
+  const { data, update, currentTrainer } = useStore()
+  const { settings, groups, interns, trainers } = data
   const [newGroupName, setNewGroupName] = useState('')
+  const admin = isTrainerAdmin(currentTrainer)
 
   function patchSettings(patch) {
     update((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
@@ -37,6 +39,7 @@ export default function SettingsTab() {
     const group = {
       id: uid(),
       name,
+      ownerId: currentTrainer.id,
       isOpen: false,
       startDate: '',
       endDate: '',
@@ -65,7 +68,14 @@ export default function SettingsTab() {
     update((prev) => ({ ...prev, groups: prev.groups.filter((g) => g.id !== groupId) }))
   }
 
-  const groupsInfo = groupsWithCounts(groups, interns)
+  const groupsInfo = groupsWithCounts(visibleGroups(groups, currentTrainer), interns)
+
+  function ownerName(group) {
+    if (!admin) return null
+    if (group.ownerId === currentTrainer.id) return null
+    if (!group.ownerId) return 'без владельца'
+    return trainers.find((t) => t.id === group.ownerId)?.name || 'бывший тренер'
+  }
 
   return (
     <div className="space-y-6">
@@ -112,7 +122,14 @@ export default function SettingsTab() {
               <div key={g.id} className="border border-navy-100 rounded-xl overflow-hidden">
                 <div className="flex flex-wrap items-center justify-between gap-3 p-4">
                   <div>
-                    <div className="font-semibold">{g.name}</div>
+                    <div className="font-semibold">
+                      {g.name}
+                      {ownerName(g) && (
+                        <span className="ml-2 text-xs font-normal text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+                          {ownerName(g)}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-sm text-navy-500">
                       {g.count}/{GROUP_CAPACITY} участников
                     </div>

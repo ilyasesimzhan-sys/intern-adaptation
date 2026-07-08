@@ -1,13 +1,18 @@
 import { useStore } from '../../store/StoreContext.jsx'
 import { renderTemplate, buildWhatsAppLink } from '../../lib/whatsapp'
+import { visibleGroups } from '../../lib/roles'
 
 const DEFAULT_TEMPLATE =
   'Здравствуйте, {name}! Вы зачислены в группу {group} адаптационной программы для стажёров ({title}). Ждём вас на первом занятии!'
 
 export default function WhatsAppTab() {
-  const { data, update } = useStore()
-  const { settings, groups, interns } = data
+  const { data, update, currentTrainer } = useStore()
+  const { settings, groups, interns: allInterns } = data
   const template = settings.whatsappTemplate ?? DEFAULT_TEMPLATE
+
+  const myGroups = visibleGroups(groups, currentTrainer)
+  const myGroupIds = new Set(myGroups.map((g) => g.id))
+  const interns = allInterns.filter((i) => myGroupIds.has(i.groupId))
 
   function setTemplate(value) {
     update((prev) => ({ ...prev, settings: { ...prev.settings, whatsappTemplate: value } }))
