@@ -48,11 +48,14 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <header className="bg-gradient-to-br from-navy-900 via-navy-700 to-sky-600 text-white">
-        <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col sm:flex-row sm:items-center gap-6">
-          <div className="bg-white rounded-2xl p-3 shadow-lg shrink-0 w-fit">
-            <img src={logo} alt="Kazakhtelecom Corporate University" className="h-12 sm:h-14 w-auto" />
-          </div>
+      <header className="relative overflow-hidden bg-gradient-to-br from-navy-900 via-navy-700 to-sky-600 text-white">
+        <img
+          src={logo}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none select-none absolute right-[-5%] top-1/2 -translate-y-1/2 h-[220%] w-auto max-w-none opacity-40 mix-blend-multiply"
+        />
+        <div className="relative max-w-5xl mx-auto px-4 py-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">{settings.programName}</h1>
             <p className="text-navy-100 mt-2 max-w-2xl">
