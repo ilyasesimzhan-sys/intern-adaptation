@@ -20,6 +20,7 @@ export default function SettingsTab() {
   const { data, update, currentTrainer } = useStore()
   const { settings, groups, interns, trainers } = data
   const [newGroupName, setNewGroupName] = useState('')
+  const [newGroupOwnerId, setNewGroupOwnerId] = useState('')
   const admin = isTrainerAdmin(currentTrainer)
 
   function patchSettings(patch) {
@@ -36,10 +37,14 @@ export default function SettingsTab() {
   function createGroup() {
     const name = newGroupName.trim()
     if (!name) return
+    if (admin && !newGroupOwnerId) {
+      alert('Назначьте владельца группы — себя или любого другого тренера.')
+      return
+    }
     const group = {
       id: uid(),
       name,
-      ownerId: currentTrainer.id,
+      ownerId: admin ? newGroupOwnerId : currentTrainer.id,
       isOpen: false,
       startDate: '',
       endDate: '',
@@ -48,6 +53,11 @@ export default function SettingsTab() {
     }
     update((prev) => ({ ...prev, groups: [...prev.groups, group] }))
     setNewGroupName('')
+    setNewGroupOwnerId('')
+  }
+
+  function reassignOwner(groupId, ownerId) {
+    patchGroup(groupId, { ownerId })
   }
 
   function startGroup(group) {
@@ -79,13 +89,6 @@ export default function SettingsTab() {
   }
 
   const groupsInfo = groupsWithCounts(activeVisibleGroups(groups, currentTrainer), interns)
-
-  function ownerName(group) {
-    if (!admin || !currentTrainer) return null
-    if (group.ownerId === currentTrainer.id) return null
-    if (!group.ownerId) return 'без владельца'
-    return trainers.find((t) => t.id === group.ownerId)?.name || 'бывший тренер'
-  }
 
   return (
     <div className="space-y-6">
@@ -119,6 +122,24 @@ export default function SettingsTab() {
               placeholder="Например, Стажёры — июль 2026"
             />
           </div>
+          {admin && (
+            <div className="min-w-[180px]">
+              <label className="field-label">Владелец группы</label>
+              <select
+                className="field-input"
+                value={newGroupOwnerId}
+                onChange={(e) => setNewGroupOwnerId(e.target.value)}
+              >
+                <option value="">Выберите тренера</option>
+                {trainers.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                    {t.id === currentTrainer.id ? ' (я)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <button onClick={createGroup} className="btn-primary shrink-0">
             Создать группу
           </button>
@@ -132,14 +153,7 @@ export default function SettingsTab() {
               <div key={g.id} className="border border-navy-100 rounded-xl overflow-hidden">
                 <div className="flex flex-wrap items-center justify-between gap-3 p-4">
                   <div>
-                    <div className="font-semibold">
-                      {g.name}
-                      {ownerName(g) && (
-                        <span className="ml-2 text-xs font-normal text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
-                          {ownerName(g)}
-                        </span>
-                      )}
-                    </div>
+                    <div className="font-semibold">{g.name}</div>
                     <div className="text-sm text-navy-500">
                       {g.count}/{GROUP_CAPACITY} участников
                     </div>
@@ -174,6 +188,24 @@ export default function SettingsTab() {
                         onChange={(e) => patchGroup(g.id, { endDate: e.target.value })}
                       />
                     </div>
+                    {admin && (
+                      <div>
+                        <label className="field-label">Владелец группы</label>
+                        <select
+                          className="field-input min-w-[160px]"
+                          value={g.ownerId || ''}
+                          onChange={(e) => reassignOwner(g.id, e.target.value)}
+                        >
+                          <option value="">Без владельца</option>
+                          {trainers.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name}
+                              {t.id === currentTrainer.id ? ' (я)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     {g.isOpen ? (
                       <button onClick={() => stopGroup(g)} className="btn-secondary text-sm">
                         Закрыть приём
