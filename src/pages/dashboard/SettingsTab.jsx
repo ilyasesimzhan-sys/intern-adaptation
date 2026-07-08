@@ -85,8 +85,8 @@ export default function SettingsTab() {
       <div className="card space-y-4">
         <h2 className="font-semibold">Группы</h2>
         <p className="text-sm text-navy-500">
-          Можно вести сразу несколько групп — у каждой свой старт и стоп, до {GROUP_CAPACITY} участников. Даты
-          старта/стопа видны руководителям на главной странице.
+          Можно вести сразу несколько групп — у каждой свой приём анкет, до {GROUP_CAPACITY} участников. Даты
+          открытия/закрытия приёма видны руководителям на главной странице.
         </p>
 
         <div className="flex flex-wrap gap-2 items-end">
@@ -130,7 +130,7 @@ export default function SettingsTab() {
                 <div className="border-t border-navy-100 p-4 space-y-3">
                   <div className="flex flex-wrap items-end gap-3">
                     <div>
-                      <label className="field-label">Дата старта</label>
+                      <label className="field-label">Дата открытия приёма</label>
                       <input
                         type="date"
                         className="field-input max-w-[170px]"
@@ -139,7 +139,7 @@ export default function SettingsTab() {
                       />
                     </div>
                     <div>
-                      <label className="field-label">Дата стопа</label>
+                      <label className="field-label">Дата закрытия приёма</label>
                       <input
                         type="date"
                         className="field-input max-w-[170px]"
@@ -149,11 +149,11 @@ export default function SettingsTab() {
                     </div>
                     {g.isOpen ? (
                       <button onClick={() => stopGroup(g)} className="btn-secondary text-sm">
-                        Стоп
+                        Закрыть приём
                       </button>
                     ) : (
                       <button onClick={() => startGroup(g)} className="btn-success text-sm">
-                        Старт
+                        Открыть приём
                       </button>
                     )}
                     <button
