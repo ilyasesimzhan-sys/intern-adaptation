@@ -22,8 +22,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-navy-50 via-sky-50 to-violet-50">
-      <div className="card w-full max-w-sm">
+    <div className="relative min-h-screen overflow-hidden flex items-center justify-center px-4 bg-gradient-to-br from-navy-50 via-sky-50 to-violet-50">
+      <img
+        src={logo}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[130%] max-w-none sm:w-[900px] opacity-90 mix-blend-multiply saturate-[2] contrast-125"
+      />
+      <div className="relative card w-full max-w-sm">
         <img src={logo} alt="Kazakhtelecom Corporate University" className="h-10 w-auto mb-4" />
         <h1 className="text-xl font-bold mb-1">Вход для тренеров</h1>
         <p className="text-navy-500 text-sm mb-6">Введите ваш логин и пароль.</p>
