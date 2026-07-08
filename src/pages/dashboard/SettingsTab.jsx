@@ -82,6 +82,26 @@ export default function SettingsTab() {
             onChange={(e) => patchSettings({ programName: e.target.value })}
           />
         </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="field-label">Дата начала сбора</label>
+            <input
+              type="date"
+              className="field-input"
+              value={settings.collectionStart}
+              onChange={(e) => patchSettings({ collectionStart: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="field-label">Дата окончания сбора</label>
+            <input
+              type="date"
+              className="field-input"
+              value={settings.collectionEnd}
+              onChange={(e) => patchSettings({ collectionEnd: e.target.value })}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="card space-y-4">

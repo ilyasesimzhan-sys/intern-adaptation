@@ -3,7 +3,7 @@ import { useStore } from '../store/StoreContext.jsx'
 import StagePath from '../components/StagePath.jsx'
 import { groupsWithCounts } from '../lib/groups'
 import { GROUP_CAPACITY } from '../lib/constants'
-import { getCurrentStage } from '../lib/stage'
+import { getCurrentStage, daysUntil } from '../lib/stage'
 
 function formatWindow(g) {
   if (g.isOpen) {
@@ -24,6 +24,7 @@ export default function HomePage() {
   )
   const openGroups = groupsInfo.filter((g) => g.isOpen && g.count < GROUP_CAPACITY)
   const collectionOpen = openGroups.length > 0
+  const days = daysUntil(settings.collectionEnd)
 
   return (
     <div className="min-h-screen">
@@ -56,10 +57,14 @@ export default function HomePage() {
               <span className="font-semibold">{collectionOpen ? 'Сбор анкет открыт' : 'Сбор анкет закрыт'}</span>
             </div>
             <p className="text-sm text-navy-500 mt-1">
-              {collectionOpen
-                ? `Открыто групп: ${openGroups.length}`
-                : 'Сейчас нет открытых групп для приёма анкет.'}
+              {collectionOpen ? `Открыто групп: ${openGroups.length}` : 'Сейчас нет открытых групп для приёма анкет.'}
             </p>
+            {settings.collectionEnd && (
+              <p className="text-sm text-navy-500 mt-1">
+                Окончание сбора: {settings.collectionEnd}
+                {days !== null && days >= 0 ? ` (осталось ${days} дн.)` : ''}
+              </p>
+            )}
           </div>
           <Link to="/submit" className="btn-primary">
             Заполнить анкету
