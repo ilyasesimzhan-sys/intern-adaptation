@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
 import StagePath from '../components/StagePath.jsx'
-import { groupsWithCounts } from '../lib/groups'
-import { GROUP_CAPACITY } from '../lib/constants'
+import { groupsWithCounts, openGroupsWithSpace } from '../lib/groups'
 import { getCurrentStage, daysUntil } from '../lib/stage'
 
 function formatWindow(g) {
@@ -22,7 +21,7 @@ export default function HomePage() {
   const groupsInfo = groupsWithCounts(groups, interns).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
   )
-  const openGroups = groupsInfo.filter((g) => g.isOpen && g.count < GROUP_CAPACITY)
+  const openGroups = openGroupsWithSpace(groups, interns, settings.collectionOpen)
   const collectionOpen = openGroups.length > 0
   const days = daysUntil(settings.collectionEnd)
 

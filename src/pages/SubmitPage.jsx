@@ -20,7 +20,7 @@ const EMPTY_FORM = {
 export default function SubmitPage() {
   const { data, update } = useStore()
   const [searchParams] = useSearchParams()
-  const openGroups = openGroupsWithSpace(data.groups, data.interns)
+  const openGroups = openGroupsWithSpace(data.groups, data.interns, data.settings.collectionOpen)
   const preselected = searchParams.get('group')
 
   const [form, setForm] = useState(EMPTY_FORM)
@@ -53,7 +53,9 @@ export default function SubmitPage() {
     if (Object.keys(errs).length > 0) return
 
     update((prev) => {
-      const stillOpen = openGroupsWithSpace(prev.groups, prev.interns).some((g) => g.id === groupId)
+      const stillOpen = openGroupsWithSpace(prev.groups, prev.interns, prev.settings.collectionOpen).some(
+        (g) => g.id === groupId,
+      )
       if (!stillOpen) {
         setErrors({ groupId: 'Группа уже закрылась или заполнилась, выберите другую' })
         return prev
