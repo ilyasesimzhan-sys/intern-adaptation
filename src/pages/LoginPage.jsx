@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
+import logo from '../assets/logo.jpeg'
 
 export default function LoginPage() {
   const { login, currentTrainer } = useStore()
@@ -21,8 +22,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-navy-50 via-sky-50 to-violet-50">
       <div className="card w-full max-w-sm">
+        <img src={logo} alt="Kazakhtelecom Corporate University" className="h-10 w-auto mb-4" />
         <h1 className="text-xl font-bold mb-1">Вход для тренеров</h1>
         <p className="text-navy-500 text-sm mb-6">Введите ваш логин и пароль.</p>
         <form onSubmit={handleSubmit} className="space-y-4">

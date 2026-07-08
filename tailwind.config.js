@@ -32,6 +32,20 @@ export default {
           500: '#e8a916',
           600: '#c78c0d',
         },
+        sky: {
+          50: '#eaf7fe',
+          100: '#cfeefd',
+          400: '#38b6f0',
+          500: '#1e9fe0',
+          600: '#1580ba',
+        },
+        violet: {
+          50: '#f2eefc',
+          100: '#e1d6f9',
+          400: '#9b6ee8',
+          500: '#7c4fd4',
+          600: '#6338b0',
+        },
       },
       fontFamily: {
         sans: ['"Inter"', 'system-ui', 'sans-serif'],

@@ -3,6 +3,7 @@ import { useStore } from '../store/StoreContext.jsx'
 import StagePath from '../components/StagePath.jsx'
 import { groupsWithCounts, openGroupsWithSpace } from '../lib/groups'
 import { getCurrentStage } from '../lib/stage'
+import logo from '../assets/logo.jpeg'
 
 function formatWindow(g) {
   if (g.isOpen) {
@@ -12,6 +13,27 @@ function formatWindow(g) {
   if (g.startDate) return `Была открыта с ${g.startDate}`
   return 'Закрыта'
 }
+
+const INFO_CARDS = [
+  {
+    emoji: '📝',
+    color: 'bg-sky-500',
+    title: 'Анкета стажёра',
+    text: 'Анкету заполняет руководитель стажёра, а не сам стажёр — это ускоряет и упрощает сбор данных.',
+  },
+  {
+    emoji: '⚖️',
+    color: 'bg-violet-500',
+    title: 'Честное деление',
+    text: 'Группы формируются автоматически и равномерно, с учётом подразделения и города каждого стажёра.',
+  },
+  {
+    emoji: '💬',
+    color: 'bg-success-500',
+    title: 'Уведомление в WhatsApp',
+    text: 'После формирования группы каждый стажёр получает приглашение и информацию через WhatsApp.',
+  },
+]
 
 export default function HomePage() {
   const { data } = useStore()
@@ -26,16 +48,26 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <header className="bg-navy-800 text-white">
-        <div className="max-w-5xl mx-auto px-4 py-8">
-          <h1 className="text-2xl sm:text-3xl font-bold">{settings.programName}</h1>
-          <p className="text-navy-200 mt-2 max-w-2xl">
-            Единое место сбора анкет, формирования учебных групп и сопровождения стажёров на протяжении всей
-            программы адаптации.
-          </p>
-          <Link to="/login" className="inline-block mt-4 text-sm text-navy-200 underline hover:text-white">
-            Вход для тренеров
-          </Link>
+      <header className="bg-gradient-to-br from-navy-900 via-navy-700 to-sky-600 text-white">
+        <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col sm:flex-row sm:items-center gap-6">
+          <div className="bg-white rounded-2xl p-3 shadow-lg shrink-0 w-fit">
+            <img src={logo} alt="Kazakhtelecom Corporate University" className="h-12 sm:h-14 w-auto" />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold">{settings.programName}</h1>
+            <p className="text-navy-100 mt-2 max-w-2xl">
+              Единое место сбора анкет, формирования учебных групп и сопровождения стажёров на протяжении всей
+              программы адаптации.
+            </p>
+            <div className="flex flex-wrap items-center gap-4 mt-4">
+              <Link to="/submit" className="btn bg-white text-navy-800 hover:bg-sky-50">
+                Заполнить анкету стажёра
+              </Link>
+              <Link to="/login" className="text-sm text-navy-100 underline hover:text-white">
+                Вход для тренеров
+              </Link>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -64,24 +96,17 @@ export default function HomePage() {
         </section>
 
         <section className="grid sm:grid-cols-3 gap-4">
-          <div className="card">
-            <h3 className="font-semibold mb-2">Анкета стажёра</h3>
-            <p className="text-sm text-navy-500">
-              Анкету заполняет руководитель стажёра, а не сам стажёр — это ускоряет и упрощает сбор данных.
-            </p>
-          </div>
-          <div className="card">
-            <h3 className="font-semibold mb-2">Честное деление</h3>
-            <p className="text-sm text-navy-500">
-              Группы формируются автоматически и равномерно, с учётом подразделения и города каждого стажёра.
-            </p>
-          </div>
-          <div className="card">
-            <h3 className="font-semibold mb-2">Уведомление в WhatsApp</h3>
-            <p className="text-sm text-navy-500">
-              После формирования группы каждый стажёр получает приглашение и информацию через WhatsApp.
-            </p>
-          </div>
+          {INFO_CARDS.map((c) => (
+            <div key={c.title} className="card">
+              <div className={'w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-3 ' + c.color}>
+                <span role="img" aria-hidden="true">
+                  {c.emoji}
+                </span>
+              </div>
+              <h3 className="font-semibold mb-2">{c.title}</h3>
+              <p className="text-sm text-navy-500">{c.text}</p>
+            </div>
+          ))}
         </section>
 
         <section className="card">
@@ -97,13 +122,18 @@ export default function HomePage() {
               {groupsInfo.map((g) => {
                 const members = interns.filter((i) => i.groupId === g.id)
                 return (
-                  <div key={g.id}>
+                  <div
+                    key={g.id}
+                    className={
+                      'rounded-xl border-l-4 pl-4 py-1 ' + (g.isOpen ? 'border-success-500' : 'border-sky-500')
+                    }
+                  >
                     <h3 className="font-semibold text-navy-700 mb-2 flex flex-wrap items-center gap-2">
                       {g.name}
                       <span
                         className={
                           'text-xs font-medium px-2 py-0.5 rounded-full ' +
-                          (g.isOpen ? 'bg-success-50 text-success-600' : 'bg-navy-100 text-navy-500')
+                          (g.isOpen ? 'bg-success-50 text-success-600' : 'bg-sky-50 text-sky-600')
                         }
                       >
                         {g.isOpen ? 'приём открыт' : 'сбор закрыт — идёт обучение'}
