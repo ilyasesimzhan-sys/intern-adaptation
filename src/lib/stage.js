@@ -14,10 +14,3 @@ export function getCurrentStage(groups, interns) {
 
   return 'grouping'
 }
-
-export function daysUntil(dateStr) {
-  if (!dateStr) return null
-  const end = new Date(dateStr + 'T23:59:59')
-  const now = new Date()
-  return Math.ceil((end - now) / (1000 * 60 * 60 * 24))
-}

@@ -80,50 +80,6 @@ export default function SettingsTab() {
             onChange={(e) => patchSettings({ programName: e.target.value })}
           />
         </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="field-label">Дата начала сбора</label>
-            <input
-              type="date"
-              className="field-input"
-              value={settings.collectionStart}
-              onChange={(e) => patchSettings({ collectionStart: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="field-label">Дата окончания сбора</label>
-            <input
-              type="date"
-              className="field-input"
-              value={settings.collectionEnd}
-              onChange={(e) => patchSettings({ collectionEnd: e.target.value })}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between border border-navy-100 rounded-lg px-4 py-3">
-          <div>
-            <div className="font-medium">Сбор анкет открыт</div>
-            <div className="text-sm text-navy-500">
-              Общий переключатель поверх старта/стопа отдельных групп. Если выключен, анкеты не принимаются нигде,
-              даже если какая-то группа сама по себе открыта.
-            </div>
-          </div>
-          <button
-            onClick={() => patchSettings({ collectionOpen: !settings.collectionOpen })}
-            className={
-              'relative w-12 h-7 rounded-full transition-colors shrink-0 ' +
-              (settings.collectionOpen ? 'bg-success-500' : 'bg-navy-200')
-            }
-          >
-            <span
-              className={
-                'absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ' +
-                (settings.collectionOpen ? 'translate-x-6' : 'translate-x-1')
-              }
-            />
-          </button>
-        </div>
       </div>
 
       <div className="card space-y-4">
