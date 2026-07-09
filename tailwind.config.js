@@ -50,6 +50,28 @@ export default {
       fontFamily: {
         sans: ['"Inter"', 'system-ui', 'sans-serif'],
       },
+      keyframes: {
+        pop: {
+          '0%': { transform: 'scale(0.5)', opacity: '0' },
+          '60%': { transform: 'scale(1.15)', opacity: '1' },
+          '100%': { transform: 'scale(1)' },
+        },
+        'chase-pulse': {
+          '0%, 100%': { transform: 'scale(0.85)', opacity: '0' },
+          '10%': { opacity: '0.55' },
+          '22%': { transform: 'scale(1.55)', opacity: '0' },
+        },
+        'chase-sweep': {
+          '0%, 100%': { transform: 'translateX(-120%)', opacity: '0' },
+          '8%': { opacity: '1' },
+          '22%': { transform: 'translateX(220%)', opacity: '0' },
+        },
+      },
+      animation: {
+        pop: 'pop 0.4s ease-out',
+        'chase-pulse': 'chase-pulse 2.8s ease-out infinite',
+        'chase-sweep': 'chase-sweep 2.8s ease-in-out infinite',
+      },
     },
   },
   plugins: [],
