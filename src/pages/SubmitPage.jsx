@@ -16,6 +16,7 @@ const EMPTY_FORM = {
   managerName: '',
   managerContact: '',
   city: '',
+  cityOther: '',
 }
 
 export default function SubmitPage() {
@@ -38,7 +39,11 @@ export default function SubmitPage() {
   function validate() {
     const errs = {}
     for (const key of Object.keys(EMPTY_FORM)) {
+      if (key === 'cityOther') continue
       if (!form[key].trim()) errs[key] = 'Обязательное поле'
+    }
+    if (form.city === 'Другой' && !form.cityOther.trim()) {
+      errs.cityOther = 'Укажите город или село'
     }
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       errs.email = 'Некорректный email'
@@ -59,13 +64,15 @@ export default function SubmitPage() {
         setErrors({ groupId: 'Группа уже закрылась или заполнилась, выберите другую' })
         return prev
       }
+      const { cityOther, ...rest } = form
       return {
         ...prev,
         interns: [
           ...prev.interns,
           {
             id: uid(),
-            ...form,
+            ...rest,
+            city: form.city === 'Другой' ? cityOther.trim() : form.city,
             groupId,
             attendance: {},
             homework: {},
@@ -175,6 +182,18 @@ export default function SubmitPage() {
             </select>
             {errors.city && <p className="text-danger-500 text-xs mt-1">{errors.city}</p>}
           </div>
+
+          {form.city === 'Другой' && (
+            <div>
+              <label className="field-label">Укажите город или село</label>
+              <input
+                className="field-input"
+                value={form.cityOther}
+                onChange={(e) => handleChange('cityOther', e.target.value)}
+              />
+              {errors.cityOther && <p className="text-danger-500 text-xs mt-1">{errors.cityOther}</p>}
+            </div>
+          )}
 
           <button type="submit" className="btn-primary w-full">
             Отправить анкету
