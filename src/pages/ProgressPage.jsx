@@ -1,7 +1,15 @@
 import { Link, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
 import { HOMEWORK_STATUSES } from '../lib/constants'
-import { getExamAnswers, getRetakeAnswers, examCorrectCount, examPercent, getInternExamStatus, EXAM_QUESTION_COUNT } from '../lib/exam'
+import {
+  getExamAnswers,
+  getRetakeAnswers,
+  getExamQuestions,
+  examCorrectCount,
+  examPercent,
+  getInternExamStatus,
+  EXAM_QUESTION_COUNT,
+} from '../lib/exam'
 import ExamAnswerList from '../components/ExamAnswerList.jsx'
 
 function homeworkLabel(value) {
@@ -102,7 +110,7 @@ export default function ProgressPage() {
             const first = getExamAnswers(intern)
             const retake = getRetakeAnswers(intern)
             const status = getInternExamStatus(intern)
-            const questions = data.settings.examQuestions
+            const questions = getExamQuestions(intern)
             return (
               <>
                 <p className="text-sm">

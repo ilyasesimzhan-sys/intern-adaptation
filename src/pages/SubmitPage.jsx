@@ -4,7 +4,7 @@ import { useStore } from '../store/StoreContext.jsx'
 import { KZ_CITIES, GROUP_CAPACITY } from '../lib/constants'
 import { uid } from '../store/defaultData'
 import { openGroupsWithSpace } from '../lib/groups'
-import { emptyExamAnswers } from '../lib/exam'
+import { emptyExamAnswers, emptyExamQuestions } from '../lib/exam'
 
 const EMPTY_FORM = {
   lastName: '',
@@ -70,6 +70,7 @@ export default function SubmitPage() {
             attendance: {},
             homework: {},
             comment: '',
+            examQuestions: emptyExamQuestions(),
             examAnswers: emptyExamAnswers(),
             createdAt: new Date().toISOString(),
           },

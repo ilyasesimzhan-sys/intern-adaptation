@@ -5,6 +5,7 @@ import {
   emptyExamAnswers,
   getExamAnswers,
   getRetakeAnswers,
+  getExamQuestions,
   examCorrectCount,
   examPercent,
   getInternExamStatus,
@@ -21,7 +22,6 @@ function nextAnswerState(value) {
 export default function ExamTab() {
   const { data, update, currentTrainer } = useStore()
   const { settings, interns: allInterns } = data
-  const questions = settings.examQuestions || emptyExamAnswers().map(() => '')
 
   const myGroups = activeVisibleGroups(data.groups, currentTrainer).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
@@ -31,10 +31,16 @@ export default function ExamTab() {
     update((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
   }
 
-  function patchQuestion(idx, text) {
-    const next = questions.slice()
-    next[idx] = text
-    patchSettings({ examQuestions: next })
+  function patchInternQuestion(internId, questionIdx, text) {
+    update((prev) => ({
+      ...prev,
+      interns: prev.interns.map((i) => {
+        if (i.id !== internId) return i
+        const nextQuestions = getExamQuestions(i).slice()
+        nextQuestions[questionIdx] = text
+        return { ...i, examQuestions: nextQuestions }
+      }),
+    }))
   }
 
   function toggleAnswer(internId, field, questionIdx) {
@@ -79,6 +85,10 @@ export default function ExamTab() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Итоговый экзамен</h1>
+      <p className="text-sm text-navy-500">
+        Вопросы задаются отдельно для каждого стажёра — впишите их прямо в списке под именем стажёра. Текст виден
+        стажёру на публичной странице прогресса вместе с результатом по каждому вопросу.
+      </p>
 
       <div className="card space-y-2">
         <h2 className="font-semibold">Правила экзамена</h2>
@@ -87,27 +97,6 @@ export default function ExamTab() {
           value={settings.examRules}
           onChange={(e) => patchSettings({ examRules: e.target.value })}
         />
-      </div>
-
-      <div className="card space-y-3">
-        <h2 className="font-semibold">Вопросы экзамена</h2>
-        <p className="text-sm text-navy-500">
-          Текст всех 10 вопросов виден стажёру на публичной странице прогресса вместе с результатом по каждому
-          вопросу.
-        </p>
-        <div className="space-y-2">
-          {questions.map((q, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <span className="text-sm text-navy-400 w-5 shrink-0 text-right">{idx + 1}.</span>
-              <input
-                className="field-input"
-                value={q}
-                onChange={(e) => patchQuestion(idx, e.target.value)}
-                placeholder={`Текст вопроса ${idx + 1}`}
-              />
-            </div>
-          ))}
-        </div>
       </div>
 
       {myGroups.length === 0 ? (
@@ -164,6 +153,7 @@ export default function ExamTab() {
                 <div className="space-y-3">
                   {interns.map((i, idx) => {
                     const status = statuses[idx]
+                    const questions = getExamQuestions(i)
                     const first = getExamAnswers(i)
                     const retake = getRetakeAnswers(i)
 
@@ -186,6 +176,7 @@ export default function ExamTab() {
                             questions={questions}
                             answers={first}
                             onToggle={(qIdx) => toggleAnswer(i.id, 'examAnswers', qIdx)}
+                            onQuestionChange={(qIdx, text) => patchInternQuestion(i.id, qIdx, text)}
                           />
                         </div>
 
@@ -198,6 +189,7 @@ export default function ExamTab() {
                               questions={questions}
                               answers={retake}
                               onToggle={(qIdx) => toggleAnswer(i.id, 'examRetakeAnswers', qIdx)}
+                              onQuestionChange={(qIdx, text) => patchInternQuestion(i.id, qIdx, text)}
                             />
                           </div>
                         )}

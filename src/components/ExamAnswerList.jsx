@@ -16,20 +16,30 @@ function stateKey(value) {
   return value === true ? 'true' : value === false ? 'false' : 'null'
 }
 
-// Список вопросов экзамена с ответом по каждому. С onToggle — редактируемый (кабинет тренера),
-// без onToggle — только для чтения (публичная страница прогресса стажёра).
-export default function ExamAnswerList({ questions, answers, onToggle }) {
+// Список вопросов экзамена с ответом по каждому. С onToggle — ответы редактируемые (кабинет тренера),
+// без onToggle — только для чтения (публичная страница прогресса стажёра). onQuestionChange даёт
+// редактировать сам текст вопроса (тренер задаёт вопросы индивидуально для каждого стажёра).
+export default function ExamAnswerList({ questions, answers, onToggle, onQuestionChange }) {
   return (
     <div className="divide-y divide-navy-50 border border-navy-100 rounded-lg overflow-hidden">
       {answers.map((a, idx) => {
         const key = stateKey(a)
         const questionText = questions?.[idx]?.trim()
         return (
-          <div key={idx} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-            <div className="flex-1">
-              <span className="text-navy-400 mr-1">{idx + 1}.</span>
-              {questionText ? questionText : <span className="text-navy-300 italic">Вопрос не задан</span>}
-            </div>
+          <div key={idx} className="flex items-center gap-3 px-3 py-2 text-sm">
+            <span className="text-navy-400 shrink-0">{idx + 1}.</span>
+            {onQuestionChange ? (
+              <input
+                className="flex-1 min-w-0 border-none bg-transparent px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-navy-300 rounded"
+                value={questions?.[idx] || ''}
+                onChange={(e) => onQuestionChange(idx, e.target.value)}
+                placeholder={`Текст вопроса ${idx + 1}`}
+              />
+            ) : (
+              <div className="flex-1">
+                {questionText ? questionText : <span className="text-navy-300 italic">Вопрос не задан</span>}
+              </div>
+            )}
             {onToggle ? (
               <button
                 type="button"

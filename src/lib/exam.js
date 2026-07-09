@@ -5,9 +5,18 @@ export function emptyExamAnswers() {
   return Array(EXAM_QUESTION_COUNT).fill(null)
 }
 
+export function emptyExamQuestions() {
+  return Array(EXAM_QUESTION_COUNT).fill('')
+}
+
 // Старые данные (до перехода на поквестионную оценку) не имеют examAnswers — считаем, что экзамен ещё не начат.
 export function getExamAnswers(intern) {
   return intern.examAnswers || emptyExamAnswers()
+}
+
+// Вопросы задаются тренером отдельно для каждого стажёра.
+export function getExamQuestions(intern) {
+  return intern.examQuestions || emptyExamQuestions()
 }
 
 export function getRetakeAnswers(intern) {
