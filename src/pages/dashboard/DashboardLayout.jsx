@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
 import Avatar from '../../components/Avatar.jsx'
+import CreatorCard from '../../components/CreatorCard.jsx'
 import logo from '../../assets/logo.jpeg'
 
 const TABS = [
@@ -67,7 +68,8 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 mt-auto border-t border-navy-700 hidden lg:block">
+        <div className="p-4 mt-auto border-t border-navy-700 hidden lg:block space-y-3">
+          <CreatorCard />
           <button onClick={handleLogout} className="text-sm text-navy-300 hover:text-white">
             Выйти
           </button>
