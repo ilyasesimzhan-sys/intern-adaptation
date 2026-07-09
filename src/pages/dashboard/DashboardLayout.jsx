@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
+import logo from '../../assets/logo.jpeg'
 
 const TABS = [
   { to: 'settings', label: 'Настройки сбора' },
@@ -25,12 +26,18 @@ export default function DashboardLayout() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      <aside className="lg:w-64 bg-navy-800 text-white shrink-0">
-        <div className="p-4 border-b border-navy-700">
+      <aside className="relative overflow-hidden lg:w-64 bg-navy-800 text-white shrink-0">
+        <img
+          src={logo}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none select-none absolute -right-10 -top-10 w-[280px] max-w-none opacity-80 mix-blend-multiply saturate-150 contrast-125"
+        />
+        <div className="relative p-4 border-b border-navy-700">
           <div className="font-bold">Кабинет тренера</div>
           <div className="text-sm text-navy-300">{currentTrainer?.name}</div>
         </div>
-        <nav className="p-2 flex lg:flex-col gap-1 overflow-x-auto">
+        <nav className="relative p-2 flex lg:flex-col gap-1 overflow-x-auto">
           {visibleTabs.map((tab) => (
             <NavLink
               key={tab.to}
@@ -44,7 +51,7 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 mt-auto border-t border-navy-700 hidden lg:block">
+        <div className="relative p-4 mt-auto border-t border-navy-700 hidden lg:block">
           <button onClick={handleLogout} className="text-sm text-navy-300 hover:text-white">
             Выйти
           </button>
