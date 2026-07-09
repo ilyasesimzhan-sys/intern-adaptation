@@ -40,7 +40,6 @@ export function makeDefaultData() {
     trainers: makeDefaultTrainers(),
     groups: [],
     interns: [],
-    knowledgeFolders: [],
   }
 }
 
