@@ -18,6 +18,7 @@ function loadLocalData() {
       trainers: parsed.trainers?.length ? parsed.trainers : defaults.trainers,
       groups: parsed.groups || [],
       interns: parsed.interns || [],
+      knowledgeFolders: parsed.knowledgeFolders || [],
     }
   } catch {
     return makeDefaultData()
@@ -31,6 +32,7 @@ function mergeWithDefaults(remote) {
     trainers: remote.trainers?.length ? remote.trainers : defaults.trainers,
     groups: remote.groups || [],
     interns: remote.interns || [],
+    knowledgeFolders: remote.knowledgeFolders || [],
   }
 }
 

@@ -14,6 +14,7 @@ import InternsTab from './pages/dashboard/InternsTab.jsx'
 import ExamTab from './pages/dashboard/ExamTab.jsx'
 import WhatsAppTab from './pages/dashboard/WhatsAppTab.jsx'
 import ArchiveTab from './pages/dashboard/ArchiveTab.jsx'
+import KnowledgeBaseTab from './pages/dashboard/KnowledgeBaseTab.jsx'
 
 function RequireAuth({ children }) {
   const { currentTrainer } = useStore()
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="exam" element={<ExamTab />} />
         <Route path="whatsapp" element={<WhatsAppTab />} />
         <Route path="archive" element={<ArchiveTab />} />
+        <Route path="knowledge" element={<KnowledgeBaseTab />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -6,12 +6,13 @@ import logo from '../../assets/logo.jpeg'
 
 const TABS = [
   { to: 'settings', label: 'Настройки сбора' },
-  { to: 'trainers', label: 'Тренеры', adminOnly: true },
-  { to: 'rules', label: 'Правила адаптационной программы' },
   { to: 'interns', label: 'Список стажёров' },
-  { to: 'exam', label: 'Итоговый экзамен' },
   { to: 'whatsapp', label: 'Рассылка WhatsApp' },
+  { to: 'exam', label: 'Итоговый экзамен' },
+  { to: 'rules', label: 'Правила адаптационной программы' },
+  { to: 'trainers', label: 'Тренеры', adminOnly: true },
   { to: 'archive', label: 'Архив' },
+  { to: 'knowledge', label: 'База знаний' },
 ]
 
 export default function DashboardLayout() {
