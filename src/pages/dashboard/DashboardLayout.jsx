@@ -58,13 +58,19 @@ export default function DashboardLayout() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col">
-        <div className="lg:hidden p-3 bg-white border-b border-navy-100 flex justify-end">
+      <div className="relative flex-1 flex flex-col">
+        <img
+          src={logo}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none select-none fixed bottom-4 right-4 w-[260px] sm:w-[420px] lg:w-[640px] max-w-none opacity-[0.18] mix-blend-multiply saturate-150 z-20"
+        />
+        <div className="relative z-10 lg:hidden p-3 bg-white border-b border-navy-100 flex justify-end">
           <button onClick={handleLogout} className="text-sm text-navy-500 hover:text-navy-700">
             Выйти
           </button>
         </div>
-        <main className="flex-1 p-4 sm:p-6 max-w-5xl w-full mx-auto">
+        <main className="relative z-10 flex-1 p-4 sm:p-6 max-w-5xl w-full mx-auto">
           <Outlet />
         </main>
       </div>
