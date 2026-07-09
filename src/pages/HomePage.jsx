@@ -7,7 +7,10 @@ import logo from '../assets/logo.jpeg'
 
 function formatWindow(g) {
   if (g.isOpen) {
-    return g.startDate ? `Открыта с ${g.startDate}` : 'Открыта'
+    if (g.startDate && g.endDate) return `Открыта с ${g.startDate} по ${g.endDate}`
+    if (g.startDate) return `Открыта с ${g.startDate}`
+    if (g.endDate) return `Открыта до ${g.endDate}`
+    return 'Открыта'
   }
   if (g.endDate) return `Закрыта ${g.endDate}`
   if (g.startDate) return `Была открыта с ${g.startDate}`
