@@ -1,72 +1,62 @@
 import * as XLSX from 'xlsx'
-import { HOMEWORK_STATUSES } from './constants'
-import { getExamQuestions, getExamAnswers, getRetakeAnswers, examCorrectCount, examPercent, getInternExamStatus } from './exam'
+import { getExamAnswers, getRetakeAnswers, examPercent, getInternExamStatus } from './exam'
 
-function homeworkLabel(value) {
-  return HOMEWORK_STATUSES.find((h) => h.value === value)?.label || 'Не указано'
+const HOMEWORK_SCORE = { done: 100, partial: 50, not_done: 0 }
+
+const OUTCOME_LABEL = {
+  passed: 'Прошёл',
+  training: 'Направлен на переобучение',
+  ended: 'Отказался',
 }
 
-function answerLabel(a) {
-  return a === true ? 'Верно' : a === false ? 'Неверно' : '—'
+function attendancePercent(intern, lessons) {
+  if (lessons.length === 0) return ''
+  const present = lessons.filter((l) => intern.attendance?.[l.id]).length
+  return `${Math.round((present / lessons.length) * 100)}%`
 }
 
-function questionCell(questions, answers, idx) {
-  const text = questions[idx]?.trim()
-  return `${text || `Вопрос ${idx + 1}`}: ${answerLabel(answers[idx])}`
+function homeworkPercent(intern, lessons) {
+  if (lessons.length === 0) return ''
+  const total = lessons.reduce((sum, l) => sum + (HOMEWORK_SCORE[intern.homework?.[l.id]] ?? 0), 0)
+  return `${Math.round(total / lessons.length)}%`
 }
 
-// Полная выгрузка по группе для служебных целей: анкета, путь по группе, посещаемость и ДЗ по каждому
-// занятию, оба захода на экзамен по вопросам, итоговый статус. Доступна только из кабинета тренера.
+function trainingPeriod(lessons) {
+  const dates = lessons.map((l) => l.date).filter(Boolean).sort()
+  if (dates.length === 0) return ''
+  const first = dates[0]
+  const last = dates[dates.length - 1]
+  return first === last ? first : `${first} — ${last}`
+}
+
+// Сводная выгрузка по группе для служебных целей: одна строка на стажёра с итоговыми процентами,
+// а не детализация по дням и вопросам. Доступна только из кабинета тренера.
 export function downloadGroupReport(group, interns, trainers) {
   const ownerName = trainers.find((t) => t.id === group.ownerId)?.name || 'без владельца'
+  const lessons = group.lessons || []
 
   const rows = interns.map((i) => {
-    const questions = getExamQuestions(i)
     const first = getExamAnswers(i)
     const retake = getRetakeAnswers(i)
     const status = getInternExamStatus(i)
 
-    const row = {
+    return {
       Фамилия: i.lastName,
       Имя: i.firstName,
-      Email: i.email,
       Подразделение: i.department,
       Должность: i.position,
-      Телефон: i.phone,
+      'Город/район': i.city,
+      'Период обучения': trainingPeriod(lessons),
+      'Посещаемость, %': attendancePercent(i, lessons),
+      'Выполнение домашних заданий, %': homeworkPercent(i, lessons),
+      'Результат экзамена, %': `${examPercent(first)}%`,
+      Пересдача: retake ? `${examPercent(retake)}%` : '',
+      'Бизнес-тренер': ownerName,
+      Итог: OUTCOME_LABEL[status.code] || status.label,
+      Комментарий: i.examFinalComment || '',
       Руководитель: i.managerName,
       'Контакты руководителя': i.managerContact,
-      Город: i.city,
-      'Дата подачи анкеты': i.createdAt ? i.createdAt.slice(0, 10) : '',
-      Группа: group.name,
-      'Владелец группы': ownerName,
-      'Группа создана': group.createdAt ? group.createdAt.slice(0, 10) : '',
-      'Приём анкет — начало': group.startDate || '',
-      'Приём анкет — окончание': group.endDate || '',
     }
-
-    group.lessons.forEach((l, idx) => {
-      const label = `Занятие ${idx + 1}: ${l.name}${l.date ? ` (${l.date})` : ''}`
-      row[`${label} — посещение`] = i.attendance?.[l.id] ? 'Присутствовал' : 'Отсутствовал'
-      row[`${label} — ДЗ`] = homeworkLabel(i.homework?.[l.id])
-      row[`${label} — комментарий`] = i.comments?.[l.id] || ''
-    })
-
-    questions.forEach((_, q) => {
-      row[`Экзамен, 1-я попытка — вопрос ${q + 1}`] = questionCell(questions, first, q)
-    })
-    row['Экзамен, 1-я попытка — итог'] = `${examCorrectCount(first)}/${first.length} (${examPercent(first)}%)`
-
-    if (retake) {
-      questions.forEach((_, q) => {
-        row[`Пересдача — вопрос ${q + 1}`] = questionCell(questions, retake, q)
-      })
-      row['Пересдача — итог'] = `${examCorrectCount(retake)}/${retake.length} (${examPercent(retake)}%)`
-    }
-
-    row['Итоговый статус'] = status.label
-    row['Комментарий завершения экзамена'] = i.examFinalComment || ''
-
-    return row
   })
 
   const sheet = XLSX.utils.json_to_sheet(rows)
