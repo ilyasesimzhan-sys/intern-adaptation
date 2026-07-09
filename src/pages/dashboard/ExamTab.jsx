@@ -12,11 +12,11 @@ function examStatus(score) {
 
 export default function ExamTab() {
   const { data, update, currentTrainer } = useStore()
-  const { settings, groups, interns: allInterns } = data
+  const { settings, interns: allInterns } = data
 
-  const myGroups = activeVisibleGroups(groups, currentTrainer)
-  const myGroupIds = new Set(myGroups.map((g) => g.id))
-  const interns = allInterns.filter((i) => myGroupIds.has(i.groupId))
+  const myGroups = activeVisibleGroups(data.groups, currentTrainer).sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+  )
 
   function patchSettings(patch) {
     update((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
@@ -30,8 +30,15 @@ export default function ExamTab() {
     }))
   }
 
-  const graded = interns.filter((i) => i.examScore !== null && i.examScore !== undefined)
-  const passed = graded.filter((i) => i.examScore >= PASS_THRESHOLD)
+  function archiveGroup(groupId) {
+    if (!confirm('Отправить группу в архив? Она пропадёт из активных, но данные сохранятся в разделе «Архив».')) return
+    update((prev) => ({
+      ...prev,
+      groups: prev.groups.map((g) =>
+        g.id === groupId ? { ...g, archived: true, archivedAt: new Date().toISOString().slice(0, 10) } : g,
+      ),
+    }))
+  }
 
   return (
     <div className="space-y-6">
@@ -46,61 +53,93 @@ export default function ExamTab() {
         />
       </div>
 
-      <div className="card">
-        <div className="flex flex-wrap gap-6 mb-4 text-sm">
-          <div>
-            Всего стажёров: <span className="font-semibold">{interns.length}</span>
-          </div>
-          <div>
-            Оценено: <span className="font-semibold">{graded.length}</span>
-          </div>
-          <div>
-            Прошли порог ({PASS_THRESHOLD}/10): <span className="font-semibold text-success-600">{passed.length}</span>
-          </div>
-        </div>
+      {myGroups.length === 0 ? (
+        <p className="text-navy-400">Сначала создайте группу во вкладке «Настройки сбора».</p>
+      ) : (
+        myGroups.map((group) => {
+          const interns = allInterns.filter((i) => i.groupId === group.id)
+          const graded = interns.filter((i) => i.examScore !== null && i.examScore !== undefined)
+          const passed = graded.filter((i) => i.examScore >= PASS_THRESHOLD)
+          const allGraded = interns.length > 0 && graded.length === interns.length
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[500px]">
-            <thead>
-              <tr className="text-left text-navy-500 border-b border-navy-100">
-                <th className="py-2 pr-3">ФИО</th>
-                <th className="py-2 pr-3">Группа</th>
-                <th className="py-2 pr-3">Балл (0–10)</th>
-                <th className="py-2 pr-3">Статус</th>
-              </tr>
-            </thead>
-            <tbody>
-              {interns.map((i) => {
-                const status = examStatus(i.examScore)
-                const groupName = groups.find((g) => g.id === i.groupId)?.name ?? '—'
-                return (
-                  <tr key={i.id} className="border-b border-navy-50 last:border-0">
-                    <td className="py-2 pr-3 whitespace-nowrap">
-                      {i.lastName} {i.firstName}
-                    </td>
-                    <td className="py-2 pr-3">{groupName}</td>
-                    <td className="py-2 pr-3">
-                      <input
-                        type="number"
-                        min={0}
-                        max={10}
-                        className="field-input max-w-[90px]"
-                        value={i.examScore ?? ''}
-                        onChange={(e) => setScore(i.id, e.target.value)}
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <span className={'px-2 py-1 rounded-full text-xs font-semibold ' + status.cls}>
-                        {status.label}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          return (
+            <div key={group.id} className="card space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-semibold">{group.name}</h2>
+                <button
+                  onClick={() => archiveGroup(group.id)}
+                  disabled={!allGraded}
+                  title={allGraded ? '' : 'Доступно, когда всем стажёрам группы выставлен балл за экзамен'}
+                  className="btn-secondary text-sm"
+                >
+                  Отправить в архив
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-6 text-sm">
+                <div>
+                  Всего стажёров: <span className="font-semibold">{interns.length}</span>
+                </div>
+                <div>
+                  Оценено: <span className="font-semibold">{graded.length}</span>
+                </div>
+                <div>
+                  Прошли порог ({PASS_THRESHOLD}/10):{' '}
+                  <span className="font-semibold text-success-600">{passed.length}</span>
+                </div>
+              </div>
+              {!allGraded && interns.length > 0 && (
+                <p className="text-xs text-warning-600">
+                  В архив можно отправить, только когда балл выставлен всем стажёрам группы.
+                </p>
+              )}
+
+              {interns.length === 0 ? (
+                <p className="text-navy-400 text-sm">В группе пока нет стажёров.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[400px]">
+                    <thead>
+                      <tr className="text-left text-navy-500 border-b border-navy-100">
+                        <th className="py-2 pr-3">ФИО</th>
+                        <th className="py-2 pr-3">Балл (0–10)</th>
+                        <th className="py-2 pr-3">Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {interns.map((i) => {
+                        const status = examStatus(i.examScore)
+                        return (
+                          <tr key={i.id} className="border-b border-navy-50 last:border-0">
+                            <td className="py-2 pr-3 whitespace-nowrap">
+                              {i.lastName} {i.firstName}
+                            </td>
+                            <td className="py-2 pr-3">
+                              <input
+                                type="number"
+                                min={0}
+                                max={10}
+                                className="field-input max-w-[90px]"
+                                value={i.examScore ?? ''}
+                                onChange={(e) => setScore(i.id, e.target.value)}
+                              />
+                            </td>
+                            <td className="py-2 pr-3">
+                              <span className={'px-2 py-1 rounded-full text-xs font-semibold ' + status.cls}>
+                                {status.label}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )
+        })
+      )}
     </div>
   )
 }

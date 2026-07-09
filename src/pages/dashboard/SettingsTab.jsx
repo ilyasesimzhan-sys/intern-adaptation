@@ -78,16 +78,6 @@ export default function SettingsTab() {
     update((prev) => ({ ...prev, groups: prev.groups.filter((g) => g.id !== groupId) }))
   }
 
-  function archiveGroup(groupId) {
-    if (!confirm('Отправить группу в архив? Она пропадёт из активных, но данные сохранятся в разделе «Архив».')) return
-    update((prev) => ({
-      ...prev,
-      groups: prev.groups.map((g) =>
-        g.id === groupId ? { ...g, archived: true, archivedAt: new Date().toISOString().slice(0, 10) } : g,
-      ),
-    }))
-  }
-
   const groupsInfo = groupsWithCounts(activeVisibleGroups(groups, currentTrainer), interns)
 
   return (
@@ -109,7 +99,8 @@ export default function SettingsTab() {
         <h2 className="font-semibold">Группы</h2>
         <p className="text-sm text-navy-500">
           Можно вести сразу несколько групп — у каждой свой приём анкет, до {GROUP_CAPACITY} участников. Даты
-          открытия/закрытия приёма видны руководителям на главной странице.
+          открытия/закрытия приёма видны руководителям на главной странице. Отправить группу в архив можно во
+          вкладке «Итоговый экзамен», когда всем стажёрам выставлен балл.
         </p>
 
         <div className="flex flex-wrap gap-2 items-end">
@@ -213,11 +204,6 @@ export default function SettingsTab() {
                     ) : (
                       <button onClick={() => startGroup(g)} className="btn-success text-sm">
                         Открыть приём
-                      </button>
-                    )}
-                    {!g.isOpen && (
-                      <button onClick={() => archiveGroup(g.id)} className="btn-secondary text-sm">
-                        Отправить в архив
                       </button>
                     )}
                     <button
