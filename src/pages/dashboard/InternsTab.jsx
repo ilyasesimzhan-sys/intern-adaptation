@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { HOMEWORK_STATUSES } from '../../lib/constants'
 import { uid } from '../../store/defaultData'
-import { activeVisibleGroups } from '../../lib/roles'
+import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -19,6 +19,7 @@ const COLUMNS = [
 export default function InternsTab() {
   const { data, update, currentTrainer } = useStore()
   const { groups, interns } = data
+  const admin = isTrainerAdmin(currentTrainer)
   const sortedGroups = useMemo(
     () => activeVisibleGroups(groups, currentTrainer).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
     [groups, currentTrainer],
@@ -128,7 +129,7 @@ export default function InternsTab() {
                   {c.label}
                 </th>
               ))}
-              <th className="py-2 pr-3" />
+              {admin && <th className="py-2 pr-3" />}
             </tr>
           </thead>
           <tbody>
@@ -143,19 +144,21 @@ export default function InternsTab() {
                     />
                   </td>
                 ))}
-                <td className="py-1.5 pr-3">
-                  <button
-                    onClick={() => deleteIntern(intern.id)}
-                    className="text-danger-500 hover:text-danger-600 text-xs whitespace-nowrap"
-                  >
-                    Удалить
-                  </button>
-                </td>
+                {admin && (
+                  <td className="py-1.5 pr-3">
+                    <button
+                      onClick={() => deleteIntern(intern.id)}
+                      className="text-danger-500 hover:text-danger-600 text-xs whitespace-nowrap"
+                    >
+                      Удалить
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={COLUMNS.length + 1} className="py-6 text-center text-navy-400">
+                <td colSpan={COLUMNS.length + (admin ? 1 : 0)} className="py-6 text-center text-navy-400">
                   Анкет не найдено
                 </td>
               </tr>
