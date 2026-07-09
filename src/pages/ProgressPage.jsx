@@ -132,6 +132,13 @@ export default function ProgressPage() {
                     <ExamAnswerList questions={questions} answers={retake} />
                   </div>
                 )}
+
+                {intern.examFinalComment && (
+                  <div className="text-sm bg-navy-50 rounded-lg p-3">
+                    <span className="font-medium">Комментарий по завершению экзамена: </span>
+                    {intern.examFinalComment}
+                  </div>
+                )}
               </>
             )
           })()}

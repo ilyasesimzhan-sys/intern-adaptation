@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { activeVisibleGroups } from '../../lib/roles'
 import {
@@ -11,6 +12,7 @@ import {
   getInternExamStatus,
   isInternResolved,
 } from '../../lib/exam'
+import { downloadGroupReport } from '../../lib/examReport'
 import ExamAnswerList from '../../components/ExamAnswerList.jsx'
 
 function nextAnswerState(value) {
@@ -21,7 +23,9 @@ function nextAnswerState(value) {
 
 export default function ExamTab() {
   const { data, update, currentTrainer } = useStore()
-  const { settings, interns: allInterns } = data
+  const { settings, interns: allInterns, trainers } = data
+  const [endingId, setEndingId] = useState(null)
+  const [endComment, setEndComment] = useState('')
 
   const myGroups = activeVisibleGroups(data.groups, currentTrainer).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
@@ -65,11 +69,30 @@ export default function ExamTab() {
     }))
   }
 
-  function setFinalOutcome(internId, outcome) {
+  function setFinalOutcome(internId, outcome, comment) {
     update((prev) => ({
       ...prev,
-      interns: prev.interns.map((i) => (i.id === internId ? { ...i, examFinalOutcome: outcome } : i)),
+      interns: prev.interns.map((i) =>
+        i.id === internId ? { ...i, examFinalOutcome: outcome, examFinalComment: comment ?? i.examFinalComment ?? '' } : i,
+      ),
     }))
+  }
+
+  function startEnding(internId) {
+    setEndingId(internId)
+    setEndComment('')
+  }
+
+  function cancelEnding() {
+    setEndingId(null)
+    setEndComment('')
+  }
+
+  function confirmEnding(internId) {
+    if (!endComment.trim()) return
+    setFinalOutcome(internId, 'ended', endComment.trim())
+    setEndingId(null)
+    setEndComment('')
   }
 
   function archiveGroup(groupId) {
@@ -106,21 +129,30 @@ export default function ExamTab() {
           const interns = allInterns.filter((i) => i.groupId === group.id)
           const statuses = interns.map((i) => getInternExamStatus(i))
           const passedCount = statuses.filter((s) => s.code === 'passed').length
-          const droppedCount = statuses.filter((s) => s.code === 'rejected' || s.code === 'training').length
+          const droppedCount = statuses.filter((s) => s.code === 'ended' || s.code === 'training').length
           const allResolved = interns.length > 0 && statuses.every((s) => isInternResolved(s))
 
           return (
             <div key={group.id} className="card space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-semibold">{group.name}</h2>
-                <button
-                  onClick={() => archiveGroup(group.id)}
-                  disabled={!allResolved}
-                  title={allResolved ? '' : 'Доступно, когда по каждому стажёру принято итоговое решение'}
-                  className="btn-secondary text-sm"
-                >
-                  Отправить в архив
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => downloadGroupReport(group, interns, trainers)}
+                    disabled={interns.length === 0}
+                    className="btn-secondary text-sm"
+                  >
+                    Выгрузить отчёт
+                  </button>
+                  <button
+                    onClick={() => archiveGroup(group.id)}
+                    disabled={!allResolved}
+                    title={allResolved ? '' : 'Доступно, когда по каждому стажёру принято итоговое решение'}
+                    className="btn-secondary text-sm"
+                  >
+                    Отправить в архив
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-6 text-sm">
@@ -142,8 +174,8 @@ export default function ExamTab() {
               </div>
               {!allResolved && interns.length > 0 && (
                 <p className="text-xs text-warning-600">
-                  В архив можно отправить, только когда по каждому стажёру принято итоговое решение (сдал, отказан
-                  или направлен на доп. обучение).
+                  В архив можно отправить, только когда по каждому стажёру принято итоговое решение (сдал, экзамен
+                  завершён или направлен на доп. обучение).
                 </p>
               )}
 
@@ -156,6 +188,7 @@ export default function ExamTab() {
                     const questions = getExamQuestions(i)
                     const first = getExamAnswers(i)
                     const retake = getRetakeAnswers(i)
+                    const canEnd = status.code === 'failed' || status.code === 'retake_failed'
 
                     return (
                       <div key={i.id} className="border border-navy-100 rounded-xl p-3 sm:p-4 space-y-3">
@@ -194,6 +227,13 @@ export default function ExamTab() {
                           </div>
                         )}
 
+                        {i.examFinalComment && status.code === 'ended' && (
+                          <div className="text-sm bg-navy-50 rounded-lg p-3">
+                            <span className="font-medium">Комментарий завершения: </span>
+                            {i.examFinalComment}
+                          </div>
+                        )}
+
                         {status.code === 'failed' && (
                           <button onClick={() => sendToRetake(i.id)} className="btn-secondary text-sm">
                             Отправить на пересдачу
@@ -201,16 +241,45 @@ export default function ExamTab() {
                         )}
 
                         {status.code === 'retake_failed' && (
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={() => setFinalOutcome(i.id, 'training')}
-                              className="btn-secondary text-sm"
-                            >
-                              Направить на доп. обучение
-                            </button>
-                            <button onClick={() => setFinalOutcome(i.id, 'rejected')} className="btn-danger text-sm">
-                              Отказать
-                            </button>
+                          <button
+                            onClick={() => setFinalOutcome(i.id, 'training')}
+                            className="btn-secondary text-sm"
+                          >
+                            Направить на доп. обучение
+                          </button>
+                        )}
+
+                        {canEnd && endingId !== i.id && (
+                          <button onClick={() => startEnding(i.id)} className="btn-danger text-sm">
+                            Завершение экзамена
+                          </button>
+                        )}
+
+                        {endingId === i.id && (
+                          <div className="space-y-2 border border-danger-500/30 bg-danger-50 rounded-lg p-3">
+                            <label className="field-label">
+                              Комментарий к завершению экзамена (обязательно, будет виден стажёру и всем в
+                              прогрессе)
+                            </label>
+                            <textarea
+                              className="field-input min-h-[80px]"
+                              value={endComment}
+                              onChange={(e) => setEndComment(e.target.value)}
+                              placeholder="Укажите причину завершения экзамена"
+                              autoFocus
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => confirmEnding(i.id)}
+                                disabled={!endComment.trim()}
+                                className="btn-danger text-sm"
+                              >
+                                Подтвердить завершение
+                              </button>
+                              <button onClick={cancelEnding} className="btn-secondary text-sm">
+                                Отмена
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
