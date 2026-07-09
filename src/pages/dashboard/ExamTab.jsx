@@ -1,13 +1,25 @@
 import { useStore } from '../../store/StoreContext.jsx'
 import { activeVisibleGroups } from '../../lib/roles'
+import {
+  EXAM_QUESTION_COUNT,
+  getExamAnswers,
+  isExamGraded,
+  examCorrectCount,
+  examPercent,
+  examPassed,
+  examStatus,
+} from '../../lib/exam'
 
-const PASS_THRESHOLD = 9
+const QUESTION_STATE_CLASSES = {
+  null: 'bg-white border-navy-200 text-navy-400 hover:border-navy-400',
+  true: 'bg-success-500 border-success-500 text-white',
+  false: 'bg-danger-500 border-danger-500 text-white',
+}
 
-function examStatus(score) {
-  if (score === null || score === undefined || score === '') return { label: 'Не оценён', cls: 'bg-navy-100 text-navy-500' }
-  return score >= PASS_THRESHOLD
-    ? { label: 'Сдан', cls: 'bg-success-50 text-success-600' }
-    : { label: 'Не сдан', cls: 'bg-danger-50 text-danger-500' }
+function nextAnswerState(value) {
+  if (value === null || value === undefined) return true
+  if (value === true) return false
+  return null
 }
 
 export default function ExamTab() {
@@ -22,11 +34,16 @@ export default function ExamTab() {
     update((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
   }
 
-  function setScore(internId, value) {
-    const score = value === '' ? null : Math.max(0, Math.min(10, Number(value)))
+  function toggleAnswer(internId, questionIdx) {
     update((prev) => ({
       ...prev,
-      interns: prev.interns.map((i) => (i.id === internId ? { ...i, examScore: score } : i)),
+      interns: prev.interns.map((i) => {
+        if (i.id !== internId) return i
+        const answers = getExamAnswers(i)
+        const nextAnswers = answers.slice()
+        nextAnswers[questionIdx] = nextAnswerState(answers[questionIdx])
+        return { ...i, examAnswers: nextAnswers }
+      }),
     }))
   }
 
@@ -58,8 +75,9 @@ export default function ExamTab() {
       ) : (
         myGroups.map((group) => {
           const interns = allInterns.filter((i) => i.groupId === group.id)
-          const graded = interns.filter((i) => i.examScore !== null && i.examScore !== undefined)
-          const passed = graded.filter((i) => i.examScore >= PASS_THRESHOLD)
+          const answersByIntern = interns.map((i) => getExamAnswers(i))
+          const graded = interns.filter((_, idx) => isExamGraded(answersByIntern[idx]))
+          const passed = graded.filter((i) => examPassed(getExamAnswers(i)))
           const allGraded = interns.length > 0 && graded.length === interns.length
 
           return (
@@ -69,7 +87,7 @@ export default function ExamTab() {
                 <button
                   onClick={() => archiveGroup(group.id)}
                   disabled={!allGraded}
-                  title={allGraded ? '' : 'Доступно, когда всем стажёрам группы выставлен балл за экзамен'}
+                  title={allGraded ? '' : 'Доступно, когда всем стажёрам группы отмечены все 10 вопросов'}
                   className="btn-secondary text-sm"
                 >
                   Отправить в архив
@@ -84,56 +102,62 @@ export default function ExamTab() {
                   Оценено: <span className="font-semibold">{graded.length}</span>
                 </div>
                 <div>
-                  Прошли порог ({PASS_THRESHOLD}/10):{' '}
-                  <span className="font-semibold text-success-600">{passed.length}</span>
+                  Прошли порог (9/10): <span className="font-semibold text-success-600">{passed.length}</span>
                 </div>
               </div>
               {!allGraded && interns.length > 0 && (
                 <p className="text-xs text-warning-600">
-                  В архив можно отправить, только когда балл выставлен всем стажёрам группы.
+                  В архив можно отправить, только когда всем стажёрам группы отмечены ответы на все 10 вопросов.
                 </p>
               )}
 
               {interns.length === 0 ? (
                 <p className="text-navy-400 text-sm">В группе пока нет стажёров.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm min-w-[400px]">
-                    <thead>
-                      <tr className="text-left text-navy-500 border-b border-navy-100">
-                        <th className="py-2 pr-3">ФИО</th>
-                        <th className="py-2 pr-3">Балл (0–10)</th>
-                        <th className="py-2 pr-3">Статус</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {interns.map((i) => {
-                        const status = examStatus(i.examScore)
-                        return (
-                          <tr key={i.id} className="border-b border-navy-50 last:border-0">
-                            <td className="py-2 pr-3 whitespace-nowrap">
-                              {i.lastName} {i.firstName}
-                            </td>
-                            <td className="py-2 pr-3">
-                              <input
-                                type="number"
-                                min={0}
-                                max={10}
-                                className="field-input max-w-[90px]"
-                                value={i.examScore ?? ''}
-                                onChange={(e) => setScore(i.id, e.target.value)}
-                              />
-                            </td>
-                            <td className="py-2 pr-3">
-                              <span className={'px-2 py-1 rounded-full text-xs font-semibold ' + status.cls}>
-                                {status.label}
-                              </span>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+                <div className="space-y-3">
+                  {interns.map((i) => {
+                    const answers = getExamAnswers(i)
+                    const status = examStatus(answers)
+                    const correct = examCorrectCount(answers)
+                    const percent = examPercent(answers)
+                    return (
+                      <div key={i.id} className="border border-navy-100 rounded-xl p-3 sm:p-4 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="font-medium">
+                            {i.lastName} {i.firstName}
+                          </div>
+                          <span className={'px-2 py-1 rounded-full text-xs font-semibold ' + status.cls}>
+                            {status.label}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {answers.map((a, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => toggleAnswer(i.id, idx)}
+                              title={`Вопрос ${idx + 1}: ${a === true ? 'правильно' : a === false ? 'неправильно' : 'не отмечено'}`}
+                              className={
+                                'w-8 h-8 rounded-lg border text-xs font-semibold transition-colors ' +
+                                QUESTION_STATE_CLASSES[a === true ? 'true' : a === false ? 'false' : 'null']
+                              }
+                            >
+                              {idx + 1}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="text-sm text-navy-500">
+                          Правильных ответов:{' '}
+                          <span className="font-semibold text-navy-700">
+                            {correct}/{EXAM_QUESTION_COUNT}
+                          </span>{' '}
+                          ({percent}%)
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>

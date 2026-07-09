@@ -1,12 +1,6 @@
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
-
-const PASS_THRESHOLD = 9
-
-function examStatusLabel(score) {
-  if (score === null || score === undefined || score === '') return 'Не оценён'
-  return score >= PASS_THRESHOLD ? 'Сдан' : 'Не сдан'
-}
+import { getExamAnswers, isExamGraded, examPercent, examPassed, examStatus } from '../../lib/exam'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -52,8 +46,8 @@ export default function ArchiveTab() {
           {archived.map((g) => {
             const members = interns.filter((i) => i.groupId === g.id)
             const ownerName = trainers.find((t) => t.id === g.ownerId)?.name || 'без владельца'
-            const graded = members.filter((i) => i.examScore !== null && i.examScore !== undefined)
-            const passed = graded.filter((i) => i.examScore >= PASS_THRESHOLD)
+            const graded = members.filter((i) => isExamGraded(getExamAnswers(i)))
+            const passed = graded.filter((i) => examPassed(getExamAnswers(i)))
 
             return (
               <div key={g.id} className="card space-y-4">
@@ -92,22 +86,30 @@ export default function ArchiveTab() {
                             {c.label}
                           </th>
                         ))}
-                        <th className="py-1.5 pr-3 whitespace-nowrap">Балл</th>
+                        <th className="py-1.5 pr-3 whitespace-nowrap">Правильных ответов</th>
                         <th className="py-1.5 pr-3 whitespace-nowrap">Статус экзамена</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {members.map((i) => (
-                        <tr key={i.id} className="border-b border-navy-50 last:border-0">
-                          {COLUMNS.map((c) => (
-                            <td key={c.key} className="py-1.5 pr-3 whitespace-nowrap">
-                              {i[c.key]}
+                      {members.map((i) => {
+                        const answers = getExamAnswers(i)
+                        const status = examStatus(answers)
+                        return (
+                          <tr key={i.id} className="border-b border-navy-50 last:border-0">
+                            {COLUMNS.map((c) => (
+                              <td key={c.key} className="py-1.5 pr-3 whitespace-nowrap">
+                                {i[c.key]}
+                              </td>
+                            ))}
+                            <td className="py-1.5 pr-3">{examPercent(answers)}%</td>
+                            <td className="py-1.5 pr-3">
+                              <span className={'px-2 py-1 rounded-full text-xs font-semibold ' + status.cls}>
+                                {status.label}
+                              </span>
                             </td>
-                          ))}
-                          <td className="py-1.5 pr-3">{i.examScore ?? '—'}</td>
-                          <td className="py-1.5 pr-3">{examStatusLabel(i.examScore)}</td>
-                        </tr>
-                      ))}
+                          </tr>
+                        )
+                      })}
                       {members.length === 0 && (
                         <tr>
                           <td colSpan={COLUMNS.length + 2} className="py-4 text-center text-navy-400">

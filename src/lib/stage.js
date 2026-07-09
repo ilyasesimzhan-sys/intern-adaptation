@@ -1,3 +1,5 @@
+import { getExamAnswers, examStarted } from './exam'
+
 // Единый "путь стажёра" для всей программы — приблизительная сводка по всем группам сразу,
 // так как теперь групп может быть несколько и каждая на своём этапе.
 export function getCurrentStage(groups, interns) {
@@ -6,7 +8,7 @@ export function getCurrentStage(groups, interns) {
   const anyOpen = groups.some((g) => g.isOpen)
   if (anyOpen) return 'form'
 
-  const anyGraded = interns.some((i) => i.examScore !== null && i.examScore !== undefined)
+  const anyGraded = interns.some((i) => examStarted(getExamAnswers(i)))
   if (anyGraded) return 'exam'
 
   const anyWithLessons = groups.some((g) => (g.lessons || []).length > 0)
