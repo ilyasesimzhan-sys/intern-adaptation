@@ -43,7 +43,12 @@ export default function DashboardLayout() {
               (isActive ? 'bg-navy-700' : 'hover:bg-navy-700/60')
             }
           >
-            <Avatar src={currentTrainer?.photo} name={currentTrainer?.name} size={32} />
+            <Avatar
+              src={currentTrainer?.photo}
+              name={currentTrainer?.name}
+              position={currentTrainer?.photoPosition}
+              size={44}
+            />
             <div className="text-sm text-navy-300">{currentTrainer?.name}</div>
           </NavLink>
         </div>

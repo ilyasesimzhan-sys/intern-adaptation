@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
-import { fileToResizedDataUrl } from '../../lib/image'
-import Avatar from '../../components/Avatar.jsx'
+import AvatarEditor from '../../components/AvatarEditor.jsx'
 
 export default function TrainersTab() {
   const { data, update, currentTrainer } = useStore()
   const [visiblePasswords, setVisiblePasswords] = useState({})
-  const [photoErrors, setPhotoErrors] = useState({})
 
   function patchTrainer(id, patch) {
     update((prev) => ({
@@ -18,23 +16,6 @@ export default function TrainersTab() {
 
   function togglePassword(id) {
     setVisiblePasswords((v) => ({ ...v, [id]: !v[id] }))
-  }
-
-  async function handlePhotoChange(id, e) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      setPhotoErrors((v) => ({ ...v, [id]: 'Выберите файл изображения.' }))
-      return
-    }
-    try {
-      const dataUrl = await fileToResizedDataUrl(file)
-      patchTrainer(id, { photo: dataUrl })
-      setPhotoErrors((v) => ({ ...v, [id]: '' }))
-    } catch {
-      setPhotoErrors((v) => ({ ...v, [id]: 'Не удалось загрузить фото, попробуйте другой файл.' }))
-    }
   }
 
   if (!isTrainerAdmin(currentTrainer)) {
@@ -58,32 +39,15 @@ export default function TrainersTab() {
       <div className="space-y-4">
         {data.trainers.map((t) => (
           <div key={t.id} className="card space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar src={t.photo} name={t.name} size={56} />
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <label className="btn-secondary text-sm cursor-pointer">
-                    Загрузить фото
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handlePhotoChange(t.id, e)}
-                    />
-                  </label>
-                  {t.photo && (
-                    <button
-                      type="button"
-                      onClick={() => patchTrainer(t.id, { photo: '' })}
-                      className="text-sm text-danger-500 hover:text-danger-600"
-                    >
-                      Удалить фото
-                    </button>
-                  )}
-                </div>
-                {photoErrors[t.id] && <p className="text-xs text-danger-500">{photoErrors[t.id]}</p>}
-              </div>
-            </div>
+            <AvatarEditor
+              photo={t.photo}
+              position={t.photoPosition}
+              name={t.name}
+              size={96}
+              onPhotoChange={(photo) => patchTrainer(t.id, { photo })}
+              onPositionChange={(photoPosition) => patchTrainer(t.id, { photoPosition })}
+              onRemove={() => patchTrainer(t.id, { photo: '', photoPosition: null })}
+            />
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>

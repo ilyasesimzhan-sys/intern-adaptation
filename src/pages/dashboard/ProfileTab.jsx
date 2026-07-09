@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
-import { fileToResizedDataUrl } from '../../lib/image'
-import Avatar from '../../components/Avatar.jsx'
+import AvatarEditor from '../../components/AvatarEditor.jsx'
 
 export default function ProfileTab() {
   const { data, update, currentTrainer } = useStore()
   const [showPassword, setShowPassword] = useState(false)
-  const [photoError, setPhotoError] = useState('')
 
   const trainer = data.trainers.find((t) => t.id === currentTrainer?.id)
   if (!trainer) return null
@@ -18,23 +16,6 @@ export default function ProfileTab() {
     }))
   }
 
-  async function handlePhotoChange(e) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      setPhotoError('Выберите файл изображения.')
-      return
-    }
-    try {
-      const dataUrl = await fileToResizedDataUrl(file)
-      patch({ photo: dataUrl })
-      setPhotoError('')
-    } catch {
-      setPhotoError('Не удалось загрузить фото, попробуйте другой файл.')
-    }
-  }
-
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Мой профиль</h1>
@@ -44,23 +25,15 @@ export default function ProfileTab() {
       </p>
 
       <div className="card space-y-6">
-        <div className="flex items-center gap-4">
-          <Avatar src={trainer.photo} name={trainer.name} size={72} />
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <label className="btn-secondary text-sm cursor-pointer">
-                Загрузить фото
-                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-              </label>
-              {trainer.photo && (
-                <button type="button" onClick={() => patch({ photo: '' })} className="text-sm text-danger-500 hover:text-danger-600">
-                  Удалить фото
-                </button>
-              )}
-            </div>
-            {photoError && <p className="text-xs text-danger-500">{photoError}</p>}
-          </div>
-        </div>
+        <AvatarEditor
+          photo={trainer.photo}
+          position={trainer.photoPosition}
+          name={trainer.name}
+          size={128}
+          onPhotoChange={(photo) => patch({ photo })}
+          onPositionChange={(photoPosition) => patch({ photoPosition })}
+          onRemove={() => patch({ photo: '', photoPosition: null })}
+        />
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>

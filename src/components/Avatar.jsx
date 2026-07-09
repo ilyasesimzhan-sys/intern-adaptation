@@ -1,11 +1,13 @@
-export default function Avatar({ src, name, size = 40 }) {
+export default function Avatar({ src, name, size = 40, position }) {
   if (src) {
+    const pos = position || { x: 50, y: 50 }
     return (
       <img
         src={src}
         alt=""
+        draggable={false}
         className="rounded-full object-cover shrink-0"
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, objectPosition: `${pos.x}% ${pos.y}%` }}
       />
     )
   }
