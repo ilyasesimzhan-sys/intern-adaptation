@@ -6,7 +6,6 @@ import logo from '../../assets/logo.jpeg'
 
 const TABS = [
   { to: 'settings', label: 'Настройки сбора' },
-  { to: 'profile', label: 'Мой профиль' },
   { to: 'trainers', label: 'Тренеры', adminOnly: true },
   { to: 'rules', label: 'Правила адаптационной программы' },
   { to: 'interns', label: 'Список стажёров' },
@@ -37,10 +36,16 @@ export default function DashboardLayout() {
             className="pointer-events-none select-none absolute -right-16 -top-16 w-[420px] max-w-none opacity-100 mix-blend-multiply saturate-[2.5] contrast-150 brightness-125"
           />
           <div className="relative font-bold">Кабинет тренера</div>
-          <div className="relative flex items-center gap-2 mt-2">
+          <NavLink
+            to="profile"
+            className={({ isActive }) =>
+              'relative flex items-center gap-2 mt-2 -mx-2 px-2 py-1.5 rounded-lg transition-colors ' +
+              (isActive ? 'bg-navy-700' : 'hover:bg-navy-700/60')
+            }
+          >
             <Avatar src={currentTrainer?.photo} name={currentTrainer?.name} size={32} />
             <div className="text-sm text-navy-300">{currentTrainer?.name}</div>
-          </div>
+          </NavLink>
         </div>
         <nav className="p-2 flex lg:flex-col gap-1 overflow-x-auto">
           {visibleTabs.map((tab) => (
