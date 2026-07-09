@@ -1,7 +1,8 @@
 import { Link, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
 import { HOMEWORK_STATUSES } from '../lib/constants'
-import { getExamAnswers, examCorrectCount, examPercent, examStatus, EXAM_QUESTION_COUNT } from '../lib/exam'
+import { getExamAnswers, getRetakeAnswers, examCorrectCount, examPercent, getInternExamStatus, EXAM_QUESTION_COUNT } from '../lib/exam'
+import ExamAnswerList from '../components/ExamAnswerList.jsx'
 
 function homeworkLabel(value) {
   return HOMEWORK_STATUSES.find((h) => h.value === value)?.label || 'Не указано'
@@ -95,35 +96,34 @@ export default function ProgressPage() {
           )}
         </div>
 
-        <div className="card space-y-3">
+        <div className="card space-y-4">
           <h2 className="font-semibold">Итоговый экзамен</h2>
           {(() => {
-            const answers = getExamAnswers(intern)
-            const status = examStatus(answers)
+            const first = getExamAnswers(intern)
+            const retake = getRetakeAnswers(intern)
+            const status = getInternExamStatus(intern)
+            const questions = data.settings.examQuestions
             return (
               <>
                 <p className="text-sm">
-                  Статус: <span className="font-medium">{status.label}</span>{' '}
-                  ({examCorrectCount(answers)}/{EXAM_QUESTION_COUNT} правильных, {examPercent(answers)}%)
+                  Итог: <span className="font-medium">{status.label}</span>
                 </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {answers.map((a, idx) => (
-                    <span
-                      key={idx}
-                      title={`Вопрос ${idx + 1}`}
-                      className={
-                        'w-8 h-8 rounded-lg border flex items-center justify-center text-xs font-semibold ' +
-                        (a === true
-                          ? 'bg-success-500 border-success-500 text-white'
-                          : a === false
-                            ? 'bg-danger-500 border-danger-500 text-white'
-                            : 'bg-white border-navy-200 text-navy-400')
-                      }
-                    >
-                      {idx + 1}
-                    </span>
-                  ))}
+
+                <div className="space-y-1.5">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-navy-400">
+                    Первая попытка · {examCorrectCount(first)}/{EXAM_QUESTION_COUNT} ({examPercent(first)}%)
+                  </div>
+                  <ExamAnswerList questions={questions} answers={first} />
                 </div>
+
+                {retake && (
+                  <div className="space-y-1.5">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-navy-400">
+                      Пересдача · {examCorrectCount(retake)}/{EXAM_QUESTION_COUNT} ({examPercent(retake)}%)
+                    </div>
+                    <ExamAnswerList questions={questions} answers={retake} />
+                  </div>
+                )}
               </>
             )
           })()}

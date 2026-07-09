@@ -1,6 +1,6 @@
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
-import { getExamAnswers, isExamGraded, examPercent, examPassed, examStatus } from '../../lib/exam'
+import { getActiveAnswers, examPercent, getInternExamStatus } from '../../lib/exam'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -46,8 +46,8 @@ export default function ArchiveTab() {
           {archived.map((g) => {
             const members = interns.filter((i) => i.groupId === g.id)
             const ownerName = trainers.find((t) => t.id === g.ownerId)?.name || 'без владельца'
-            const graded = members.filter((i) => isExamGraded(getExamAnswers(i)))
-            const passed = graded.filter((i) => examPassed(getExamAnswers(i)))
+            const statuses = members.map((i) => getInternExamStatus(i))
+            const passed = statuses.filter((s) => s.code === 'passed')
 
             return (
               <div key={g.id} className="card space-y-4">
@@ -67,7 +67,7 @@ export default function ArchiveTab() {
                     <div className="text-sm text-navy-500">
                       Стажёров: <span className="font-semibold text-navy-700">{members.length}</span> · Сдали
                       экзамен: <span className="font-semibold text-success-600">{passed.length}</span>/
-                      {graded.length}
+                      {members.length}
                     </div>
                     {admin && (
                       <button onClick={() => unarchive(g.id)} className="btn-secondary text-xs px-3 py-1.5">
@@ -91,9 +91,9 @@ export default function ArchiveTab() {
                       </tr>
                     </thead>
                     <tbody>
-                      {members.map((i) => {
-                        const answers = getExamAnswers(i)
-                        const status = examStatus(answers)
+                      {members.map((i, idx) => {
+                        const answers = getActiveAnswers(i)
+                        const status = statuses[idx]
                         return (
                           <tr key={i.id} className="border-b border-navy-50 last:border-0">
                             {COLUMNS.map((c) => (

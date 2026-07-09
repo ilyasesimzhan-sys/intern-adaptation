@@ -1,3 +1,5 @@
+import { EXAM_QUESTION_COUNT } from '../lib/exam'
+
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
 }
@@ -36,6 +38,7 @@ export function makeDefaultData() {
       programName: 'Адаптационная программа стажёров',
       programRules: DEFAULT_PROGRAM_RULES,
       examRules: DEFAULT_EXAM_RULES,
+      examQuestions: Array(EXAM_QUESTION_COUNT).fill(''),
     },
     trainers: makeDefaultTrainers(),
     groups: [],

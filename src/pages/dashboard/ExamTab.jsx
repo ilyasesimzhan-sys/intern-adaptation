@@ -2,19 +2,15 @@ import { useStore } from '../../store/StoreContext.jsx'
 import { activeVisibleGroups } from '../../lib/roles'
 import {
   EXAM_QUESTION_COUNT,
+  emptyExamAnswers,
   getExamAnswers,
-  isExamGraded,
+  getRetakeAnswers,
   examCorrectCount,
   examPercent,
-  examPassed,
-  examStatus,
+  getInternExamStatus,
+  isInternResolved,
 } from '../../lib/exam'
-
-const QUESTION_STATE_CLASSES = {
-  null: 'bg-white border-navy-200 text-navy-400 hover:border-navy-400',
-  true: 'bg-success-500 border-success-500 text-white',
-  false: 'bg-danger-500 border-danger-500 text-white',
-}
+import ExamAnswerList from '../../components/ExamAnswerList.jsx'
 
 function nextAnswerState(value) {
   if (value === null || value === undefined) return true
@@ -25,6 +21,7 @@ function nextAnswerState(value) {
 export default function ExamTab() {
   const { data, update, currentTrainer } = useStore()
   const { settings, interns: allInterns } = data
+  const questions = settings.examQuestions || emptyExamAnswers().map(() => '')
 
   const myGroups = activeVisibleGroups(data.groups, currentTrainer).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
@@ -34,16 +31,38 @@ export default function ExamTab() {
     update((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
   }
 
-  function toggleAnswer(internId, questionIdx) {
+  function patchQuestion(idx, text) {
+    const next = questions.slice()
+    next[idx] = text
+    patchSettings({ examQuestions: next })
+  }
+
+  function toggleAnswer(internId, field, questionIdx) {
     update((prev) => ({
       ...prev,
       interns: prev.interns.map((i) => {
         if (i.id !== internId) return i
-        const answers = getExamAnswers(i)
-        const nextAnswers = answers.slice()
-        nextAnswers[questionIdx] = nextAnswerState(answers[questionIdx])
-        return { ...i, examAnswers: nextAnswers }
+        const current = field === 'examAnswers' ? getExamAnswers(i) : i.examRetakeAnswers || emptyExamAnswers()
+        const nextAnswers = current.slice()
+        nextAnswers[questionIdx] = nextAnswerState(current[questionIdx])
+        return { ...i, [field]: nextAnswers }
       }),
+    }))
+  }
+
+  function sendToRetake(internId) {
+    update((prev) => ({
+      ...prev,
+      interns: prev.interns.map((i) =>
+        i.id === internId ? { ...i, examRetakeAnswers: emptyExamAnswers(), examFinalOutcome: null } : i,
+      ),
+    }))
+  }
+
+  function setFinalOutcome(internId, outcome) {
+    update((prev) => ({
+      ...prev,
+      interns: prev.interns.map((i) => (i.id === internId ? { ...i, examFinalOutcome: outcome } : i)),
     }))
   }
 
@@ -70,15 +89,36 @@ export default function ExamTab() {
         />
       </div>
 
+      <div className="card space-y-3">
+        <h2 className="font-semibold">Вопросы экзамена</h2>
+        <p className="text-sm text-navy-500">
+          Текст всех 10 вопросов виден стажёру на публичной странице прогресса вместе с результатом по каждому
+          вопросу.
+        </p>
+        <div className="space-y-2">
+          {questions.map((q, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <span className="text-sm text-navy-400 w-5 shrink-0 text-right">{idx + 1}.</span>
+              <input
+                className="field-input"
+                value={q}
+                onChange={(e) => patchQuestion(idx, e.target.value)}
+                placeholder={`Текст вопроса ${idx + 1}`}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {myGroups.length === 0 ? (
         <p className="text-navy-400">Сначала создайте группу во вкладке «Настройки сбора».</p>
       ) : (
         myGroups.map((group) => {
           const interns = allInterns.filter((i) => i.groupId === group.id)
-          const answersByIntern = interns.map((i) => getExamAnswers(i))
-          const graded = interns.filter((_, idx) => isExamGraded(answersByIntern[idx]))
-          const passed = graded.filter((i) => examPassed(getExamAnswers(i)))
-          const allGraded = interns.length > 0 && graded.length === interns.length
+          const statuses = interns.map((i) => getInternExamStatus(i))
+          const passedCount = statuses.filter((s) => s.code === 'passed').length
+          const droppedCount = statuses.filter((s) => s.code === 'rejected' || s.code === 'training').length
+          const allResolved = interns.length > 0 && statuses.every((s) => isInternResolved(s))
 
           return (
             <div key={group.id} className="card space-y-4">
@@ -86,8 +126,8 @@ export default function ExamTab() {
                 <h2 className="font-semibold">{group.name}</h2>
                 <button
                   onClick={() => archiveGroup(group.id)}
-                  disabled={!allGraded}
-                  title={allGraded ? '' : 'Доступно, когда всем стажёрам группы отмечены все 10 вопросов'}
+                  disabled={!allResolved}
+                  title={allResolved ? '' : 'Доступно, когда по каждому стажёру принято итоговое решение'}
                   className="btn-secondary text-sm"
                 >
                   Отправить в архив
@@ -99,15 +139,22 @@ export default function ExamTab() {
                   Всего стажёров: <span className="font-semibold">{interns.length}</span>
                 </div>
                 <div>
-                  Оценено: <span className="font-semibold">{graded.length}</span>
+                  Сдали: <span className="font-semibold text-success-600">{passedCount}</span>
                 </div>
                 <div>
-                  Прошли порог (9/10): <span className="font-semibold text-success-600">{passed.length}</span>
+                  Не прошли программу: <span className="font-semibold text-danger-500">{droppedCount}</span>
+                </div>
+                <div>
+                  В процессе:{' '}
+                  <span className="font-semibold text-navy-700">
+                    {interns.length - passedCount - droppedCount}
+                  </span>
                 </div>
               </div>
-              {!allGraded && interns.length > 0 && (
+              {!allResolved && interns.length > 0 && (
                 <p className="text-xs text-warning-600">
-                  В архив можно отправить, только когда всем стажёрам группы отмечены ответы на все 10 вопросов.
+                  В архив можно отправить, только когда по каждому стажёру принято итоговое решение (сдал, отказан
+                  или направлен на доп. обучение).
                 </p>
               )}
 
@@ -115,11 +162,11 @@ export default function ExamTab() {
                 <p className="text-navy-400 text-sm">В группе пока нет стажёров.</p>
               ) : (
                 <div className="space-y-3">
-                  {interns.map((i) => {
-                    const answers = getExamAnswers(i)
-                    const status = examStatus(answers)
-                    const correct = examCorrectCount(answers)
-                    const percent = examPercent(answers)
+                  {interns.map((i, idx) => {
+                    const status = statuses[idx]
+                    const first = getExamAnswers(i)
+                    const retake = getRetakeAnswers(i)
+
                     return (
                       <div key={i.id} className="border border-navy-100 rounded-xl p-3 sm:p-4 space-y-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -131,30 +178,49 @@ export default function ExamTab() {
                           </span>
                         </div>
 
-                        <div className="flex flex-wrap gap-1.5">
-                          {answers.map((a, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => toggleAnswer(i.id, idx)}
-                              title={`Вопрос ${idx + 1}: ${a === true ? 'правильно' : a === false ? 'неправильно' : 'не отмечено'}`}
-                              className={
-                                'w-8 h-8 rounded-lg border text-xs font-semibold transition-colors ' +
-                                QUESTION_STATE_CLASSES[a === true ? 'true' : a === false ? 'false' : 'null']
-                              }
-                            >
-                              {idx + 1}
-                            </button>
-                          ))}
+                        <div className="space-y-1.5">
+                          <div className="text-xs font-semibold uppercase tracking-wide text-navy-400">
+                            Первая попытка · {examCorrectCount(first)}/{EXAM_QUESTION_COUNT} ({examPercent(first)}%)
+                          </div>
+                          <ExamAnswerList
+                            questions={questions}
+                            answers={first}
+                            onToggle={(qIdx) => toggleAnswer(i.id, 'examAnswers', qIdx)}
+                          />
                         </div>
 
-                        <div className="text-sm text-navy-500">
-                          Правильных ответов:{' '}
-                          <span className="font-semibold text-navy-700">
-                            {correct}/{EXAM_QUESTION_COUNT}
-                          </span>{' '}
-                          ({percent}%)
-                        </div>
+                        {retake && (
+                          <div className="space-y-1.5">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-navy-400">
+                              Пересдача · {examCorrectCount(retake)}/{EXAM_QUESTION_COUNT} ({examPercent(retake)}%)
+                            </div>
+                            <ExamAnswerList
+                              questions={questions}
+                              answers={retake}
+                              onToggle={(qIdx) => toggleAnswer(i.id, 'examRetakeAnswers', qIdx)}
+                            />
+                          </div>
+                        )}
+
+                        {status.code === 'failed' && (
+                          <button onClick={() => sendToRetake(i.id)} className="btn-secondary text-sm">
+                            Отправить на пересдачу
+                          </button>
+                        )}
+
+                        {status.code === 'retake_failed' && (
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => setFinalOutcome(i.id, 'training')}
+                              className="btn-secondary text-sm"
+                            >
+                              Направить на доп. обучение
+                            </button>
+                            <button onClick={() => setFinalOutcome(i.id, 'rejected')} className="btn-danger text-sm">
+                              Отказать
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
