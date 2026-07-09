@@ -6,7 +6,7 @@ import logo from '../../assets/logo.jpeg'
 const TABS = [
   { to: 'settings', label: 'Настройки сбора' },
   { to: 'trainers', label: 'Тренеры', adminOnly: true },
-  { to: 'rules', label: 'Правила программы' },
+  { to: 'rules', label: 'Правила адаптационной программы' },
   { to: 'interns', label: 'Список стажёров' },
   { to: 'exam', label: 'Итоговый экзамен' },
   { to: 'whatsapp', label: 'Рассылка WhatsApp' },

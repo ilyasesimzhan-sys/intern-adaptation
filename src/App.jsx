@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage.jsx'
 import SubmitPage from './pages/SubmitPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import ProgressPage from './pages/ProgressPage.jsx'
+import RulesPage from './pages/RulesPage.jsx'
 import DashboardLayout from './pages/dashboard/DashboardLayout.jsx'
 import SettingsTab from './pages/dashboard/SettingsTab.jsx'
 import TrainersTab from './pages/dashboard/TrainersTab.jsx'
@@ -26,6 +27,7 @@ export default function App() {
       <Route path="/submit" element={<SubmitPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/progress/:internId" element={<ProgressPage />} />
+      <Route path="/rules" element={<RulesPage />} />
       <Route
         path="/dashboard"
         element={

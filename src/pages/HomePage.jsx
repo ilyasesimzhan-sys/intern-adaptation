@@ -33,6 +33,13 @@ const INFO_CARDS = [
     title: 'Уведомление в WhatsApp',
     text: 'После формирования группы каждый стажёр получает приглашение и информацию через WhatsApp.',
   },
+  {
+    emoji: '📋',
+    color: 'bg-navy-700',
+    title: 'Правила адаптационной программы',
+    text: 'Полные правила программы доступны руководителям и стажёрам без входа в систему.',
+    to: '/rules',
+  },
 ]
 
 export default function HomePage() {
@@ -98,18 +105,29 @@ export default function HomePage() {
           </Link>
         </section>
 
-        <section className="grid sm:grid-cols-3 gap-4">
-          {INFO_CARDS.map((c) => (
-            <div key={c.title} className="card">
-              <div className={'w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-3 ' + c.color}>
-                <span role="img" aria-hidden="true">
-                  {c.emoji}
-                </span>
+        <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {INFO_CARDS.map((c) => {
+            const content = (
+              <>
+                <div className={'w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-3 ' + c.color}>
+                  <span role="img" aria-hidden="true">
+                    {c.emoji}
+                  </span>
+                </div>
+                <h3 className="font-semibold mb-2">{c.title}</h3>
+                <p className="text-sm text-navy-500">{c.text}</p>
+              </>
+            )
+            return c.to ? (
+              <Link key={c.title} to={c.to} className="card hover:bg-navy-50 transition-colors">
+                {content}
+              </Link>
+            ) : (
+              <div key={c.title} className="card">
+                {content}
               </div>
-              <h3 className="font-semibold mb-2">{c.title}</h3>
-              <p className="text-sm text-navy-500">{c.text}</p>
-            </div>
-          ))}
+            )
+          })}
         </section>
 
         <section className="card">
