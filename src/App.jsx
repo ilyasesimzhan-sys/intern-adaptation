@@ -7,6 +7,7 @@ import ProgressPage from './pages/ProgressPage.jsx'
 import RulesPage from './pages/RulesPage.jsx'
 import DashboardLayout from './pages/dashboard/DashboardLayout.jsx'
 import SettingsTab from './pages/dashboard/SettingsTab.jsx'
+import ProfileTab from './pages/dashboard/ProfileTab.jsx'
 import TrainersTab from './pages/dashboard/TrainersTab.jsx'
 import RulesTab from './pages/dashboard/RulesTab.jsx'
 import InternsTab from './pages/dashboard/InternsTab.jsx'
@@ -38,6 +39,7 @@ export default function App() {
       >
         <Route index element={<Navigate to="settings" replace />} />
         <Route path="settings" element={<SettingsTab />} />
+        <Route path="profile" element={<ProfileTab />} />
         <Route path="trainers" element={<TrainersTab />} />
         <Route path="rules" element={<RulesTab />} />
         <Route path="interns" element={<InternsTab />} />

@@ -1,10 +1,12 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
+import Avatar from '../../components/Avatar.jsx'
 import logo from '../../assets/logo.jpeg'
 
 const TABS = [
   { to: 'settings', label: 'Настройки сбора' },
+  { to: 'profile', label: 'Мой профиль' },
   { to: 'trainers', label: 'Тренеры', adminOnly: true },
   { to: 'rules', label: 'Правила адаптационной программы' },
   { to: 'interns', label: 'Список стажёров' },
@@ -35,7 +37,10 @@ export default function DashboardLayout() {
             className="pointer-events-none select-none absolute -right-16 -top-16 w-[420px] max-w-none opacity-100 mix-blend-multiply saturate-[2.5] contrast-150 brightness-125"
           />
           <div className="relative font-bold">Кабинет тренера</div>
-          <div className="relative text-sm text-navy-300">{currentTrainer?.name}</div>
+          <div className="relative flex items-center gap-2 mt-2">
+            <Avatar src={currentTrainer?.photo} name={currentTrainer?.name} size={32} />
+            <div className="text-sm text-navy-300">{currentTrainer?.name}</div>
+          </div>
         </div>
         <nav className="p-2 flex lg:flex-col gap-1 overflow-x-auto">
           {visibleTabs.map((tab) => (
