@@ -26,18 +26,18 @@ export default function DashboardLayout() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      <aside className="relative overflow-hidden lg:w-64 bg-navy-800 text-white shrink-0">
-        <img
-          src={logo}
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none select-none absolute -right-10 -top-10 w-[280px] max-w-none opacity-80 mix-blend-multiply saturate-150 contrast-125"
-        />
-        <div className="relative p-4 border-b border-navy-700">
-          <div className="font-bold">Кабинет тренера</div>
-          <div className="text-sm text-navy-300">{currentTrainer?.name}</div>
+      <aside className="lg:w-64 bg-navy-800 text-white shrink-0">
+        <div className="relative overflow-hidden p-4 border-b border-navy-700">
+          <img
+            src={logo}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none select-none absolute -right-16 -top-16 w-[420px] max-w-none opacity-100 mix-blend-multiply saturate-[2.5] contrast-150 brightness-125"
+          />
+          <div className="relative font-bold">Кабинет тренера</div>
+          <div className="relative text-sm text-navy-300">{currentTrainer?.name}</div>
         </div>
-        <nav className="relative p-2 flex lg:flex-col gap-1 overflow-x-auto">
+        <nav className="p-2 flex lg:flex-col gap-1 overflow-x-auto">
           {visibleTabs.map((tab) => (
             <NavLink
               key={tab.to}
@@ -51,7 +51,7 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="relative p-4 mt-auto border-t border-navy-700 hidden lg:block">
+        <div className="p-4 mt-auto border-t border-navy-700 hidden lg:block">
           <button onClick={handleLogout} className="text-sm text-navy-300 hover:text-white">
             Выйти
           </button>
