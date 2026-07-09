@@ -110,15 +110,9 @@ export default function ProgressPage() {
           </p>
         </div>
 
-        <div className="card space-y-4">
-          <div>
-            <h2 className="font-semibold mb-1">Правила адаптационной программы</h2>
-            <p className="text-sm whitespace-pre-wrap text-navy-600">{data.settings.programRules}</p>
-          </div>
-          <div>
-            <h2 className="font-semibold mb-1">Правила экзамена</h2>
-            <p className="text-sm whitespace-pre-wrap text-navy-600">{data.settings.examRules}</p>
-          </div>
+        <div className="card">
+          <h2 className="font-semibold mb-1">Правила экзамена</h2>
+          <p className="text-sm whitespace-pre-wrap text-navy-600">{data.settings.examRules}</p>
         </div>
       </div>
     </div>
