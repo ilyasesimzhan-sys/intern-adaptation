@@ -69,7 +69,7 @@ export default function SubmitPage() {
             groupId,
             attendance: {},
             homework: {},
-            comment: '',
+            comments: {},
             examQuestions: emptyExamQuestions(),
             examAnswers: emptyExamAnswers(),
             createdAt: new Date().toISOString(),

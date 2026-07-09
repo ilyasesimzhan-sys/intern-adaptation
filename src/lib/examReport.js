@@ -48,9 +48,8 @@ export function downloadGroupReport(group, interns, trainers) {
       const label = `Занятие ${idx + 1}: ${l.name}${l.date ? ` (${l.date})` : ''}`
       row[`${label} — посещение`] = i.attendance?.[l.id] ? 'Присутствовал' : 'Отсутствовал'
       row[`${label} — ДЗ`] = homeworkLabel(i.homework?.[l.id])
+      row[`${label} — комментарий`] = i.comments?.[l.id] || ''
     })
-
-    row['Комментарий тренера (обучение)'] = i.comment || ''
 
     questions.forEach((_, q) => {
       row[`Экзамен, 1-я попытка — вопрос ${q + 1}`] = questionCell(questions, first, q)

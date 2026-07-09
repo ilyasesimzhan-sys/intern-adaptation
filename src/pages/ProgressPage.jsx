@@ -62,12 +62,13 @@ export default function ProgressPage() {
             <p className="text-navy-400 text-sm">Занятия ещё не добавлены.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[500px]">
+              <table className="w-full text-sm min-w-[600px]">
                 <thead>
                   <tr className="text-left text-navy-500 border-b border-navy-100">
                     <th className="py-2 pr-3">Занятие</th>
                     <th className="py-2 pr-3">Присутствие</th>
                     <th className="py-2 pr-3">Домашнее задание</th>
+                    <th className="py-2 pr-3">Комментарий тренера</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -90,16 +91,11 @@ export default function ProgressPage() {
                         </span>
                       </td>
                       <td className="py-2 pr-3">{homeworkLabel(intern.homework[l.id])}</td>
+                      <td className="py-2 pr-3">{intern.comments?.[l.id] || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-          {intern.comment && (
-            <div className="mt-4 text-sm">
-              <span className="font-medium">Комментарий тренера: </span>
-              {intern.comment}
             </div>
           )}
         </div>

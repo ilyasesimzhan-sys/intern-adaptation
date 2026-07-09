@@ -229,7 +229,9 @@ function GroupProgress({ group, interns, update }) {
   function setComment(internId, value) {
     update((prev) => ({
       ...prev,
-      interns: prev.interns.map((i) => (i.id === internId ? { ...i, comment: value } : i)),
+      interns: prev.interns.map((i) =>
+        i.id === internId ? { ...i, comments: { ...i.comments, [activeLessonId]: value } } : i,
+      ),
     }))
   }
 
@@ -339,7 +341,7 @@ function GroupProgress({ group, interns, update }) {
                   <td className="py-2 pr-3">
                     <input
                       className="field-input min-w-[180px]"
-                      value={i.comment}
+                      value={i.comments?.[activeLessonId] || ''}
                       onChange={(e) => setComment(i.id, e.target.value)}
                     />
                   </td>
