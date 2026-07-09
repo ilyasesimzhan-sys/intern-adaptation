@@ -86,14 +86,9 @@ export default function AvatarEditor({ photo, position, name, onPhotoChange, onP
             <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           </label>
           {photo && (
-            <>
-              <button type="button" onClick={() => onPositionChange(CENTER)} className="btn-secondary text-sm">
-                Центрировать
-              </button>
-              <button type="button" onClick={onRemove} className="text-sm text-danger-500 hover:text-danger-600">
-                Удалить фото
-              </button>
-            </>
+            <button type="button" onClick={onRemove} className="text-sm text-danger-500 hover:text-danger-600">
+              Удалить фото
+            </button>
           )}
         </div>
         {photo && <p className="text-xs text-navy-400">Перетащите фото внутри круга, чтобы выбрать центр.</p>}
