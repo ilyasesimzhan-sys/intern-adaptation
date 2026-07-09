@@ -45,7 +45,7 @@ const INFO_CARDS = [
 
 export default function HomePage() {
   const { data } = useStore()
-  const { settings, groups, interns } = data
+  const { settings, groups, interns, trainers } = data
   const stage = getCurrentStage(groups, interns)
 
   const groupsInfo = groupsWithCounts(groups, interns).sort(
@@ -143,6 +143,7 @@ export default function HomePage() {
             <div className="space-y-5">
               {groupsInfo.map((g) => {
                 const members = interns.filter((i) => i.groupId === g.id)
+                const owner = trainers.find((t) => t.id === g.ownerId)
                 return (
                   <div
                     key={g.id}
@@ -150,7 +151,7 @@ export default function HomePage() {
                       'rounded-xl border-l-4 pl-4 py-1 ' + (g.isOpen ? 'border-success-500' : 'border-sky-500')
                     }
                   >
-                    <h3 className="font-semibold text-navy-700 mb-2 flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold text-navy-700 mb-1 flex flex-wrap items-center gap-2">
                       {g.name}
                       <span
                         className={
@@ -162,6 +163,11 @@ export default function HomePage() {
                       </span>
                       <span className="text-xs text-navy-400 font-normal">{formatWindow(g)}</span>
                     </h3>
+                    <p className="text-xs text-navy-500 mb-2">
+                      Тренер: <span className="font-medium text-navy-700">{owner?.name || 'без владельца'}</span>
+                      {owner?.phone && <> · {owner.phone}</>}
+                      {owner?.email && <> · {owner.email}</>}
+                    </p>
                     {members.length === 0 ? (
                       <p className="text-sm text-navy-400">Пока нет стажёров в этой группе.</p>
                     ) : (
