@@ -63,7 +63,7 @@ export default function DashboardLayout() {
           src={logo}
           alt=""
           aria-hidden="true"
-          className="pointer-events-none select-none fixed bottom-4 right-4 w-[260px] sm:w-[420px] lg:w-[640px] max-w-none opacity-[0.18] mix-blend-multiply saturate-150 z-20"
+          className="pointer-events-none select-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] sm:w-[640px] lg:w-[900px] max-w-none opacity-[0.18] mix-blend-multiply saturate-150 z-20"
         />
         <div className="relative z-10 lg:hidden p-3 bg-white border-b border-navy-100 flex justify-end">
           <button onClick={handleLogout} className="text-sm text-navy-500 hover:text-navy-700">
