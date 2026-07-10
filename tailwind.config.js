@@ -66,11 +66,17 @@ export default {
           '8%': { opacity: '1' },
           '22%': { transform: 'translateX(220%)', opacity: '0' },
         },
+        'chase-blink': {
+          '0%, 100%': { opacity: '1' },
+          '10%': { opacity: '0.25' },
+          '20%': { opacity: '1' },
+        },
       },
       animation: {
         pop: 'pop 0.4s ease-out',
         'chase-pulse': 'chase-pulse 2.8s ease-out infinite',
         'chase-sweep': 'chase-sweep 2.8s ease-in-out infinite',
+        'chase-blink': 'chase-blink 2.8s ease-in-out infinite',
       },
     },
   },
