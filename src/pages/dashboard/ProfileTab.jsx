@@ -19,7 +19,7 @@ export default function ProfileTab() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Мой профиль</h1>
-      <p className="text-sm text-navy-500">
+      <p className="text-sm text-navy-500 dark:text-navy-400">
         Здесь можно изменить свои данные для входа в кабинет и контакты. Роль «Главный логин» назначает только
         главный тренер во вкладке «Тренеры».
       </p>
@@ -84,7 +84,7 @@ export default function ProfileTab() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="text-xs text-navy-500 hover:text-navy-700 shrink-0"
+                className="text-xs text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200 shrink-0"
               >
                 {showPassword ? 'Скрыть' : 'Показать'}
               </button>

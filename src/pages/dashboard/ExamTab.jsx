@@ -108,7 +108,7 @@ export default function ExamTab() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Итоговый экзамен</h1>
-      <p className="text-sm text-navy-500">
+      <p className="text-sm text-navy-500 dark:text-navy-400">
         Вопросы задаются отдельно для каждого стажёра — впишите их прямо в списке под именем стажёра. Текст виден
         стажёру на публичной странице прогресса вместе с результатом по каждому вопросу.
       </p>
@@ -123,7 +123,7 @@ export default function ExamTab() {
       </div>
 
       {myGroups.length === 0 ? (
-        <p className="text-navy-400">Сначала создайте группу во вкладке «Настройки сбора».</p>
+        <p className="text-navy-400 dark:text-navy-500">Сначала создайте группу во вкладке «Настройки сбора».</p>
       ) : (
         myGroups.map((group) => {
           const interns = allInterns.filter((i) => i.groupId === group.id)
@@ -160,27 +160,28 @@ export default function ExamTab() {
                   Всего стажёров: <span className="font-semibold">{interns.length}</span>
                 </div>
                 <div>
-                  Сдали: <span className="font-semibold text-success-600">{passedCount}</span>
+                  Сдали: <span className="font-semibold text-success-600 dark:text-success-400">{passedCount}</span>
                 </div>
                 <div>
-                  Не прошли программу: <span className="font-semibold text-danger-500">{droppedCount}</span>
+                  Не прошли программу:{' '}
+                  <span className="font-semibold text-danger-500 dark:text-danger-400">{droppedCount}</span>
                 </div>
                 <div>
                   В процессе:{' '}
-                  <span className="font-semibold text-navy-700">
+                  <span className="font-semibold text-navy-700 dark:text-navy-200">
                     {interns.length - passedCount - droppedCount}
                   </span>
                 </div>
               </div>
               {!allResolved && interns.length > 0 && (
-                <p className="text-xs text-warning-600">
+                <p className="text-xs text-warning-600 dark:text-warning-500">
                   В архив можно отправить, только когда по каждому стажёру принято итоговое решение (сдал, экзамен
                   завершён или направлен на доп. обучение).
                 </p>
               )}
 
               {interns.length === 0 ? (
-                <p className="text-navy-400 text-sm">В группе пока нет стажёров.</p>
+                <p className="text-navy-400 dark:text-navy-500 text-sm">В группе пока нет стажёров.</p>
               ) : (
                 <div className="space-y-3">
                   {interns.map((i, idx) => {
@@ -191,7 +192,10 @@ export default function ExamTab() {
                     const canEnd = status.code === 'failed' || status.code === 'retake_failed'
 
                     return (
-                      <div key={i.id} className="border border-navy-100 rounded-xl p-3 sm:p-4 space-y-3">
+                      <div
+                        key={i.id}
+                        className="border border-navy-100 dark:border-navy-700 rounded-xl p-3 sm:p-4 space-y-3"
+                      >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="font-medium">
                             {i.lastName} {i.firstName}
@@ -202,7 +206,7 @@ export default function ExamTab() {
                         </div>
 
                         <div className="space-y-1.5">
-                          <div className="text-xs font-semibold uppercase tracking-wide text-navy-400">
+                          <div className="text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
                             Первая попытка · {examCorrectCount(first)}/{EXAM_QUESTION_COUNT} ({examPercent(first)}%)
                           </div>
                           <ExamAnswerList
@@ -215,7 +219,7 @@ export default function ExamTab() {
 
                         {retake && (
                           <div className="space-y-1.5">
-                            <div className="text-xs font-semibold uppercase tracking-wide text-navy-400">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
                               Пересдача · {examCorrectCount(retake)}/{EXAM_QUESTION_COUNT} ({examPercent(retake)}%)
                             </div>
                             <ExamAnswerList
@@ -228,7 +232,7 @@ export default function ExamTab() {
                         )}
 
                         {i.examFinalComment && status.code === 'ended' && (
-                          <div className="text-sm bg-navy-50 rounded-lg p-3">
+                          <div className="text-sm bg-navy-50 dark:bg-navy-800 rounded-lg p-3">
                             <span className="font-medium">Комментарий завершения: </span>
                             {i.examFinalComment}
                           </div>
@@ -256,7 +260,7 @@ export default function ExamTab() {
                         )}
 
                         {endingId === i.id && (
-                          <div className="space-y-2 border border-danger-500/30 bg-danger-50 rounded-lg p-3">
+                          <div className="space-y-2 border border-danger-500/30 bg-danger-50 dark:bg-danger-500/10 rounded-lg p-3">
                             <label className="field-label">
                               Комментарий к завершению экзамена (обязательно, будет виден стажёру и всем в
                               прогрессе)

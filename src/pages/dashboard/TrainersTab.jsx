@@ -22,7 +22,7 @@ export default function TrainersTab() {
     return (
       <div className="space-y-6">
         <h1 className="text-xl font-bold">Тренеры</h1>
-        <p className="text-navy-400">Этот раздел доступен только главному логину.</p>
+        <p className="text-navy-400 dark:text-navy-500">Этот раздел доступен только главному логину.</p>
       </div>
     )
   }
@@ -30,7 +30,7 @@ export default function TrainersTab() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Тренеры</h1>
-      <p className="text-sm text-navy-500">
+      <p className="text-sm text-navy-500 dark:text-navy-400">
         До 10 именных аккаунтов тренеров. Пароль — простая защита от случайного входа, не полноценная система
         безопасности. Главный логин видит и может редактировать все группы и данные всех тренеров, остальные —
         только свои (во вкладке «Мой профиль»).
@@ -98,7 +98,7 @@ export default function TrainersTab() {
                   <button
                     type="button"
                     onClick={() => togglePassword(t.id)}
-                    className="text-xs text-navy-500 hover:text-navy-700 shrink-0"
+                    className="text-xs text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200 shrink-0"
                   >
                     {visiblePasswords[t.id] ? 'Скрыть' : 'Показать'}
                   </button>

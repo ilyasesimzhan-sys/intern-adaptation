@@ -34,13 +34,13 @@ export default function ArchiveTab() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Архив</h1>
-      <p className="text-sm text-navy-500">
+      <p className="text-sm text-navy-500 dark:text-navy-400">
         Группы, прошедшие весь путь обучения и итоговый экзамен. Доступно всем тренерам на просмотр
         {admin ? '; главный логин может вернуть группу из архива.' : '.'}
       </p>
 
       {archived.length === 0 ? (
-        <p className="text-navy-400">В архиве пока пусто.</p>
+        <p className="text-navy-400 dark:text-navy-500">В архиве пока пусто.</p>
       ) : (
         <div className="space-y-6">
           {archived.map((g) => {
@@ -54,7 +54,7 @@ export default function ArchiveTab() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="font-semibold text-lg">{g.name}</h2>
-                    <div className="text-sm text-navy-500 space-y-0.5 mt-1">
+                    <div className="text-sm text-navy-500 dark:text-navy-400 space-y-0.5 mt-1">
                       <div>Тренер: {ownerName}</div>
                       <div>Группа создана: {g.createdAt ? g.createdAt.slice(0, 10) : '—'}</div>
                       <div>
@@ -64,9 +64,10 @@ export default function ArchiveTab() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <div className="text-sm text-navy-500">
-                      Стажёров: <span className="font-semibold text-navy-700">{members.length}</span> · Сдали
-                      экзамен: <span className="font-semibold text-success-600">{passed.length}</span>/
+                    <div className="text-sm text-navy-500 dark:text-navy-400">
+                      Стажёров: <span className="font-semibold text-navy-700 dark:text-navy-200">{members.length}</span> ·
+                      Сдали экзамен:{' '}
+                      <span className="font-semibold text-success-600 dark:text-success-400">{passed.length}</span>/
                       {members.length}
                     </div>
                     {admin && (
@@ -80,7 +81,7 @@ export default function ArchiveTab() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm min-w-[900px]">
                     <thead>
-                      <tr className="text-left text-navy-500 border-b border-navy-100">
+                      <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
                         {COLUMNS.map((c) => (
                           <th key={c.key} className="py-1.5 pr-3 whitespace-nowrap">
                             {c.label}
@@ -95,7 +96,7 @@ export default function ArchiveTab() {
                         const answers = getActiveAnswers(i)
                         const status = statuses[idx]
                         return (
-                          <tr key={i.id} className="border-b border-navy-50 last:border-0">
+                          <tr key={i.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                             {COLUMNS.map((c) => (
                               <td key={c.key} className="py-1.5 pr-3 whitespace-nowrap">
                                 {i[c.key]}
@@ -112,7 +113,10 @@ export default function ArchiveTab() {
                       })}
                       {members.length === 0 && (
                         <tr>
-                          <td colSpan={COLUMNS.length + 2} className="py-4 text-center text-navy-400">
+                          <td
+                            colSpan={COLUMNS.length + 2}
+                            className="py-4 text-center text-navy-400 dark:text-navy-500"
+                          >
                             В группе не было стажёров
                           </td>
                         </tr>

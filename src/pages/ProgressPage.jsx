@@ -11,6 +11,7 @@ import {
   EXAM_QUESTION_COUNT,
 } from '../lib/exam'
 import ExamAnswerList from '../components/ExamAnswerList.jsx'
+import ThemeToggle from '../components/ThemeToggle.jsx'
 
 function homeworkLabel(value) {
   return HOMEWORK_STATUSES.find((h) => h.value === value)?.label || 'Не указано'
@@ -40,15 +41,18 @@ export default function ProgressPage() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
-        <Link to="/" className="text-sm text-navy-500 hover:text-navy-700">
-          ← На главную
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link to="/" className="text-sm text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200">
+            ← На главную
+          </Link>
+          <ThemeToggle />
+        </div>
 
         <div className="card">
           <h1 className="text-xl font-bold mb-1">
             {intern.lastName} {intern.firstName}
           </h1>
-          <p className="text-navy-500 text-sm mb-4">
+          <p className="text-navy-500 dark:text-navy-400 text-sm mb-4">
             {intern.department} · {intern.position} · {intern.city}
           </p>
           <div className="text-sm">
@@ -59,12 +63,12 @@ export default function ProgressPage() {
         <div className="card">
           <h2 className="font-semibold mb-3">Посещаемость и домашние задания</h2>
           {lessons.length === 0 ? (
-            <p className="text-navy-400 text-sm">Занятия ещё не добавлены.</p>
+            <p className="text-navy-400 dark:text-navy-500 text-sm">Занятия ещё не добавлены.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[600px]">
                 <thead>
-                  <tr className="text-left text-navy-500 border-b border-navy-100">
+                  <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
                     <th className="py-2 pr-3">Занятие</th>
                     <th className="py-2 pr-3">Присутствие</th>
                     <th className="py-2 pr-3">Домашнее задание</th>
@@ -73,7 +77,7 @@ export default function ProgressPage() {
                 </thead>
                 <tbody>
                   {lessons.map((l) => (
-                    <tr key={l.id} className="border-b border-navy-50 last:border-0">
+                    <tr key={l.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                       <td className="py-2 pr-3">
                         {l.name}
                         {l.date ? ` · ${l.date}` : ''}
@@ -83,8 +87,8 @@ export default function ProgressPage() {
                           className={
                             'px-2 py-1 rounded-full text-xs font-semibold ' +
                             (intern.attendance[l.id]
-                              ? 'bg-success-50 text-success-600'
-                              : 'bg-danger-50 text-danger-500')
+                              ? 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400'
+                              : 'bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400')
                           }
                         >
                           {intern.attendance[l.id] ? 'Присутствовал' : 'Отсутствовал'}
@@ -114,7 +118,7 @@ export default function ProgressPage() {
                 </p>
 
                 <div className="space-y-1.5">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-navy-400">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
                     Первая попытка · {examCorrectCount(first)}/{EXAM_QUESTION_COUNT} ({examPercent(first)}%)
                   </div>
                   <ExamAnswerList questions={questions} answers={first} />
@@ -122,7 +126,7 @@ export default function ProgressPage() {
 
                 {retake && (
                   <div className="space-y-1.5">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-navy-400">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
                       Пересдача · {examCorrectCount(retake)}/{EXAM_QUESTION_COUNT} ({examPercent(retake)}%)
                     </div>
                     <ExamAnswerList questions={questions} answers={retake} />
@@ -130,7 +134,7 @@ export default function ProgressPage() {
                 )}
 
                 {intern.examFinalComment && (
-                  <div className="text-sm bg-navy-50 rounded-lg p-3">
+                  <div className="text-sm bg-navy-50 dark:bg-navy-800 rounded-lg p-3">
                     <span className="font-medium">Комментарий по завершению экзамена: </span>
                     {intern.examFinalComment}
                   </div>
@@ -142,7 +146,7 @@ export default function ProgressPage() {
 
         <div className="card">
           <h2 className="font-semibold mb-1">Правила экзамена</h2>
-          <p className="text-sm whitespace-pre-wrap text-navy-600">{data.settings.examRules}</p>
+          <p className="text-sm whitespace-pre-wrap text-navy-600 dark:text-navy-300">{data.settings.examRules}</p>
         </div>
       </div>
     </div>

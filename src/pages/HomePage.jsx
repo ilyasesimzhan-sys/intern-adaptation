@@ -4,6 +4,7 @@ import StagePath from '../components/StagePath.jsx'
 import { groupsWithCounts, openGroupsWithSpace } from '../lib/groups'
 import { getCurrentStage } from '../lib/stage'
 import logo from '../assets/logo.jpeg'
+import ThemeToggle from '../components/ThemeToggle.jsx'
 
 function formatWindow(g) {
   if (g.isOpen) {
@@ -67,6 +68,9 @@ export default function HomePage() {
           className="pointer-events-none select-none absolute right-[-5%] top-1/2 -translate-y-1/2 h-[240%] w-auto max-w-none opacity-80 mix-blend-multiply saturate-150 contrast-125"
         />
         <div className="relative max-w-5xl mx-auto px-4 py-8">
+          <div className="absolute right-4 top-4">
+            <ThemeToggle className="!bg-white/10 !border-white/30 !text-white hover:!bg-white/20" />
+          </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">{settings.programName}</h1>
             <p className="text-navy-100 mt-2 max-w-2xl">
@@ -100,7 +104,7 @@ export default function HomePage() {
               />
               <span className="font-semibold">{collectionOpen ? 'Сбор анкет открыт' : 'Сбор анкет закрыт'}</span>
             </div>
-            <p className="text-sm text-navy-500 mt-1">
+            <p className="text-sm text-navy-500 dark:text-navy-400 mt-1">
               {collectionOpen ? `Открыто групп: ${openGroups.length}` : 'Сейчас нет открытых групп для приёма анкет.'}
             </p>
           </div>
@@ -119,11 +123,15 @@ export default function HomePage() {
                   </span>
                 </div>
                 <h3 className="font-semibold mb-2">{c.title}</h3>
-                <p className="text-sm text-navy-500">{c.text}</p>
+                <p className="text-sm text-navy-500 dark:text-navy-400">{c.text}</p>
               </>
             )
             return c.to ? (
-              <Link key={c.title} to={c.to} className="card hover:bg-navy-50 transition-colors">
+              <Link
+                key={c.title}
+                to={c.to}
+                className="card hover:bg-navy-50 dark:hover:bg-navy-800/60 transition-colors"
+              >
                 {content}
               </Link>
             ) : (
@@ -136,12 +144,12 @@ export default function HomePage() {
 
         <section className="card">
           <h2 className="text-lg font-bold mb-1">Группы и прогресс стажёров</h2>
-          <p className="text-sm text-navy-500 mb-4">
+          <p className="text-sm text-navy-500 dark:text-navy-400 mb-4">
             Здесь видно, когда каждая группа открылась и закроется. Руководитель может открыть карточку своего
             стажёра и посмотреть посещаемость, домашние задания и результат экзамена — без входа в систему.
           </p>
           {groupsInfo.length === 0 ? (
-            <p className="text-navy-400">Пока нет ни одной группы.</p>
+            <p className="text-navy-400 dark:text-navy-500">Пока нет ни одной группы.</p>
           ) : (
             <div className="space-y-5">
               {groupsInfo.map((g) => {
@@ -154,37 +162,42 @@ export default function HomePage() {
                       'rounded-xl border-l-4 pl-4 py-1 ' + (g.isOpen ? 'border-success-500' : 'border-sky-500')
                     }
                   >
-                    <h3 className="font-semibold text-navy-700 mb-1 flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold text-navy-700 dark:text-navy-100 mb-1 flex flex-wrap items-center gap-2">
                       {g.name}
                       <span
                         className={
                           'text-xs font-medium px-2 py-0.5 rounded-full ' +
-                          (g.isOpen ? 'bg-success-50 text-success-600' : 'bg-sky-50 text-sky-600')
+                          (g.isOpen
+                            ? 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400'
+                            : 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400')
                         }
                       >
                         {g.isOpen ? 'приём открыт' : 'сбор закрыт — идёт обучение'}
                       </span>
-                      <span className="text-xs text-navy-400 font-normal">{formatWindow(g)}</span>
+                      <span className="text-xs text-navy-400 dark:text-navy-500 font-normal">{formatWindow(g)}</span>
                     </h3>
-                    <p className="text-xs text-navy-500 mb-2">
-                      Тренер: <span className="font-medium text-navy-700">{owner?.name || 'без владельца'}</span>
+                    <p className="text-xs text-navy-500 dark:text-navy-400 mb-2">
+                      Тренер:{' '}
+                      <span className="font-medium text-navy-700 dark:text-navy-200">
+                        {owner?.name || 'без владельца'}
+                      </span>
                       {owner?.phone && <> · {owner.phone}</>}
                       {owner?.email && <> · {owner.email}</>}
                     </p>
                     {members.length === 0 ? (
-                      <p className="text-sm text-navy-400">Пока нет стажёров в этой группе.</p>
+                      <p className="text-sm text-navy-400 dark:text-navy-500">Пока нет стажёров в этой группе.</p>
                     ) : (
                       <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         {members.map((i) => (
                           <li key={i.id}>
                             <Link
                               to={`/progress/${i.id}`}
-                              className="flex justify-between gap-2 rounded-lg border border-navy-100 px-3 py-2 text-sm hover:bg-navy-50"
+                              className="flex justify-between gap-2 rounded-lg border border-navy-100 dark:border-navy-700 px-3 py-2 text-sm hover:bg-navy-50 dark:hover:bg-navy-800/60"
                             >
                               <span>
                                 {i.lastName} {i.firstName}
                               </span>
-                              <span className="text-navy-400">{i.city}</span>
+                              <span className="text-navy-400 dark:text-navy-500">{i.city}</span>
                             </Link>
                           </li>
                         ))}

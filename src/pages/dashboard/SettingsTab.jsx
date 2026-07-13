@@ -97,7 +97,7 @@ export default function SettingsTab() {
 
       <div className="card space-y-4">
         <h2 className="font-semibold">Группы</h2>
-        <p className="text-sm text-navy-500">
+        <p className="text-sm text-navy-500 dark:text-navy-400">
           Можно вести сразу несколько групп — у каждой свой приём анкет, до {GROUP_CAPACITY} участников. Даты
           открытия/закрытия приёма видны руководителям на главной странице. Отправить группу в архив можно во
           вкладке «Итоговый экзамен», когда всем стажёрам выставлен балл.
@@ -137,29 +137,31 @@ export default function SettingsTab() {
         </div>
 
         <div className="space-y-3">
-          {groupsInfo.length === 0 && <p className="text-navy-400">Групп пока нет.</p>}
+          {groupsInfo.length === 0 && <p className="text-navy-400 dark:text-navy-500">Групп пока нет.</p>}
           {groupsInfo.map((g) => {
             const members = interns.filter((i) => i.groupId === g.id)
             return (
-              <div key={g.id} className="border border-navy-100 rounded-xl overflow-hidden">
+              <div key={g.id} className="border border-navy-100 dark:border-navy-700 rounded-xl overflow-hidden">
                 <div className="flex flex-wrap items-center justify-between gap-3 p-4">
                   <div>
                     <div className="font-semibold">{g.name}</div>
-                    <div className="text-sm text-navy-500">
+                    <div className="text-sm text-navy-500 dark:text-navy-400">
                       {g.count}/{GROUP_CAPACITY} участников
                     </div>
                   </div>
                   <span
                     className={
                       'px-2 py-1 rounded-full text-xs font-semibold shrink-0 ' +
-                      (g.isOpen ? 'bg-success-50 text-success-600' : 'bg-navy-100 text-navy-500')
+                      (g.isOpen
+                        ? 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400'
+                        : 'bg-navy-100 text-navy-500 dark:bg-navy-800 dark:text-navy-400')
                     }
                   >
                     {g.isOpen ? 'Открыта' : 'Закрыта'}
                   </span>
                 </div>
 
-                <div className="border-t border-navy-100 p-4 space-y-3">
+                <div className="border-t border-navy-100 dark:border-navy-700 p-4 space-y-3">
                   <div className="flex flex-wrap items-end gap-3">
                     <div>
                       <label className="field-label">Дата открытия приёма</label>
@@ -214,13 +216,13 @@ export default function SettingsTab() {
                     </button>
                   </div>
 
-                  <div className="overflow-x-auto pt-2 border-t border-navy-50">
+                  <div className="overflow-x-auto pt-2 border-t border-navy-50 dark:border-navy-800">
                     {members.length === 0 ? (
-                      <p className="text-navy-400 text-sm">В группе пока нет стажёров.</p>
+                      <p className="text-navy-400 dark:text-navy-500 text-sm">В группе пока нет стажёров.</p>
                     ) : (
                       <table className="w-full text-sm min-w-[400px]">
                         <thead>
-                          <tr className="text-left text-navy-500 border-b border-navy-100">
+                          <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
                             {COLUMNS.map((c) => (
                               <th key={c.key} className="py-1.5 pr-3">
                                 {c.label}
@@ -230,7 +232,7 @@ export default function SettingsTab() {
                         </thead>
                         <tbody>
                           {members.map((i) => (
-                            <tr key={i.id} className="border-b border-navy-50 last:border-0">
+                            <tr key={i.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                               {COLUMNS.map((c) => (
                                 <td key={c.key} className="py-1.5 pr-3">
                                   {i[c.key]}

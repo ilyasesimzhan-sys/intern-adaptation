@@ -40,13 +40,15 @@ export default function KnowledgeBaseTab() {
       <div className="card space-y-3">
         {knowledgeBaseUrl ? (
           <>
-            {knowledgeBaseNote && <p className="text-sm text-navy-500">{knowledgeBaseNote}</p>}
+            {knowledgeBaseNote && (
+              <p className="text-sm text-navy-500 dark:text-navy-400">{knowledgeBaseNote}</p>
+            )}
             <a href={knowledgeBaseUrl} target="_blank" rel="noreferrer" className="btn-primary inline-flex">
               Открыть базу знаний
             </a>
           </>
         ) : (
-          <p className="text-navy-400">
+          <p className="text-navy-400 dark:text-navy-500">
             {admin
               ? 'Вставьте ссылку выше, чтобы она стала доступна остальным тренерам.'
               : 'Ссылка ещё не добавлена главным логином.'}

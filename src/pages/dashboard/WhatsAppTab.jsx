@@ -37,7 +37,7 @@ export default function WhatsAppTab() {
     return (
       <div className="space-y-6">
         <h1 className="text-xl font-bold">Рассылка WhatsApp</h1>
-        <p className="text-navy-400">Пока нет ни одного стажёра.</p>
+        <p className="text-navy-400 dark:text-navy-500">Пока нет ни одного стажёра.</p>
       </div>
     )
   }
@@ -55,7 +55,7 @@ export default function WhatsAppTab() {
             value={template}
             onChange={(e) => setTemplate(e.target.value)}
           />
-          <p className="text-xs text-navy-400">
+          <p className="text-xs text-navy-400 dark:text-navy-500">
             Доступные подстановки: <code>{'{name}'}</code>, <code>{'{group}'}</code>, <code>{'{title}'}</code>
           </p>
         </div>
@@ -63,7 +63,7 @@ export default function WhatsAppTab() {
         <div className="card overflow-x-auto">
           <table className="w-full text-sm min-w-[600px]">
             <thead>
-              <tr className="text-left text-navy-500 border-b border-navy-100">
+              <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
                 <th className="py-2 pr-3">ФИО</th>
                 <th className="py-2 pr-3">Группа</th>
                 <th className="py-2 pr-3">Телефон</th>
@@ -75,7 +75,7 @@ export default function WhatsAppTab() {
                 const groupName = groups.find((g) => g.id === i.groupId)?.name ?? '—'
                 const text = renderTemplate(template, i, groupName)
                 return (
-                  <tr key={i.id} className="border-b border-navy-50 last:border-0">
+                  <tr key={i.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                     <td className="py-2 pr-3 whitespace-nowrap">
                       {i.lastName} {i.firstName}
                     </td>
@@ -108,7 +108,7 @@ export default function WhatsAppTab() {
             value={managerTemplate}
             onChange={(e) => setManagerTemplate(e.target.value)}
           />
-          <p className="text-xs text-navy-400">
+          <p className="text-xs text-navy-400 dark:text-navy-500">
             Доступные подстановки: <code>{'{managerName}'}</code>, <code>{'{name}'}</code>, <code>{'{group}'}</code>,{' '}
             <code>{'{startDate}'}</code>, <code>{'{trainerName}'}</code>, <code>{'{trainerPhone}'}</code>,{' '}
             <code>{'{trainerEmail}'}</code>
@@ -116,7 +116,7 @@ export default function WhatsAppTab() {
         </div>
 
         {managerInterns.length === 0 ? (
-          <p className="text-navy-400 text-sm">
+          <p className="text-navy-400 dark:text-navy-500 text-sm">
             Пока нет групп с закрытым сбором — рассылка руководителям станет доступна, когда группа закроется и
             начнётся обучение.
           </p>
@@ -124,7 +124,7 @@ export default function WhatsAppTab() {
           <div className="card overflow-x-auto">
             <table className="w-full text-sm min-w-[700px]">
               <thead>
-                <tr className="text-left text-navy-500 border-b border-navy-100">
+                <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
                   <th className="py-2 pr-3">Руководитель</th>
                   <th className="py-2 pr-3">Стажёр</th>
                   <th className="py-2 pr-3">Группа</th>
@@ -138,7 +138,7 @@ export default function WhatsAppTab() {
                   const trainer = trainers.find((t) => t.id === group?.ownerId) || currentTrainer
                   const text = renderManagerTemplate(managerTemplate, i, group?.name, group?.endDate, trainer)
                   return (
-                    <tr key={i.id} className="border-b border-navy-50 last:border-0">
+                    <tr key={i.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                       <td className="py-2 pr-3 whitespace-nowrap">{i.managerName}</td>
                       <td className="py-2 pr-3 whitespace-nowrap">
                         {i.lastName} {i.firstName}

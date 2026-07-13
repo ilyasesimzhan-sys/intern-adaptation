@@ -35,7 +35,7 @@ export default function StagePath({ current }) {
               <span
                 className={
                   'text-xs font-medium text-center max-w-[100px] transition-colors duration-300 ' +
-                  (active ? 'text-navy-900' : 'text-navy-400')
+                  (active ? 'text-navy-900 dark:text-navy-50' : 'text-navy-400 dark:text-navy-500')
                 }
               >
                 {stage.label}

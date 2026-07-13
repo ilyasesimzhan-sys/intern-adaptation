@@ -7,17 +7,17 @@ html {
 }
 
 body {
-  @apply bg-navy-100 text-navy-900;
+  @apply bg-navy-100 text-navy-900 dark:bg-navy-950 dark:text-navy-100 transition-colors;
 }
 
 .btn {
   @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
 }
 .btn-primary {
-  @apply btn bg-navy-700 text-white hover:bg-navy-800;
+  @apply btn bg-navy-700 text-white hover:bg-navy-800 dark:bg-sky-500 dark:hover:bg-sky-400 dark:text-navy-950;
 }
 .btn-secondary {
-  @apply btn bg-white text-navy-700 border border-navy-200 hover:bg-navy-50;
+  @apply btn bg-white text-navy-700 border border-navy-200 hover:bg-navy-50 dark:bg-navy-800 dark:text-navy-100 dark:border-navy-600 dark:hover:bg-navy-700;
 }
 .btn-success {
   @apply btn bg-success-500 text-white hover:bg-success-600;
@@ -27,12 +27,12 @@ body {
 }
 
 .card {
-  @apply bg-white rounded-2xl shadow-sm border border-navy-100 p-6;
+  @apply bg-white rounded-2xl shadow-sm border border-navy-100 p-6 dark:bg-navy-900 dark:border-navy-800;
 }
 
 .field-label {
-  @apply block text-sm font-medium text-navy-700 mb-1;
+  @apply block text-sm font-medium text-navy-700 mb-1 dark:text-navy-200;
 }
 .field-input {
-  @apply w-full rounded-lg border border-navy-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent;
+  @apply w-full rounded-lg border border-navy-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent dark:bg-navy-800 dark:border-navy-600 dark:text-navy-100 dark:focus:ring-sky-500;
 }

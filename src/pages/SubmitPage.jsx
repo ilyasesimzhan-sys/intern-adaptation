@@ -5,6 +5,7 @@ import { KZ_CITIES, GROUP_CAPACITY } from '../lib/constants'
 import { uid } from '../store/defaultData'
 import { openGroupsWithSpace } from '../lib/groups'
 import { emptyExamAnswers, emptyExamQuestions } from '../lib/exam'
+import ThemeToggle from '../components/ThemeToggle.jsx'
 
 const EMPTY_FORM = {
   lastName: '',
@@ -92,7 +93,7 @@ export default function SubmitPage() {
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="card max-w-md text-center">
           <h1 className="text-xl font-bold mb-2">Приём анкет закрыт</h1>
-          <p className="text-navy-500 mb-4">
+          <p className="text-navy-500 dark:text-navy-400 mb-4">
             Сейчас нет ни одной открытой группы. Обратитесь к тренеру за информацией о следующем наборе.
           </p>
           <Link to="/" className="btn-secondary">
@@ -107,8 +108,8 @@ export default function SubmitPage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="card max-w-md text-center">
-          <h1 className="text-xl font-bold mb-2 text-success-600">Анкета отправлена</h1>
-          <p className="text-navy-500 mb-4">Спасибо! Данные стажёра приняты.</p>
+          <h1 className="text-xl font-bold mb-2 text-success-600 dark:text-success-400">Анкета отправлена</h1>
+          <p className="text-navy-500 dark:text-navy-400 mb-4">Спасибо! Данные стажёра приняты.</p>
           <Link to="/" className="btn-secondary">
             На главную
           </Link>
@@ -131,11 +132,14 @@ export default function SubmitPage() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-xl mx-auto">
-        <Link to="/" className="text-sm text-navy-500 hover:text-navy-700">
-          ← На главную
-        </Link>
-        <h1 className="text-2xl font-bold mt-4 mb-1">Анкета стажёра</h1>
-        <p className="text-navy-500 mb-6 text-sm">
+        <div className="flex items-center justify-between mb-4">
+          <Link to="/" className="text-sm text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200">
+            ← На главную
+          </Link>
+          <ThemeToggle />
+        </div>
+        <h1 className="text-2xl font-bold mb-1">Анкета стажёра</h1>
+        <p className="text-navy-500 dark:text-navy-400 mb-6 text-sm">
           Анкету заполняет руководитель стажёра. Все поля обязательны.
         </p>
 

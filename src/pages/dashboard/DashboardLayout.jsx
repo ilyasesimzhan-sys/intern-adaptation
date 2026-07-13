@@ -3,6 +3,7 @@ import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
 import Avatar from '../../components/Avatar.jsx'
 import CreatorCard from '../../components/CreatorCard.jsx'
+import ThemeToggle from '../../components/ThemeToggle.jsx'
 import logo from '../../assets/logo.jpeg'
 
 const TABS = [
@@ -70,9 +71,12 @@ export default function DashboardLayout() {
         </nav>
         <div className="p-4 mt-auto border-t border-navy-700 hidden lg:block space-y-3">
           <CreatorCard />
-          <button onClick={handleLogout} className="text-sm text-navy-300 hover:text-white">
-            Выйти
-          </button>
+          <div className="flex items-center justify-between">
+            <button onClick={handleLogout} className="text-sm text-navy-300 hover:text-white">
+              Выйти
+            </button>
+            <ThemeToggle className="!bg-navy-700 !border-navy-600 !text-navy-100 hover:!bg-navy-600" />
+          </div>
         </div>
       </aside>
 
@@ -81,10 +85,14 @@ export default function DashboardLayout() {
           src={logo}
           alt=""
           aria-hidden="true"
-          className="pointer-events-none select-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] sm:w-[640px] lg:w-[900px] max-w-none opacity-[0.18] mix-blend-multiply saturate-150 z-20"
+          className="pointer-events-none select-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] sm:w-[640px] lg:w-[900px] max-w-none opacity-[0.05] mix-blend-multiply saturate-150 z-0"
         />
-        <div className="relative z-10 lg:hidden p-3 bg-white border-b border-navy-100 flex justify-end">
-          <button onClick={handleLogout} className="text-sm text-navy-500 hover:text-navy-700">
+        <div className="relative z-10 lg:hidden p-3 bg-white dark:bg-navy-900 border-b border-navy-100 dark:border-navy-800 flex items-center justify-between">
+          <ThemeToggle />
+          <button
+            onClick={handleLogout}
+            className="text-sm text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200"
+          >
             Выйти
           </button>
         </div>

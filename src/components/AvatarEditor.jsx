@@ -71,7 +71,7 @@ export default function AvatarEditor({ photo, position, name, onPhotoChange, onP
   return (
     <div className="flex items-center gap-4 flex-wrap">
       <div
-        className={'rounded-full overflow-hidden select-none ring-1 ring-navy-100 ' + (photo ? (dragging ? 'cursor-grabbing' : 'cursor-grab') : '')}
+        className={'rounded-full overflow-hidden select-none ring-1 ring-navy-100 dark:ring-navy-700 ' + (photo ? (dragging ? 'cursor-grabbing' : 'cursor-grab') : '')}
         style={{ width: size, height: size, touchAction: 'none' }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -91,7 +91,9 @@ export default function AvatarEditor({ photo, position, name, onPhotoChange, onP
             </button>
           )}
         </div>
-        {photo && <p className="text-xs text-navy-400">Перетащите фото внутри круга, чтобы выбрать центр.</p>}
+        {photo && (
+          <p className="text-xs text-navy-400 dark:text-navy-500">Перетащите фото внутри круга, чтобы выбрать центр.</p>
+        )}
         {error && <p className="text-xs text-danger-500">{error}</p>}
       </div>
     </div>

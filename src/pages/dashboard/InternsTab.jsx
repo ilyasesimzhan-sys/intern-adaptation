@@ -90,7 +90,7 @@ export default function InternsTab() {
     return (
       <div className="space-y-6">
         <h1 className="text-xl font-bold">Список стажёров</h1>
-        <p className="text-navy-400">Сначала создайте группу во вкладке «Настройки сбора».</p>
+        <p className="text-navy-400 dark:text-navy-500">Сначала создайте группу во вкладке «Настройки сбора».</p>
       </div>
     )
   }
@@ -123,7 +123,7 @@ export default function InternsTab() {
       <div className="card overflow-x-auto">
         <table className="w-full text-sm min-w-[1000px]">
           <thead>
-            <tr className="text-left text-navy-500 border-b border-navy-100">
+            <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
               {COLUMNS.map((c) => (
                 <th key={c.key} className="py-2 pr-3 whitespace-nowrap">
                   {c.label}
@@ -134,7 +134,7 @@ export default function InternsTab() {
           </thead>
           <tbody>
             {filtered.map((intern) => (
-              <tr key={intern.id} className="border-b border-navy-50 last:border-0">
+              <tr key={intern.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                 {COLUMNS.map((c) => (
                   <td key={c.key} className="py-1.5 pr-3">
                     <input
@@ -158,7 +158,10 @@ export default function InternsTab() {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={COLUMNS.length + (admin ? 1 : 0)} className="py-6 text-center text-navy-400">
+                <td
+                  colSpan={COLUMNS.length + (admin ? 1 : 0)}
+                  className="py-6 text-center text-navy-400 dark:text-navy-500"
+                >
                   Анкет не найдено
                 </td>
               </tr>
@@ -169,7 +172,7 @@ export default function InternsTab() {
 
       {group && !group.isOpen && <GroupProgress group={group} interns={groupInterns} update={update} />}
       {group && group.isOpen && (
-        <p className="text-sm text-navy-400">
+        <p className="text-sm text-navy-400 dark:text-navy-500">
           Посещаемость и домашние задания станут доступны здесь после закрытия группы.
         </p>
       )}
@@ -247,8 +250,8 @@ function GroupProgress({ group, interns, update }) {
             className={
               'px-3 py-1.5 rounded-full text-sm border flex items-center gap-2 ' +
               (l.id === activeLessonId
-                ? 'bg-navy-700 text-white border-navy-700'
-                : 'bg-white text-navy-700 border-navy-200 hover:bg-navy-50')
+                ? 'bg-navy-700 text-white border-navy-700 dark:bg-sky-500 dark:border-sky-500 dark:text-navy-950'
+                : 'bg-white text-navy-700 border-navy-200 hover:bg-navy-50 dark:bg-navy-800 dark:text-navy-100 dark:border-navy-600 dark:hover:bg-navy-700')
             }
           >
             {l.name}
@@ -291,14 +294,14 @@ function GroupProgress({ group, interns, update }) {
       </div>
 
       {interns.length === 0 ? (
-        <p className="text-navy-400">В группе нет стажёров.</p>
+        <p className="text-navy-400 dark:text-navy-500">В группе нет стажёров.</p>
       ) : !activeLesson ? (
-        <p className="text-navy-400">Добавьте и выберите занятие, чтобы отмечать посещаемость.</p>
+        <p className="text-navy-400 dark:text-navy-500">Добавьте и выберите занятие, чтобы отмечать посещаемость.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[800px]">
             <thead>
-              <tr className="text-left text-navy-500 border-b border-navy-100">
+              <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
                 <th className="py-2 pr-3">ФИО</th>
                 <th className="py-2 pr-3">Присутствие</th>
                 <th className="py-2 pr-3">Домашнее задание</th>
@@ -307,7 +310,7 @@ function GroupProgress({ group, interns, update }) {
             </thead>
             <tbody>
               {interns.map((i) => (
-                <tr key={i.id} className="border-b border-navy-50 last:border-0">
+                <tr key={i.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                   <td className="py-2 pr-3 whitespace-nowrap">
                     {i.lastName} {i.firstName}
                   </td>
@@ -317,8 +320,8 @@ function GroupProgress({ group, interns, update }) {
                       className={
                         'px-3 py-1 rounded-full text-xs font-semibold ' +
                         (i.attendance[activeLessonId]
-                          ? 'bg-success-50 text-success-600'
-                          : 'bg-danger-50 text-danger-500')
+                          ? 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400'
+                          : 'bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400')
                       }
                     >
                       {i.attendance[activeLessonId] ? 'Присутствовал' : 'Отсутствовал'}
