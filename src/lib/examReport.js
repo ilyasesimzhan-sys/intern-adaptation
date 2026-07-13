@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx'
 import { getExamAnswers, getRetakeAnswers, examPercent, getInternExamStatus } from './exam'
+import { formatDate } from './date'
 
 const HOMEWORK_SCORE = { done: 100, partial: 50, not_done: 0 }
 
@@ -26,7 +27,7 @@ function trainingPeriod(lessons) {
   if (dates.length === 0) return ''
   const first = dates[0]
   const last = dates[dates.length - 1]
-  return first === last ? first : `${first} — ${last}`
+  return first === last ? formatDate(first) : `${formatDate(first)} — ${formatDate(last)}`
 }
 
 // Сводная выгрузка по группе для служебных целей: одна строка на стажёра с итоговыми процентами,

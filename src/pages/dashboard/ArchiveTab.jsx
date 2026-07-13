@@ -1,6 +1,7 @@
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
 import { getActiveAnswers, examPercent, getInternExamStatus } from '../../lib/exam'
+import { formatDate } from '../../lib/date'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -56,11 +57,12 @@ export default function ArchiveTab() {
                     <h2 className="font-semibold text-lg">{g.name}</h2>
                     <div className="text-sm text-navy-500 dark:text-navy-400 space-y-0.5 mt-1">
                       <div>Тренер: {ownerName}</div>
-                      <div>Группа создана: {g.createdAt ? g.createdAt.slice(0, 10) : '—'}</div>
+                      <div>Группа создана: {g.createdAt ? formatDate(g.createdAt) : '—'}</div>
                       <div>
-                        Приём анкет: {g.startDate || '—'} — {g.endDate || '—'}
+                        Приём анкет: {g.startDate ? formatDate(g.startDate) : '—'} —{' '}
+                        {g.endDate ? formatDate(g.endDate) : '—'}
                       </div>
-                      <div>Отправлена в архив: {g.archivedAt || '—'}</div>
+                      <div>Отправлена в архив: {g.archivedAt ? formatDate(g.archivedAt) : '—'}</div>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">

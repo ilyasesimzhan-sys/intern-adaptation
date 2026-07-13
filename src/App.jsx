@@ -13,6 +13,7 @@ import RulesTab from './pages/dashboard/RulesTab.jsx'
 import InternsTab from './pages/dashboard/InternsTab.jsx'
 import ExamTab from './pages/dashboard/ExamTab.jsx'
 import WhatsAppTab from './pages/dashboard/WhatsAppTab.jsx'
+import IspringTab from './pages/dashboard/IspringTab.jsx'
 import ArchiveTab from './pages/dashboard/ArchiveTab.jsx'
 import KnowledgeBaseTab from './pages/dashboard/KnowledgeBaseTab.jsx'
 
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="interns" element={<InternsTab />} />
         <Route path="exam" element={<ExamTab />} />
         <Route path="whatsapp" element={<WhatsAppTab />} />
+        <Route path="ispring" element={<IspringTab />} />
         <Route path="archive" element={<ArchiveTab />} />
         <Route path="knowledge" element={<KnowledgeBaseTab />} />
       </Route>

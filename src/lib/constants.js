@@ -22,6 +22,8 @@ export const KZ_CITIES = [
   'Другой',
 ]
 
+export const DEPARTMENTS = ['ЦОО', 'ЦРК', 'ЦАП', 'СОЛиТ']
+
 export const HOMEWORK_STATUSES = [
   { value: 'done', label: 'Выполнено' },
   { value: 'partial', label: 'Частично' },

@@ -1,3 +1,5 @@
+import { formatDate } from './date'
+
 export function renderTemplate(template, intern, groupName) {
   return (template || '')
     .replaceAll('{name}', `${intern.firstName} ${intern.lastName}`.trim())
@@ -11,7 +13,7 @@ export function renderManagerTemplate(template, intern, groupName, startDate, tr
     .replaceAll('{managerName}', intern.managerName || '')
     .replaceAll('{name}', `${intern.firstName} ${intern.lastName}`.trim())
     .replaceAll('{group}', groupName || '')
-    .replaceAll('{startDate}', startDate || '')
+    .replaceAll('{startDate}', formatDate(startDate))
     .replaceAll('{trainerName}', trainer?.name || '')
     .replaceAll('{trainerPhone}', trainer?.phone || '')
     .replaceAll('{trainerEmail}', trainer?.email || '')

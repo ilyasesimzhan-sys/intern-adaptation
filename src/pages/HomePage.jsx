@@ -5,16 +5,17 @@ import { groupsWithCounts, openGroupsWithSpace } from '../lib/groups'
 import { getCurrentStage } from '../lib/stage'
 import logo from '../assets/logo.jpeg'
 import ThemeToggle from '../components/ThemeToggle.jsx'
+import { formatDate } from '../lib/date'
 
 function formatWindow(g) {
   if (g.isOpen) {
-    if (g.startDate && g.endDate) return `Открыта с ${g.startDate} по ${g.endDate}`
-    if (g.startDate) return `Открыта с ${g.startDate}`
-    if (g.endDate) return `Открыта до ${g.endDate}`
+    if (g.startDate && g.endDate) return `Открыта с ${formatDate(g.startDate)} по ${formatDate(g.endDate)}`
+    if (g.startDate) return `Открыта с ${formatDate(g.startDate)}`
+    if (g.endDate) return `Открыта до ${formatDate(g.endDate)}`
     return 'Открыта'
   }
-  if (g.endDate) return `Закрыта ${g.endDate}`
-  if (g.startDate) return `Была открыта с ${g.startDate}`
+  if (g.endDate) return `Закрыта ${formatDate(g.endDate)}`
+  if (g.startDate) return `Была открыта с ${formatDate(g.startDate)}`
   return 'Закрыта'
 }
 

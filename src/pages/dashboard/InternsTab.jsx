@@ -3,6 +3,7 @@ import { useStore } from '../../store/StoreContext.jsx'
 import { HOMEWORK_STATUSES } from '../../lib/constants'
 import { uid } from '../../store/defaultData'
 import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
+import { formatDate } from '../../lib/date'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -255,7 +256,7 @@ function GroupProgress({ group, interns, update }) {
             }
           >
             {l.name}
-            {l.date ? ` · ${l.date}` : ''}
+            {l.date ? ` · ${formatDate(l.date)}` : ''}
             <span
               onClick={(e) => {
                 e.stopPropagation()

@@ -14,6 +14,7 @@ const TABS = [
   { to: 'rules', label: 'Правила адаптационной программы' },
   { to: 'trainers', label: 'Тренеры', adminOnly: true },
   { to: 'archive', label: 'Архив' },
+  { to: 'ispring', label: 'Логины iSpring' },
   { to: 'knowledge', label: 'База знаний' },
 ]
 

@@ -12,6 +12,7 @@ import {
 } from '../lib/exam'
 import ExamAnswerList from '../components/ExamAnswerList.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
+import { formatDate } from '../lib/date'
 
 function homeworkLabel(value) {
   return HOMEWORK_STATUSES.find((h) => h.value === value)?.label || 'Не указано'
@@ -80,7 +81,7 @@ export default function ProgressPage() {
                     <tr key={l.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                       <td className="py-2 pr-3">
                         {l.name}
-                        {l.date ? ` · ${l.date}` : ''}
+                        {l.date ? ` · ${formatDate(l.date)}` : ''}
                       </td>
                       <td className="py-2 pr-3">
                         <span

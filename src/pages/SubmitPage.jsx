@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
-import { KZ_CITIES, GROUP_CAPACITY } from '../lib/constants'
+import { KZ_CITIES, DEPARTMENTS, GROUP_CAPACITY } from '../lib/constants'
 import { uid } from '../store/defaultData'
 import { openGroupsWithSpace } from '../lib/groups'
 import { emptyExamAnswers, emptyExamQuestions } from '../lib/exam'
@@ -37,6 +37,11 @@ export default function SubmitPage() {
     setForm((f) => ({ ...f, [field]: value }))
   }
 
+  function handlePhoneChange(field, raw) {
+    const digits = raw.replace(/\D/g, '').slice(0, 10)
+    handleChange(field, digits ? '+7' + digits : '')
+  }
+
   function validate() {
     const errs = {}
     for (const key of Object.keys(EMPTY_FORM)) {
@@ -48,6 +53,12 @@ export default function SubmitPage() {
     }
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       errs.email = 'Некорректный email'
+    }
+    if (form.phone && !/^\+7\d{10}$/.test(form.phone)) {
+      errs.phone = 'Введите номер полностью, пример: +77077777777'
+    }
+    if (form.managerContact && !/^\+7\d{10}$/.test(form.managerContact)) {
+      errs.managerContact = 'Введите номер полностью, пример: +77077777777'
     }
     if (!groupId) errs.groupId = 'Выберите группу'
     return errs
@@ -118,16 +129,50 @@ export default function SubmitPage() {
     )
   }
 
-  const fields = [
+  const fieldsBeforeDepartment = [
     { key: 'lastName', label: 'Фамилия стажёра' },
     { key: 'firstName', label: 'Имя стажёра' },
     { key: 'email', label: 'Электронная почта', type: 'email' },
-    { key: 'department', label: 'Подразделение' },
-    { key: 'position', label: 'Должность' },
-    { key: 'phone', label: 'Контактный телефон стажёра', type: 'tel' },
-    { key: 'managerName', label: 'ФИО руководителя' },
-    { key: 'managerContact', label: 'Контакты руководителя' },
   ]
+  const fieldsBeforePhone = [{ key: 'position', label: 'Должность' }]
+  const fieldsAfterPhone = [{ key: 'managerName', label: 'ФИО руководителя' }]
+
+  function renderField({ key, label, type }) {
+    return (
+      <div key={key}>
+        <label className="field-label">{label}</label>
+        <input
+          type={type || 'text'}
+          className="field-input"
+          value={form[key]}
+          onChange={(e) => handleChange(key, e.target.value)}
+        />
+        {errors[key] && <p className="text-danger-500 text-xs mt-1">{errors[key]}</p>}
+      </div>
+    )
+  }
+
+  function renderPhoneField(key, label) {
+    return (
+      <div key={key}>
+        <label className="field-label">{label}</label>
+        <div className="flex">
+          <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-navy-200 dark:border-navy-600 bg-navy-50 dark:bg-navy-800 text-sm text-navy-500 dark:text-navy-400">
+            +7
+          </span>
+          <input
+            type="tel"
+            inputMode="numeric"
+            className="field-input rounded-l-none"
+            value={form[key].replace(/^\+7/, '')}
+            onChange={(e) => handlePhoneChange(key, e.target.value)}
+            placeholder="7077777777"
+          />
+        </div>
+        {errors[key] && <p className="text-danger-500 text-xs mt-1">{errors[key]}</p>}
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen py-8 px-4">
@@ -157,18 +202,32 @@ export default function SubmitPage() {
             {errors.groupId && <p className="text-danger-500 text-xs mt-1">{errors.groupId}</p>}
           </div>
 
-          {fields.map(({ key, label, type }) => (
-            <div key={key}>
-              <label className="field-label">{label}</label>
-              <input
-                type={type || 'text'}
-                className="field-input"
-                value={form[key]}
-                onChange={(e) => handleChange(key, e.target.value)}
-              />
-              {errors[key] && <p className="text-danger-500 text-xs mt-1">{errors[key]}</p>}
-            </div>
-          ))}
+          {fieldsBeforeDepartment.map(renderField)}
+
+          <div>
+            <label className="field-label">Подразделение</label>
+            <select
+              className="field-input"
+              value={form.department}
+              onChange={(e) => handleChange('department', e.target.value)}
+            >
+              <option value="">Выберите подразделение</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+            {errors.department && <p className="text-danger-500 text-xs mt-1">{errors.department}</p>}
+          </div>
+
+          {fieldsBeforePhone.map(renderField)}
+
+          {renderPhoneField('phone', 'Контактный телефон стажёра')}
+
+          {fieldsAfterPhone.map(renderField)}
+
+          {renderPhoneField('managerContact', 'Контакты руководителя')}
 
           <div>
             <label className="field-label">Город</label>
