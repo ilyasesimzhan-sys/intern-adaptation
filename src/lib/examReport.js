@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import { getExamAnswers, getRetakeAnswers, examPercent, getInternExamStatus } from './exam'
+import { getExamAnswers, getRetakeAnswers, getActiveAnswers, getExamQuestions, examPercent, getInternExamStatus } from './exam'
 import { formatDate } from './date'
 
 const HOMEWORK_SCORE = { done: 100, partial: 50, not_done: 0 }
@@ -20,6 +20,35 @@ function homeworkPercent(intern, lessons) {
   if (lessons.length === 0) return ''
   const total = lessons.reduce((sum, l) => sum + (HOMEWORK_SCORE[intern.homework?.[l.id]] ?? 0), 0)
   return `${Math.round(total / lessons.length)}%`
+}
+
+// Автоматическая рекомендация «над чем работать» — дисциплина (пропуски), домашние задания и темы,
+// по которым стажёр ответил неверно на экзамене (актуальная попытка: пересдача, если есть, иначе первая).
+function buildRecommendation(intern, lessons) {
+  const notes = []
+
+  const missed = lessons.filter((l) => !intern.attendance?.[l.id])
+  if (missed.length > 0) {
+    notes.push(`Дисциплина — пропущено занятий: ${missed.length} из ${lessons.length} (${missed.map((l) => l.name).join(', ')})`)
+  }
+
+  const notDone = lessons.filter((l) => intern.homework?.[l.id] === 'not_done').map((l) => l.name)
+  const partial = lessons.filter((l) => intern.homework?.[l.id] === 'partial').map((l) => l.name)
+  if (notDone.length > 0 || partial.length > 0) {
+    const parts = []
+    if (notDone.length > 0) parts.push(`не выполнено — ${notDone.join(', ')}`)
+    if (partial.length > 0) parts.push(`выполнено частично — ${partial.join(', ')}`)
+    notes.push(`Домашние задания: ${parts.join('; ')}`)
+  }
+
+  const questions = getExamQuestions(intern)
+  const answers = getActiveAnswers(intern)
+  const weakTopics = questions.filter((q, idx) => answers[idx] === false && q.trim())
+  if (weakTopics.length > 0) {
+    notes.push(`Повторить темы (неверные ответы на экзамене): ${weakTopics.join('; ')}`)
+  }
+
+  return notes.length > 0 ? notes.join('. ') : 'Замечаний и предложений нет'
 }
 
 function trainingPeriod(lessons) {
@@ -54,6 +83,7 @@ export function downloadGroupReport(group, interns, trainers) {
       Пересдача: retake ? `${examPercent(retake)}%` : '',
       'Бизнес-тренер': ownerName,
       Итог: OUTCOME_LABEL[status.code] || status.label,
+      Рекомендации: buildRecommendation(i, lessons),
       Комментарий: i.examFinalComment || '',
       Руководитель: i.managerName,
       'Контакты руководителя': i.managerContact,
