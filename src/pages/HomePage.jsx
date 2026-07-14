@@ -3,8 +3,11 @@ import { useStore } from '../store/StoreContext.jsx'
 import StagePath from '../components/StagePath.jsx'
 import { groupsWithCounts, openGroupsWithSpace } from '../lib/groups'
 import { getCurrentStage } from '../lib/stage'
+import { computeGroupStats } from '../lib/groupStats'
 import logo from '../assets/logo.jpeg'
 import ThemeToggle from '../components/ThemeToggle.jsx'
+import Avatar from '../components/Avatar.jsx'
+import EmptyState from '../components/EmptyState.jsx'
 import { formatDate } from '../lib/date'
 
 function formatWindow(g) {
@@ -150,12 +153,18 @@ export default function HomePage() {
             стажёра и посмотреть посещаемость, домашние задания и результат экзамена — без входа в систему.
           </p>
           {groupsInfo.length === 0 ? (
-            <p className="text-navy-400 dark:text-navy-500">Пока нет ни одной группы.</p>
+            <EmptyState
+              icon="🗂️"
+              title="Пока нет ни одной группы"
+              description="Как только тренер создаст группу и откроет приём анкет, она появится здесь."
+            />
           ) : (
             <div className="space-y-5">
               {groupsInfo.map((g) => {
                 const members = interns.filter((i) => i.groupId === g.id)
                 const owner = trainers.find((t) => t.id === g.ownerId)
+                const stats = computeGroupStats(g, members)
+                const hasProgress = stats.attendancePct !== null
                 return (
                   <div
                     key={g.id}
@@ -185,6 +194,25 @@ export default function HomePage() {
                       {owner?.phone && <> · {owner.phone}</>}
                       {owner?.email && <> · {owner.email}</>}
                     </p>
+                    {hasProgress && (
+                      <div className="flex flex-wrap items-center gap-3 mb-3 text-xs">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-navy-50 dark:bg-navy-800 px-2.5 py-1">
+                          <span className="text-navy-400 dark:text-navy-500">Посещаемость</span>
+                          <span className="font-semibold text-navy-700 dark:text-navy-100">{stats.attendancePct}%</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-navy-50 dark:bg-navy-800 px-2.5 py-1">
+                          <span className="text-navy-400 dark:text-navy-500">ДЗ</span>
+                          <span className="font-semibold text-navy-700 dark:text-navy-100">{stats.homeworkPct}%</span>
+                        </span>
+                        {stats.exam.passed > 0 && (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-50 dark:bg-success-500/10 px-2.5 py-1">
+                            <span className="font-semibold text-success-600 dark:text-success-400">
+                              {stats.exam.passed}/{members.length} сдали экзамен
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    )}
                     {members.length === 0 ? (
                       <p className="text-sm text-navy-400 dark:text-navy-500">Пока нет стажёров в этой группе.</p>
                     ) : (
@@ -193,12 +221,15 @@ export default function HomePage() {
                           <li key={i.id}>
                             <Link
                               to={`/progress/${i.id}`}
-                              className="flex justify-between gap-2 rounded-lg border border-navy-100 dark:border-navy-700 px-3 py-2 text-sm hover:bg-navy-50 dark:hover:bg-navy-800/60"
+                              className="flex items-center justify-between gap-2 rounded-lg border border-navy-100 dark:border-navy-700 px-3 py-2 text-sm hover:bg-navy-50 dark:hover:bg-navy-800/60"
                             >
-                              <span>
-                                {i.lastName} {i.firstName}
+                              <span className="flex items-center gap-2 min-w-0">
+                                <Avatar name={`${i.firstName} ${i.lastName}`} size={26} />
+                                <span className="truncate">
+                                  {i.lastName} {i.firstName}
+                                </span>
                               </span>
-                              <span className="text-navy-400 dark:text-navy-500">{i.city}</span>
+                              <span className="text-navy-400 dark:text-navy-500 shrink-0">{i.city}</span>
                             </Link>
                           </li>
                         ))}

@@ -4,8 +4,10 @@ import HomePage from './pages/HomePage.jsx'
 import SubmitPage from './pages/SubmitPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import ProgressPage from './pages/ProgressPage.jsx'
+import CertificatePage from './pages/CertificatePage.jsx'
 import RulesPage from './pages/RulesPage.jsx'
 import DashboardLayout from './pages/dashboard/DashboardLayout.jsx'
+import OverviewTab from './pages/dashboard/OverviewTab.jsx'
 import SettingsTab from './pages/dashboard/SettingsTab.jsx'
 import ProfileTab from './pages/dashboard/ProfileTab.jsx'
 import TrainersTab from './pages/dashboard/TrainersTab.jsx'
@@ -30,6 +32,7 @@ export default function App() {
       <Route path="/submit" element={<SubmitPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/progress/:internId" element={<ProgressPage />} />
+      <Route path="/certificate/:internId" element={<CertificatePage />} />
       <Route path="/rules" element={<RulesPage />} />
       <Route
         path="/dashboard"
@@ -39,7 +42,8 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route index element={<Navigate to="settings" replace />} />
+        <Route index element={<Navigate to="overview" replace />} />
+        <Route path="overview" element={<OverviewTab />} />
         <Route path="settings" element={<SettingsTab />} />
         <Route path="profile" element={<ProfileTab />} />
         <Route path="trainers" element={<TrainersTab />} />

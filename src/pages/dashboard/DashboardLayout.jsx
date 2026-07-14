@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
 import Avatar from '../../components/Avatar.jsx'
@@ -7,6 +7,7 @@ import ThemeToggle from '../../components/ThemeToggle.jsx'
 import logo from '../../assets/logo.jpeg'
 
 const TABS = [
+  { to: 'overview', label: 'Обзор' },
   { to: 'settings', label: 'Настройки сбора' },
   { to: 'interns', label: 'Список стажёров' },
   { to: 'whatsapp', label: 'Рассылка WhatsApp' },
@@ -21,6 +22,7 @@ const TABS = [
 export default function DashboardLayout() {
   const { currentTrainer, logout } = useStore()
   const navigate = useNavigate()
+  const location = useLocation()
   const admin = isTrainerAdmin(currentTrainer)
   const visibleTabs = TABS.filter((tab) => !tab.adminOnly || admin)
 
@@ -98,7 +100,9 @@ export default function DashboardLayout() {
           </button>
         </div>
         <main className="relative z-10 flex-1 p-4 sm:p-6 max-w-[1600px] w-full mx-auto">
-          <Outlet />
+          <div key={location.pathname} className="animate-fadein">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

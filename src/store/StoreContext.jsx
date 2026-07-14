@@ -124,8 +124,9 @@ export function StoreProvider({ children }) {
 
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-navy-400 dark:text-navy-500 dark:bg-navy-950">
-        Загрузка...
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 dark:bg-navy-950">
+        <div className="w-10 h-10 rounded-full border-4 border-navy-200 dark:border-navy-700 border-t-sky-500 animate-spin-slow" />
+        <div className="text-sm text-navy-400 dark:text-navy-500">Загрузка...</div>
       </div>
     )
   }

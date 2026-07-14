@@ -64,6 +64,11 @@ export default function ProgressPage() {
               {status.label}
             </span>
           </div>
+          {status.code === 'passed' && (
+            <Link to={`/certificate/${intern.id}`} className="btn-secondary text-sm mb-4 inline-flex">
+              🎓 Скачать сертификат
+            </Link>
+          )}
           <p className="text-navy-500 dark:text-navy-400 text-sm mb-4">
             {intern.department} · {intern.position} · {intern.city}
           </p>

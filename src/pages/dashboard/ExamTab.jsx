@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useStore } from '../../store/StoreContext.jsx'
 import { activeVisibleGroups } from '../../lib/roles'
 import {
@@ -204,6 +205,12 @@ export default function ExamTab() {
                             {status.label}
                           </span>
                         </div>
+
+                        {status.code === 'passed' && (
+                          <Link to={`/certificate/${i.id}`} target="_blank" rel="noreferrer" className="btn-secondary text-xs px-3 py-1.5 inline-flex">
+                            🎓 Сертификат
+                          </Link>
+                        )}
 
                         <div className="space-y-1.5">
                           <div className="text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">

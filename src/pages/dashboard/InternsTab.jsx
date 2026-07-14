@@ -4,8 +4,10 @@ import { HOMEWORK_STATUSES } from '../../lib/constants'
 import { uid } from '../../store/defaultData'
 import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
 import { formatDate } from '../../lib/date'
-import { getInternExamStatus } from '../../lib/exam'
+import { computeGroupStats } from '../../lib/groupStats'
 import { copyText } from '../../lib/clipboard'
+import Avatar from '../../components/Avatar.jsx'
+import EmptyState from '../../components/EmptyState.jsx'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -86,7 +88,11 @@ export default function InternsTab() {
     return (
       <div className="space-y-6">
         <h1 className="text-xl font-bold">Список стажёров</h1>
-        <p className="text-navy-400 dark:text-navy-500">Сначала создайте группу во вкладке «Настройки сбора».</p>
+        <EmptyState
+          icon="👥"
+          title="Сначала создайте группу"
+          description="Группа создаётся во вкладке «Настройки сбора» — после этого здесь появится список её стажёров."
+        />
       </div>
     )
   }
@@ -222,32 +228,7 @@ function Stat({ label, value }) {
 }
 
 function GroupSummary({ group, interns }) {
-  const stats = useMemo(() => {
-    const lessons = group.lessons || []
-    let present = 0
-    let possible = 0
-    let done = 0
-    interns.forEach((i) => {
-      lessons.forEach((l) => {
-        possible += 1
-        if (i.attendance?.[l.id]) present += 1
-        if (i.homework?.[l.id] === 'done') done += 1
-      })
-    })
-    const attendancePct = possible ? Math.round((present / possible) * 100) : null
-    const homeworkPct = possible ? Math.round((done / possible) * 100) : null
-
-    const exam = { passed: 0, retake: 0, failed: 0, notStarted: 0 }
-    interns.forEach((i) => {
-      const status = getInternExamStatus(i)
-      if (status.code === 'passed') exam.passed += 1
-      else if (status.code === 'ungraded') exam.notStarted += 1
-      else if (status.code === 'retake_pending') exam.retake += 1
-      else exam.failed += 1
-    })
-
-    return { attendancePct, homeworkPct, exam }
-  }, [group, interns])
+  const stats = useMemo(() => computeGroupStats(group, interns), [group, interns])
 
   return (
     <div className="card">
@@ -389,7 +370,12 @@ function GroupProgress({ group, interns, update }) {
               {interns.map((i) => (
                 <tr key={i.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                   <td className="sticky left-0 z-10 bg-white dark:bg-navy-900 py-2 pr-3 whitespace-nowrap font-medium align-top">
-                    {i.lastName} {i.firstName}
+                    <div className="flex items-center gap-2">
+                      <Avatar name={`${i.firstName} ${i.lastName}`} size={28} />
+                      <span>
+                        {i.lastName} {i.firstName}
+                      </span>
+                    </div>
                   </td>
                   {group.lessons.map((l) => (
                     <td key={l.id} className="py-2 px-2 align-top">
