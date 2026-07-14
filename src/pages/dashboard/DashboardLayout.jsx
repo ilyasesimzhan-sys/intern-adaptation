@@ -97,7 +97,7 @@ export default function DashboardLayout() {
             Выйти
           </button>
         </div>
-        <main className="relative z-10 flex-1 p-4 sm:p-6 max-w-5xl w-full mx-auto">
+        <main className="relative z-10 flex-1 p-4 sm:p-6 max-w-[1600px] w-full mx-auto">
           <Outlet />
         </main>
       </div>

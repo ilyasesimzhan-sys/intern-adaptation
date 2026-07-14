@@ -1,6 +1,27 @@
 import { useStore } from '../../store/StoreContext.jsx'
 import { renderTemplate, renderManagerTemplate, buildWhatsAppLink } from '../../lib/whatsapp'
 import { activeVisibleGroups } from '../../lib/roles'
+import { formatDate } from '../../lib/date'
+
+function SentBadge({ sentAt, onReset }) {
+  if (!sentAt) {
+    return (
+      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-navy-100 text-navy-500 dark:bg-navy-800 dark:text-navy-400">
+        Не отправлено
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400 whitespace-nowrap">
+        Отправлено {formatDate(sentAt)}
+      </span>
+      <button onClick={onReset} title="Отметить как неотправленное" className="text-navy-400 hover:text-navy-600 dark:hover:text-navy-200 text-xs">
+        ✕
+      </button>
+    </span>
+  )
+}
 
 const DEFAULT_TEMPLATE =
   'Здравствуйте, {name}! Вы зачислены в группу {group} адаптационной программы для стажёров ({title}). Ждём вас на первом занятии!'
@@ -31,6 +52,20 @@ export default function WhatsAppTab() {
 
   function setManagerTemplate(value) {
     update((prev) => ({ ...prev, settings: { ...prev.settings, whatsappManagerTemplate: value } }))
+  }
+
+  function markSent(internId, field) {
+    update((prev) => ({
+      ...prev,
+      interns: prev.interns.map((i) => (i.id === internId ? { ...i, [field]: new Date().toISOString() } : i)),
+    }))
+  }
+
+  function resetSent(internId, field) {
+    update((prev) => ({
+      ...prev,
+      interns: prev.interns.map((i) => (i.id === internId ? { ...i, [field]: null } : i)),
+    }))
   }
 
   if (interns.length === 0) {
@@ -67,6 +102,7 @@ export default function WhatsAppTab() {
                 <th className="py-2 pr-3">ФИО</th>
                 <th className="py-2 pr-3">Группа</th>
                 <th className="py-2 pr-3">Телефон</th>
+                <th className="py-2 pr-3">Статус</th>
                 <th className="py-2 pr-3" />
               </tr>
             </thead>
@@ -82,10 +118,14 @@ export default function WhatsAppTab() {
                     <td className="py-2 pr-3">{groupName}</td>
                     <td className="py-2 pr-3 whitespace-nowrap">{i.phone}</td>
                     <td className="py-2 pr-3">
+                      <SentBadge sentAt={i.whatsappSentAt} onReset={() => resetSent(i.id, 'whatsappSentAt')} />
+                    </td>
+                    <td className="py-2 pr-3">
                       <a
                         href={buildWhatsAppLink(i.phone, text)}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={() => markSent(i.id, 'whatsappSentAt')}
                         className="btn-success text-xs px-3 py-1.5"
                       >
                         Написать
@@ -129,6 +169,7 @@ export default function WhatsAppTab() {
                   <th className="py-2 pr-3">Стажёр</th>
                   <th className="py-2 pr-3">Группа</th>
                   <th className="py-2 pr-3">Контакты</th>
+                  <th className="py-2 pr-3">Статус</th>
                   <th className="py-2 pr-3" />
                 </tr>
               </thead>
@@ -146,10 +187,17 @@ export default function WhatsAppTab() {
                       <td className="py-2 pr-3">{group?.name ?? '—'}</td>
                       <td className="py-2 pr-3 whitespace-nowrap">{i.managerContact}</td>
                       <td className="py-2 pr-3">
+                        <SentBadge
+                          sentAt={i.whatsappManagerSentAt}
+                          onReset={() => resetSent(i.id, 'whatsappManagerSentAt')}
+                        />
+                      </td>
+                      <td className="py-2 pr-3">
                         <a
                           href={buildWhatsAppLink(i.managerContact, text)}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={() => markSent(i.id, 'whatsappManagerSentAt')}
                           className="btn-success text-xs px-3 py-1.5"
                         >
                           Написать

@@ -4,6 +4,8 @@ import { HOMEWORK_STATUSES } from '../../lib/constants'
 import { uid } from '../../store/defaultData'
 import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
 import { formatDate } from '../../lib/date'
+import { getInternExamStatus } from '../../lib/exam'
+import { copyText } from '../../lib/clipboard'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -28,15 +30,29 @@ export default function InternsTab() {
   const [groupId, setGroupId] = useState(sortedGroups[0]?.id || '')
   const [search, setSearch] = useState('')
   const [copied, setCopied] = useState(false)
+  const [linkCopiedId, setLinkCopiedId] = useState(null)
 
   const group = groups.find((g) => g.id === groupId) || null
   const groupInterns = useMemo(() => interns.filter((i) => i.groupId === groupId), [interns, groupId])
 
+  const q = search.trim().toLowerCase()
+
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
     if (!q) return groupInterns
     return groupInterns.filter((i) => COLUMNS.some((c) => String(i[c.key] ?? '').toLowerCase().includes(q)))
-  }, [groupInterns, search])
+  }, [groupInterns, q])
+
+  const visibleInterns = useMemo(() => {
+    const ids = new Set(sortedGroups.map((g) => g.id))
+    return interns.filter((i) => ids.has(i.groupId))
+  }, [interns, sortedGroups])
+
+  const crossMatches = useMemo(() => {
+    if (!q) return []
+    return visibleInterns
+      .filter((i) => i.groupId !== groupId && COLUMNS.some((c) => String(i[c.key] ?? '').toLowerCase().includes(q)))
+      .slice(0, 8)
+  }, [visibleInterns, groupId, q])
 
   function patchIntern(id, patch) {
     update((prev) => ({
@@ -50,41 +66,20 @@ export default function InternsTab() {
     update((prev) => ({ ...prev, interns: prev.interns.filter((i) => i.id !== id) }))
   }
 
-  function copyTable() {
+  async function copyTable() {
     const header = COLUMNS.map((c) => c.label).join('\t')
     const rows = filtered.map((i) => COLUMNS.map((c) => i[c.key] ?? '').join('\t'))
     const text = [header, ...rows].join('\n')
+    const ok = await copyText(text)
+    setCopied(ok ? 'success' : 'error')
+    setTimeout(() => setCopied(false), 2000)
+  }
 
-    function fallbackCopy() {
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      textarea.style.position = 'fixed'
-      textarea.style.opacity = '0'
-      document.body.appendChild(textarea)
-      textarea.select()
-      let ok = false
-      try {
-        ok = document.execCommand('copy')
-      } catch {
-        ok = false
-      }
-      document.body.removeChild(textarea)
-      return ok
-    }
-
-    function showResult(ok) {
-      setCopied(ok ? 'success' : 'error')
-      setTimeout(() => setCopied(false), 2000)
-    }
-
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard
-        .writeText(text)
-        .then(() => showResult(true))
-        .catch(() => showResult(fallbackCopy()))
-    } else {
-      showResult(fallbackCopy())
-    }
+  async function copyLink(internId) {
+    const url = `${window.location.origin}${window.location.pathname}#/progress/${internId}`
+    await copyText(url)
+    setLinkCopiedId(internId)
+    setTimeout(() => setLinkCopiedId(null), 2000)
   }
 
   if (sortedGroups.length === 0) {
@@ -109,10 +104,12 @@ export default function InternsTab() {
         </select>
       </div>
 
+      {group && <GroupSummary group={group} interns={groupInterns} />}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <input
           className="field-input max-w-xs"
-          placeholder="Поиск..."
+          placeholder="Поиск по всем группам..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -120,6 +117,31 @@ export default function InternsTab() {
           {copied === 'success' ? 'Скопировано!' : copied === 'error' ? 'Не удалось скопировать' : 'Копировать таблицу'}
         </button>
       </div>
+
+      {crossMatches.length > 0 && (
+        <div className="text-sm bg-navy-50 dark:bg-navy-800 rounded-lg p-3 space-y-2">
+          <div className="text-xs font-semibold text-navy-500 dark:text-navy-400">Найдено в других группах:</div>
+          {crossMatches.map((i) => {
+            const g = groups.find((gr) => gr.id === i.groupId)
+            return (
+              <div key={i.id} className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  {i.lastName} {i.firstName} — <span className="text-navy-500 dark:text-navy-400">{g?.name || '—'}</span>
+                </span>
+                <button
+                  className="btn-secondary text-xs px-2 py-1"
+                  onClick={() => {
+                    setGroupId(i.groupId)
+                    setSearch('')
+                  }}
+                >
+                  Показать
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div className="card overflow-x-auto">
         <table className="w-full text-sm min-w-[1000px]">
@@ -130,6 +152,7 @@ export default function InternsTab() {
                   {c.label}
                 </th>
               ))}
+              <th className="py-2 pr-3" />
               {admin && <th className="py-2 pr-3" />}
             </tr>
           </thead>
@@ -145,6 +168,14 @@ export default function InternsTab() {
                     />
                   </td>
                 ))}
+                <td className="py-1.5 pr-3">
+                  <button
+                    onClick={() => copyLink(intern.id)}
+                    className="btn-secondary text-xs px-2 py-1 whitespace-nowrap"
+                  >
+                    {linkCopiedId === intern.id ? 'Скопировано!' : 'Ссылка'}
+                  </button>
+                </td>
                 {admin && (
                   <td className="py-1.5 pr-3">
                     <button
@@ -160,7 +191,7 @@ export default function InternsTab() {
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={COLUMNS.length + (admin ? 1 : 0)}
+                  colSpan={COLUMNS.length + 1 + (admin ? 1 : 0)}
                   className="py-6 text-center text-navy-400 dark:text-navy-500"
                 >
                   Анкет не найдено
@@ -181,12 +212,69 @@ export default function InternsTab() {
   )
 }
 
+function Stat({ label, value }) {
+  return (
+    <div>
+      <div className="text-xl font-bold">{value}</div>
+      <div className="text-xs text-navy-500 dark:text-navy-400">{label}</div>
+    </div>
+  )
+}
+
+function GroupSummary({ group, interns }) {
+  const stats = useMemo(() => {
+    const lessons = group.lessons || []
+    let present = 0
+    let possible = 0
+    let done = 0
+    interns.forEach((i) => {
+      lessons.forEach((l) => {
+        possible += 1
+        if (i.attendance?.[l.id]) present += 1
+        if (i.homework?.[l.id] === 'done') done += 1
+      })
+    })
+    const attendancePct = possible ? Math.round((present / possible) * 100) : null
+    const homeworkPct = possible ? Math.round((done / possible) * 100) : null
+
+    const exam = { passed: 0, retake: 0, failed: 0, notStarted: 0 }
+    interns.forEach((i) => {
+      const status = getInternExamStatus(i)
+      if (status.code === 'passed') exam.passed += 1
+      else if (status.code === 'ungraded') exam.notStarted += 1
+      else if (status.code === 'retake_pending') exam.retake += 1
+      else exam.failed += 1
+    })
+
+    return { attendancePct, homeworkPct, exam }
+  }, [group, interns])
+
+  return (
+    <div className="card">
+      <h2 className="font-semibold mb-4">Сводка по группе</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Stat label="Стажёров" value={interns.length} />
+        <Stat label="Посещаемость" value={stats.attendancePct === null ? '—' : `${stats.attendancePct}%`} />
+        <Stat label="ДЗ выполнено" value={stats.homeworkPct === null ? '—' : `${stats.homeworkPct}%`} />
+        <Stat
+          label="Экзамен"
+          value={
+            <span className="text-sm font-normal space-x-2">
+              <span className="text-success-600 dark:text-success-400 font-semibold">{stats.exam.passed} сдали</span>
+              <span className="text-warning-600 dark:text-warning-500 font-semibold">{stats.exam.retake} пересдача</span>
+              <span className="text-danger-500 font-semibold">{stats.exam.failed} не сдали</span>
+              <span className="text-navy-400 dark:text-navy-500 font-semibold">{stats.exam.notStarted} не начат</span>
+            </span>
+          }
+        />
+      </div>
+    </div>
+  )
+}
+
 function GroupProgress({ group, interns, update }) {
   const [newLessonName, setNewLessonName] = useState('')
   const [newLessonDate, setNewLessonDate] = useState('')
-  const [activeLessonId, setActiveLessonId] = useState(group.lessons[0]?.id || '')
-
-  const activeLesson = group.lessons.find((l) => l.id === activeLessonId)
 
   function patchGroup(patch) {
     update((prev) => ({
@@ -199,7 +287,6 @@ function GroupProgress({ group, interns, update }) {
     if (!newLessonName.trim()) return
     const lesson = { id: uid(), name: newLessonName.trim(), date: newLessonDate }
     patchGroup({ lessons: [...group.lessons, lesson] })
-    setActiveLessonId(lesson.id)
     setNewLessonName('')
     setNewLessonDate('')
   }
@@ -207,34 +294,31 @@ function GroupProgress({ group, interns, update }) {
   function removeLesson(id) {
     if (!confirm('Удалить это занятие? Отметки посещаемости и ДЗ по нему будут потеряны.')) return
     patchGroup({ lessons: group.lessons.filter((l) => l.id !== id) })
-    if (activeLessonId === id) setActiveLessonId('')
   }
 
-  function toggleAttendance(internId) {
+  function toggleAttendance(internId, lessonId) {
     update((prev) => ({
       ...prev,
       interns: prev.interns.map((i) =>
-        i.id === internId
-          ? { ...i, attendance: { ...i.attendance, [activeLessonId]: !i.attendance[activeLessonId] } }
-          : i,
+        i.id === internId ? { ...i, attendance: { ...i.attendance, [lessonId]: !i.attendance[lessonId] } } : i,
       ),
     }))
   }
 
-  function setHomework(internId, value) {
+  function setHomework(internId, lessonId, value) {
     update((prev) => ({
       ...prev,
       interns: prev.interns.map((i) =>
-        i.id === internId ? { ...i, homework: { ...i.homework, [activeLessonId]: value } } : i,
+        i.id === internId ? { ...i, homework: { ...i.homework, [lessonId]: value } } : i,
       ),
     }))
   }
 
-  function setComment(internId, value) {
+  function setComment(internId, lessonId, value) {
     update((prev) => ({
       ...prev,
       interns: prev.interns.map((i) =>
-        i.id === internId ? { ...i, comments: { ...i.comments, [activeLessonId]: value } } : i,
+        i.id === internId ? { ...i, comments: { ...i.comments, [lessonId]: value } } : i,
       ),
     }))
   }
@@ -242,33 +326,6 @@ function GroupProgress({ group, interns, update }) {
   return (
     <div className="card space-y-4">
       <h2 className="font-semibold">Прогресс — {group.name}</h2>
-
-      <div className="flex flex-wrap gap-2">
-        {group.lessons.map((l) => (
-          <button
-            key={l.id}
-            onClick={() => setActiveLessonId(l.id)}
-            className={
-              'px-3 py-1.5 rounded-full text-sm border flex items-center gap-2 ' +
-              (l.id === activeLessonId
-                ? 'bg-navy-700 text-white border-navy-700 dark:bg-sky-500 dark:border-sky-500 dark:text-navy-950'
-                : 'bg-white text-navy-700 border-navy-200 hover:bg-navy-50 dark:bg-navy-800 dark:text-navy-100 dark:border-navy-600 dark:hover:bg-navy-700')
-            }
-          >
-            {l.name}
-            {l.date ? ` · ${formatDate(l.date)}` : ''}
-            <span
-              onClick={(e) => {
-                e.stopPropagation()
-                removeLesson(l.id)
-              }}
-              className="opacity-60 hover:opacity-100"
-            >
-              ✕
-            </span>
-          </button>
-        ))}
-      </div>
 
       <div className="flex flex-wrap gap-2 items-end">
         <div>
@@ -296,59 +353,79 @@ function GroupProgress({ group, interns, update }) {
 
       {interns.length === 0 ? (
         <p className="text-navy-400 dark:text-navy-500">В группе нет стажёров.</p>
-      ) : !activeLesson ? (
-        <p className="text-navy-400 dark:text-navy-500">Добавьте и выберите занятие, чтобы отмечать посещаемость.</p>
+      ) : group.lessons.length === 0 ? (
+        <p className="text-navy-400 dark:text-navy-500">Добавьте занятие, чтобы отмечать посещаемость.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[800px]">
+          <table className="text-sm border-separate border-spacing-0">
             <thead>
-              <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
-                <th className="py-2 pr-3">ФИО</th>
-                <th className="py-2 pr-3">Присутствие</th>
-                <th className="py-2 pr-3">Домашнее задание</th>
-                <th className="py-2 pr-3">Комментарий тренера</th>
+              <tr className="text-left text-navy-500 dark:text-navy-400">
+                <th className="sticky left-0 z-10 bg-white dark:bg-navy-900 py-2 pr-3 whitespace-nowrap border-b border-navy-100 dark:border-navy-700">
+                  ФИО
+                </th>
+                {group.lessons.map((l) => (
+                  <th
+                    key={l.id}
+                    className="py-2 px-2 min-w-[190px] border-b border-navy-100 dark:border-navy-700 align-bottom"
+                  >
+                    <div className="flex items-center justify-between gap-2 font-medium">
+                      <span>
+                        {l.name}
+                        {l.date ? ` · ${formatDate(l.date)}` : ''}
+                      </span>
+                      <span
+                        onClick={() => removeLesson(l.id)}
+                        className="opacity-60 hover:opacity-100 cursor-pointer shrink-0"
+                        title="Удалить занятие"
+                      >
+                        ✕
+                      </span>
+                    </div>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {interns.map((i) => (
                 <tr key={i.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
-                  <td className="py-2 pr-3 whitespace-nowrap">
+                  <td className="sticky left-0 z-10 bg-white dark:bg-navy-900 py-2 pr-3 whitespace-nowrap font-medium align-top">
                     {i.lastName} {i.firstName}
                   </td>
-                  <td className="py-2 pr-3">
-                    <button
-                      onClick={() => toggleAttendance(i.id)}
-                      className={
-                        'px-3 py-1 rounded-full text-xs font-semibold ' +
-                        (i.attendance[activeLessonId]
-                          ? 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400'
-                          : 'bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400')
-                      }
-                    >
-                      {i.attendance[activeLessonId] ? 'Присутствовал' : 'Отсутствовал'}
-                    </button>
-                  </td>
-                  <td className="py-2 pr-3">
-                    <select
-                      className="field-input min-w-[150px]"
-                      value={i.homework[activeLessonId] || ''}
-                      onChange={(e) => setHomework(i.id, e.target.value)}
-                    >
-                      <option value="">Не указано</option>
-                      {HOMEWORK_STATUSES.map((h) => (
-                        <option key={h.value} value={h.value}>
-                          {h.label}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="py-2 pr-3">
-                    <input
-                      className="field-input min-w-[180px]"
-                      value={i.comments?.[activeLessonId] || ''}
-                      onChange={(e) => setComment(i.id, e.target.value)}
-                    />
-                  </td>
+                  {group.lessons.map((l) => (
+                    <td key={l.id} className="py-2 px-2 align-top">
+                      <div className="space-y-1.5">
+                        <button
+                          onClick={() => toggleAttendance(i.id, l.id)}
+                          className={
+                            'w-full px-2 py-1 rounded-full text-xs font-semibold ' +
+                            (i.attendance[l.id]
+                              ? 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400'
+                              : 'bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400')
+                          }
+                        >
+                          {i.attendance[l.id] ? 'Присутствовал' : 'Отсутствовал'}
+                        </button>
+                        <select
+                          className="field-input text-xs py-1"
+                          value={i.homework[l.id] || ''}
+                          onChange={(e) => setHomework(i.id, l.id, e.target.value)}
+                        >
+                          <option value="">ДЗ: не указано</option>
+                          {HOMEWORK_STATUSES.map((h) => (
+                            <option key={h.value} value={h.value}>
+                              {h.label}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          className="field-input text-xs py-1"
+                          placeholder="Комментарий"
+                          value={i.comments?.[l.id] || ''}
+                          onChange={(e) => setComment(i.id, l.id, e.target.value)}
+                        />
+                      </div>
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>

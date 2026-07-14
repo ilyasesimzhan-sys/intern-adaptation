@@ -38,6 +38,12 @@ export default function ProgressPage() {
   }
 
   const lessons = group?.lessons || []
+  const status = getInternExamStatus(intern)
+
+  const attended = lessons.filter((l) => intern.attendance[l.id]).length
+  const attendancePct = lessons.length ? Math.round((attended / lessons.length) * 100) : null
+  const homeworkDone = lessons.filter((l) => intern.homework[l.id] === 'done').length
+  const homeworkPct = lessons.length ? Math.round((homeworkDone / lessons.length) * 100) : null
 
   return (
     <div className="min-h-screen py-8 px-4">
@@ -50,14 +56,45 @@ export default function ProgressPage() {
         </div>
 
         <div className="card">
-          <h1 className="text-xl font-bold mb-1">
-            {intern.lastName} {intern.firstName}
-          </h1>
+          <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
+            <h1 className="text-xl font-bold">
+              {intern.lastName} {intern.firstName}
+            </h1>
+            <span className={'px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ' + status.cls}>
+              {status.label}
+            </span>
+          </div>
           <p className="text-navy-500 dark:text-navy-400 text-sm mb-4">
             {intern.department} · {intern.position} · {intern.city}
           </p>
-          <div className="text-sm">
+          <div className="text-sm mb-4">
             Группа: <span className="font-medium">{group?.name || '—'}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-navy-100 dark:border-navy-800">
+            <div>
+              <div className="text-xl font-bold">
+                {attendancePct === null ? '—' : `${attendancePct}%`}
+                {lessons.length > 0 && (
+                  <span className="text-sm font-normal text-navy-400 dark:text-navy-500">
+                    {' '}
+                    ({attended}/{lessons.length})
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-navy-500 dark:text-navy-400">Посещаемость</div>
+            </div>
+            <div>
+              <div className="text-xl font-bold">
+                {homeworkPct === null ? '—' : `${homeworkPct}%`}
+                {lessons.length > 0 && (
+                  <span className="text-sm font-normal text-navy-400 dark:text-navy-500">
+                    {' '}
+                    ({homeworkDone}/{lessons.length})
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-navy-500 dark:text-navy-400">ДЗ выполнено</div>
+            </div>
           </div>
         </div>
 
