@@ -55,6 +55,20 @@ export default function ProgressPage() {
           <ThemeToggle />
         </div>
 
+        {intern.withdrawn && (
+          <div className="card border-danger-500/40 bg-danger-50/60 dark:bg-danger-500/5">
+            <div className="flex items-center gap-2 text-danger-600 dark:text-danger-400 font-semibold">
+              <span aria-hidden="true">⛔</span>
+              <span>
+                Стажёр отказался от обучения{intern.withdrawnAt ? ` · ${formatDate(intern.withdrawnAt)}` : ''}
+              </span>
+            </div>
+            {intern.withdrawnReason && (
+              <p className="text-sm text-navy-600 dark:text-navy-300 mt-1">Причина: {intern.withdrawnReason}</p>
+            )}
+          </div>
+        )}
+
         <div className="card">
           <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
             <h1 className="text-xl font-bold">
@@ -64,9 +78,9 @@ export default function ProgressPage() {
               {status.label}
             </span>
           </div>
-          {status.code === 'passed' && (
+          {(status.code === 'passed' || status.code === 'training') && (
             <Link to={`/certificate/${intern.id}`} className="btn-secondary text-sm mb-4 inline-flex">
-              🎓 Скачать сертификат
+              {status.code === 'passed' ? '🎓 Скачать сертификат' : '📄 Уведомление о результате'}
             </Link>
           )}
           <p className="text-navy-500 dark:text-navy-400 text-sm mb-4">

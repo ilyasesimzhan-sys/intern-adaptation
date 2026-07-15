@@ -23,6 +23,19 @@ export function getRetakeAnswers(intern) {
   return intern.examRetakeAnswers || null
 }
 
+export function getExamDate(intern) {
+  return intern.examDate || ''
+}
+
+export function getRetakeDate(intern) {
+  return intern.examRetakeDate || ''
+}
+
+// Дата попытки, которая сейчас определяет итог — та же логика выбора, что и у getActiveAnswers.
+export function getActiveExamDate(intern) {
+  return getRetakeAnswers(intern) ? getRetakeDate(intern) : getExamDate(intern)
+}
+
 // Ответы, которые сейчас определяют итог: пересдача, если она уже назначена, иначе первая попытка.
 export function getActiveAnswers(intern) {
   return getRetakeAnswers(intern) || getExamAnswers(intern)

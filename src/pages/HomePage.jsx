@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
 import StagePath from '../components/StagePath.jsx'
 import { groupsWithCounts, openGroupsWithSpace } from '../lib/groups'
 import { getCurrentStage } from '../lib/stage'
 import { computeGroupStats } from '../lib/groupStats'
+import { filterInternsBySearch } from '../lib/internSearch'
 import logo from '../assets/logo.jpeg'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 import Avatar from '../components/Avatar.jsx'
@@ -55,12 +57,22 @@ export default function HomePage() {
   const { data } = useStore()
   const { settings, groups, interns, trainers } = data
   const stage = getCurrentStage(groups, interns)
+  const [search, setSearch] = useState('')
 
   const groupsInfo = groupsWithCounts(groups, interns).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
   )
   const openGroups = openGroupsWithSpace(groups, interns)
   const collectionOpen = openGroups.length > 0
+
+  const query = search.trim()
+  const groupRows = groupsInfo
+    .map((g) => {
+      const members = interns.filter((i) => i.groupId === g.id)
+      const visibleMembers = filterInternsBySearch(members, query)
+      return { group: g, members, visibleMembers }
+    })
+    .filter((r) => !query || r.visibleMembers.length > 0)
 
   return (
     <div className="min-h-screen">
@@ -159,13 +171,22 @@ export default function HomePage() {
               description="Как только тренер создаст группу и откроет приём анкет, она появится здесь."
             />
           ) : (
-            <div className="space-y-5">
-              {groupsInfo.map((g) => {
-                const members = interns.filter((i) => i.groupId === g.id)
-                const owner = trainers.find((t) => t.id === g.ownerId)
-                const stats = computeGroupStats(g, members)
-                const hasProgress = stats.attendancePct !== null
-                return (
+            <>
+              <input
+                className="field-input max-w-xs mb-4"
+                placeholder="Поиск стажёра по ФИО, городу, подразделению..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {groupRows.length === 0 ? (
+                <p className="text-sm text-navy-400 dark:text-navy-500">Совпадений не найдено.</p>
+              ) : (
+                <div className="space-y-5">
+                  {groupRows.map(({ group: g, members, visibleMembers }) => {
+                    const owner = trainers.find((t) => t.id === g.ownerId)
+                    const stats = computeGroupStats(g, members)
+                    const hasProgress = stats.attendancePct !== null
+                    return (
                   <div
                     key={g.id}
                     className={
@@ -217,17 +238,25 @@ export default function HomePage() {
                       <p className="text-sm text-navy-400 dark:text-navy-500">Пока нет стажёров в этой группе.</p>
                     ) : (
                       <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {members.map((i) => (
+                        {visibleMembers.map((i) => (
                           <li key={i.id}>
                             <Link
                               to={`/progress/${i.id}`}
-                              className="flex items-center justify-between gap-2 rounded-lg border border-navy-100 dark:border-navy-700 px-3 py-2 text-sm hover:bg-navy-50 dark:hover:bg-navy-800/60"
+                              className={
+                                'flex items-center justify-between gap-2 rounded-lg border border-navy-100 dark:border-navy-700 px-3 py-2 text-sm hover:bg-navy-50 dark:hover:bg-navy-800/60 ' +
+                                (i.withdrawn ? 'opacity-60' : '')
+                              }
                             >
                               <span className="flex items-center gap-2 min-w-0">
                                 <Avatar name={`${i.firstName} ${i.lastName}`} size={26} />
-                                <span className="truncate">
+                                <span className={'truncate ' + (i.withdrawn ? 'line-through text-navy-400 dark:text-navy-500' : '')}>
                                   {i.lastName} {i.firstName}
                                 </span>
+                                {i.withdrawn && (
+                                  <span className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400">
+                                    Отказался
+                                  </span>
+                                )}
                               </span>
                               <span className="text-navy-400 dark:text-navy-500 shrink-0">{i.city}</span>
                             </Link>
@@ -236,9 +265,11 @@ export default function HomePage() {
                       </ul>
                     )}
                   </div>
-                )
-              })}
-            </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>

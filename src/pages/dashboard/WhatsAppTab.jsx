@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { renderTemplate, renderManagerTemplate, buildWhatsAppLink } from '../../lib/whatsapp'
 import { activeVisibleGroups } from '../../lib/roles'
 import { formatDate } from '../../lib/date'
+import { filterInternsBySearch } from '../../lib/internSearch'
 
 function SentBadge({ sentAt, onReset }) {
   if (!sentAt) {
@@ -37,6 +39,8 @@ export default function WhatsAppTab() {
   const template = settings.whatsappTemplate ?? DEFAULT_TEMPLATE
   const managerTemplate = settings.whatsappManagerTemplate ?? DEFAULT_MANAGER_TEMPLATE
 
+  const [search, setSearch] = useState('')
+
   const myGroups = activeVisibleGroups(groups, currentTrainer)
   const myGroupIds = new Set(myGroups.map((g) => g.id))
   const interns = allInterns.filter((i) => myGroupIds.has(i.groupId))
@@ -45,6 +49,9 @@ export default function WhatsAppTab() {
   const startedGroups = myGroups.filter((g) => !g.isOpen && g.endDate)
   const startedGroupIds = new Set(startedGroups.map((g) => g.id))
   const managerInterns = interns.filter((i) => startedGroupIds.has(i.groupId))
+
+  const visibleInterns = filterInternsBySearch(interns, search)
+  const visibleManagerInterns = filterInternsBySearch(managerInterns, search)
 
   function setTemplate(value) {
     update((prev) => ({ ...prev, settings: { ...prev.settings, whatsappTemplate: value } }))
@@ -81,6 +88,13 @@ export default function WhatsAppTab() {
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Рассылка WhatsApp</h1>
 
+      <input
+        className="field-input max-w-xs"
+        placeholder="Поиск по ФИО, email, телефону..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
       <section className="space-y-4">
         <h2 className="font-semibold">Стажёрам</h2>
         <div className="card space-y-2">
@@ -107,7 +121,14 @@ export default function WhatsAppTab() {
               </tr>
             </thead>
             <tbody>
-              {interns.map((i) => {
+              {visibleInterns.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-4 text-center text-navy-400 dark:text-navy-500">
+                    Совпадений не найдено
+                  </td>
+                </tr>
+              )}
+              {visibleInterns.map((i) => {
                 const groupName = groups.find((g) => g.id === i.groupId)?.name ?? '—'
                 const text = renderTemplate(template, i, groupName)
                 return (
@@ -174,7 +195,14 @@ export default function WhatsAppTab() {
                 </tr>
               </thead>
               <tbody>
-                {managerInterns.map((i) => {
+                {visibleManagerInterns.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-4 text-center text-navy-400 dark:text-navy-500">
+                      Совпадений не найдено
+                    </td>
+                  </tr>
+                )}
+                {visibleManagerInterns.map((i) => {
                   const group = groups.find((g) => g.id === i.groupId)
                   const trainer = trainers.find((t) => t.id === group?.ownerId) || currentTrainer
                   const text = renderManagerTemplate(managerTemplate, i, group?.name, group?.endDate, trainer)

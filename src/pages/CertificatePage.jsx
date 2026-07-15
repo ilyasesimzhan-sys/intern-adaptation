@@ -1,7 +1,15 @@
 import { Link, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
-import { getActiveAnswers, examPercent, getInternExamStatus } from '../lib/exam'
-import { formatDate } from '../lib/date'
+import {
+  getActiveAnswers,
+  examCorrectCount,
+  examPercent,
+  getInternExamStatus,
+  getActiveExamDate,
+  EXAM_QUESTION_COUNT,
+} from '../lib/exam'
+import { formatDate, trainingPeriod } from '../lib/date'
+import logo from '../assets/logo.jpeg'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 
 export default function CertificatePage() {
@@ -25,15 +33,17 @@ export default function CertificatePage() {
   }
 
   const status = getInternExamStatus(intern)
-  const percent = examPercent(getActiveAnswers(intern))
+  const isPassed = status.code === 'passed'
+  const isTraining = status.code === 'training'
 
-  if (status.code !== 'passed') {
+  if (!isPassed && !isTraining) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="card max-w-md text-center">
-          <h1 className="text-xl font-bold mb-2">Сертификат недоступен</h1>
+          <h1 className="text-xl font-bold mb-2">Документ недоступен</h1>
           <p className="text-navy-500 dark:text-navy-400 mb-4">
-            Сертификат выдаётся только после успешной сдачи итогового экзамена.
+            Сертификат или уведомление о результате появляются здесь только после того, как по итоговому экзамену
+            принято окончательное решение.
           </p>
           <Link to={`/progress/${intern.id}`} className="btn-secondary">
             К прогрессу стажёра
@@ -43,6 +53,11 @@ export default function CertificatePage() {
     )
   }
 
+  const activeAnswers = getActiveAnswers(intern)
+  const correct = examCorrectCount(activeAnswers)
+  const percent = examPercent(activeAnswers)
+  const examDate = getActiveExamDate(intern)
+  const period = trainingPeriod(group?.lessons)
   const issueDate = group?.endDate ? formatDate(group.endDate) : formatDate(new Date().toISOString())
 
   return (
@@ -72,32 +87,77 @@ export default function CertificatePage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto mt-6 print:mt-0 print:max-w-none">
-        <div className="relative bg-white text-navy-900 rounded-2xl shadow-sm border-4 border-double border-navy-700 p-10 sm:p-14 print:border-navy-700 print:rounded-none print:shadow-none">
-          <div className="absolute inset-3 border border-navy-200 rounded-xl pointer-events-none" />
-
-          <div className="relative text-center space-y-6">
-            <div className="text-xs font-semibold tracking-[0.3em] uppercase text-sky-600">
-              {data.settings.programName}
+      <div className="max-w-4xl mx-auto mt-6 print:mt-0 print:max-w-none">
+        <div className="relative bg-white text-navy-900 rounded-2xl shadow-sm border border-navy-100 overflow-hidden flex flex-col sm:flex-row print:rounded-none print:shadow-none print:border-0">
+          <div className="sm:w-48 shrink-0 bg-navy-900 flex flex-row sm:flex-col items-center justify-center gap-4 sm:gap-3 py-6 sm:py-10 px-6 print:bg-navy-900">
+            <div className="bg-white rounded-xl p-3 shrink-0">
+              <img src={logo} alt="Kazakhtelecom Corporate University" className="h-10 sm:h-12 w-auto" />
             </div>
-            <div className="font-display text-3xl sm:text-4xl font-extrabold text-navy-800">Сертификат</div>
-            <p className="text-navy-500 text-sm">подтверждает, что</p>
-            <div className="font-display text-2xl sm:text-3xl font-bold text-navy-900 py-2 border-b-2 border-navy-200 inline-block px-8">
+            <div className="text-navy-100 text-xs sm:text-[11px] text-left sm:text-center tracking-[0.15em] uppercase leading-relaxed">
+              Kazakhtelecom
+              <br />
+              Corporate University
+            </div>
+          </div>
+
+          <div className="flex-1 p-8 sm:p-12">
+            <div
+              className={
+                'text-xs font-semibold uppercase tracking-[0.25em] ' + (isPassed ? 'text-sky-600' : 'text-warning-600')
+              }
+            >
+              {isPassed ? 'Сертификат' : 'Уведомление о результате'}
+            </div>
+            <div className="font-display text-2xl sm:text-3xl font-bold text-navy-900 mt-2">
               {intern.lastName} {intern.firstName}
             </div>
-            <p className="text-navy-600 text-sm max-w-lg mx-auto">
-              успешно прошёл(-ла) адаптационную программу{group ? ` в группе «${group.name}»` : ''} и сдал(-а)
-              итоговый экзамен с результатом <span className="font-semibold text-success-600">{percent}%</span>.
+            <p className="text-sm text-navy-400 mt-1">
+              {intern.department} · {intern.position} · {intern.city}
             </p>
 
-            <div className="flex flex-wrap items-end justify-center gap-10 pt-8 text-sm">
-              <div className="text-center">
-                <div className="w-40 border-t border-navy-300 pt-1 text-navy-500">Дата</div>
-                <div className="font-medium">{issueDate}</div>
+            <p className="text-navy-600 text-sm max-w-xl mt-5 leading-relaxed">
+              {isPassed ? (
+                <>
+                  успешно прошёл(-ла) адаптационную программу{group ? ` в группе «${group.name}»` : ''}
+                  {period ? ` (${period})` : ''} и сдал(-а) итоговый экзамен с результатом{' '}
+                  <span className="font-semibold text-success-600">
+                    {correct}/{EXAM_QUESTION_COUNT} ({percent}%)
+                  </span>
+                  .
+                </>
+              ) : (
+                <>
+                  прошёл(-ла) адаптационную программу{group ? ` в группе «${group.name}»` : ''}
+                  {period ? ` (${period})` : ''}, но, к сожалению, по итогам итогового экзамена не набрал(а)
+                  проходной балл — результат{' '}
+                  <span className="font-semibold text-danger-500">
+                    {correct}/{EXAM_QUESTION_COUNT} ({percent}%)
+                  </span>{' '}
+                  — и направлен(а) на дополнительное обучение.
+                </>
+              )}
+            </p>
+
+            {isTraining && intern.examFinalComment && (
+              <p className="text-sm text-navy-500 max-w-xl mt-3 italic">«{intern.examFinalComment}»</p>
+            )}
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mt-8 pt-6 border-t border-navy-100">
+              <div>
+                <div className="text-xs text-navy-400">Обучение</div>
+                <div className="text-sm font-medium mt-0.5">{period || '—'}</div>
               </div>
-              <div className="text-center">
-                <div className="w-40 border-t border-navy-300 pt-1 text-navy-500">Бизнес-тренер</div>
-                <div className="font-medium">{trainer?.name || '—'}</div>
+              <div>
+                <div className="text-xs text-navy-400">Дата экзамена</div>
+                <div className="text-sm font-medium mt-0.5">{examDate ? formatDate(examDate) : '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs text-navy-400">Бизнес-тренер</div>
+                <div className="text-sm font-medium mt-0.5">{trainer?.name || '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs text-navy-400">Дата выдачи</div>
+                <div className="text-sm font-medium mt-0.5">{issueDate}</div>
               </div>
             </div>
           </div>

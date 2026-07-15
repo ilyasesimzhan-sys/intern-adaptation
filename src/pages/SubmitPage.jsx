@@ -103,6 +103,9 @@ export default function SubmitPage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="card max-w-md text-center">
+          <div className="w-12 h-12 rounded-full bg-navy-100 dark:bg-navy-800 flex items-center justify-center text-2xl mx-auto mb-4">
+            🔒
+          </div>
           <h1 className="text-xl font-bold mb-2">Приём анкет закрыт</h1>
           <p className="text-navy-500 dark:text-navy-400 mb-4">
             Сейчас нет ни одной открытой группы. Обратитесь к тренеру за информацией о следующем наборе.
@@ -119,6 +122,9 @@ export default function SubmitPage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="card max-w-md text-center">
+          <div className="w-12 h-12 rounded-full bg-success-50 dark:bg-success-500/10 flex items-center justify-center text-2xl mx-auto mb-4">
+            ✅
+          </div>
           <h1 className="text-xl font-bold mb-2 text-success-600 dark:text-success-400">Анкета отправлена</h1>
           <p className="text-navy-500 dark:text-navy-400 mb-4">Спасибо! Данные стажёра приняты.</p>
           <Link to="/" className="btn-secondary">
@@ -128,14 +134,6 @@ export default function SubmitPage() {
       </div>
     )
   }
-
-  const fieldsBeforeDepartment = [
-    { key: 'lastName', label: 'Фамилия стажёра' },
-    { key: 'firstName', label: 'Имя стажёра' },
-    { key: 'email', label: 'Электронная почта', type: 'email' },
-  ]
-  const fieldsBeforePhone = [{ key: 'position', label: 'Должность' }]
-  const fieldsAfterPhone = [{ key: 'managerName', label: 'ФИО руководителя' }]
 
   function renderField({ key, label, type }) {
     return (
@@ -174,6 +172,17 @@ export default function SubmitPage() {
     )
   }
 
+  function SectionHeader({ icon, title }) {
+    return (
+      <div className="flex items-center gap-2 pt-2 first:pt-0">
+        <span className="w-6 h-6 rounded-md bg-navy-50 dark:bg-navy-800 flex items-center justify-center text-sm shrink-0">
+          {icon}
+        </span>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">{title}</h2>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-xl mx-auto">
@@ -202,61 +211,74 @@ export default function SubmitPage() {
             {errors.groupId && <p className="text-danger-500 text-xs mt-1">{errors.groupId}</p>}
           </div>
 
-          {fieldsBeforeDepartment.map(renderField)}
-
-          <div>
-            <label className="field-label">Подразделение</label>
-            <select
-              className="field-input"
-              value={form.department}
-              onChange={(e) => handleChange('department', e.target.value)}
-            >
-              <option value="">Выберите подразделение</option>
-              {DEPARTMENTS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-            {errors.department && <p className="text-danger-500 text-xs mt-1">{errors.department}</p>}
+          <SectionHeader icon="👤" title="Данные стажёра" />
+          <div className="space-y-4 pl-8">
+            {renderField({ key: 'lastName', label: 'Фамилия стажёра' })}
+            {renderField({ key: 'firstName', label: 'Имя стажёра' })}
+            {renderField({ key: 'email', label: 'Электронная почта', type: 'email' })}
+            {renderPhoneField('phone', 'Контактный телефон стажёра')}
           </div>
 
-          {fieldsBeforePhone.map(renderField)}
+          <div className="border-t border-navy-100 dark:border-navy-800" />
 
-          {renderPhoneField('phone', 'Контактный телефон стажёра')}
-
-          {fieldsAfterPhone.map(renderField)}
-
-          {renderPhoneField('managerContact', 'Контакты руководителя')}
-
-          <div>
-            <label className="field-label">Город</label>
-            <select
-              className="field-input"
-              value={form.city}
-              onChange={(e) => handleChange('city', e.target.value)}
-            >
-              <option value="">Выберите город</option>
-              {KZ_CITIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            {errors.city && <p className="text-danger-500 text-xs mt-1">{errors.city}</p>}
-          </div>
-
-          {form.city === 'Другой' && (
+          <SectionHeader icon="🏢" title="Подразделение и город" />
+          <div className="space-y-4 pl-8">
             <div>
-              <label className="field-label">Укажите город или село</label>
-              <input
+              <label className="field-label">Подразделение</label>
+              <select
                 className="field-input"
-                value={form.cityOther}
-                onChange={(e) => handleChange('cityOther', e.target.value)}
-              />
-              {errors.cityOther && <p className="text-danger-500 text-xs mt-1">{errors.cityOther}</p>}
+                value={form.department}
+                onChange={(e) => handleChange('department', e.target.value)}
+              >
+                <option value="">Выберите подразделение</option>
+                {DEPARTMENTS.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+              {errors.department && <p className="text-danger-500 text-xs mt-1">{errors.department}</p>}
             </div>
-          )}
+
+            {renderField({ key: 'position', label: 'Должность' })}
+
+            <div>
+              <label className="field-label">Город</label>
+              <select
+                className="field-input"
+                value={form.city}
+                onChange={(e) => handleChange('city', e.target.value)}
+              >
+                <option value="">Выберите город</option>
+                {KZ_CITIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              {errors.city && <p className="text-danger-500 text-xs mt-1">{errors.city}</p>}
+            </div>
+
+            {form.city === 'Другой' && (
+              <div>
+                <label className="field-label">Укажите город или село</label>
+                <input
+                  className="field-input"
+                  value={form.cityOther}
+                  onChange={(e) => handleChange('cityOther', e.target.value)}
+                />
+                {errors.cityOther && <p className="text-danger-500 text-xs mt-1">{errors.cityOther}</p>}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-navy-100 dark:border-navy-800" />
+
+          <SectionHeader icon="🧑‍💼" title="Руководитель" />
+          <div className="space-y-4 pl-8">
+            {renderField({ key: 'managerName', label: 'ФИО руководителя' })}
+            {renderPhoneField('managerContact', 'Контакты руководителя')}
+          </div>
 
           <button type="submit" className="btn-primary w-full">
             Отправить анкету

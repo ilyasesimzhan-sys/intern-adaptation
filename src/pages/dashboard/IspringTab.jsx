@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
 import { downloadIspringReport } from '../../lib/ispringReport'
+import { filterInternsBySearch } from '../../lib/internSearch'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -15,6 +17,7 @@ export default function IspringTab() {
   const { data, update, currentTrainer } = useStore()
   const { groups, interns: allInterns } = data
   const admin = isTrainerAdmin(currentTrainer)
+  const [searchByGroup, setSearchByGroup] = useState({})
 
   const myGroups = activeVisibleGroups(groups, currentTrainer).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
@@ -45,6 +48,8 @@ export default function IspringTab() {
         <div className="space-y-6">
           {startedGroups.map((group) => {
             const interns = allInterns.filter((i) => i.groupId === group.id)
+            const groupSearch = searchByGroup[group.id] || ''
+            const visibleInterns = filterInternsBySearch(interns, groupSearch)
             return (
               <div key={group.id} className="card space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -61,6 +66,13 @@ export default function IspringTab() {
                 {interns.length === 0 ? (
                   <p className="text-navy-400 dark:text-navy-500 text-sm">В группе пока нет стажёров.</p>
                 ) : (
+                  <>
+                    <input
+                      className="field-input max-w-xs"
+                      placeholder="Поиск по ФИО, email..."
+                      value={groupSearch}
+                      onChange={(e) => setSearchByGroup((prev) => ({ ...prev, [group.id]: e.target.value }))}
+                    />
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm min-w-[900px]">
                       <thead>
@@ -75,7 +87,17 @@ export default function IspringTab() {
                         </tr>
                       </thead>
                       <tbody>
-                        {interns.map((i) => (
+                        {visibleInterns.length === 0 && (
+                          <tr>
+                            <td
+                              colSpan={COLUMNS.length + 2}
+                              className="py-4 text-center text-navy-400 dark:text-navy-500"
+                            >
+                              Совпадений не найдено
+                            </td>
+                          </tr>
+                        )}
+                        {visibleInterns.map((i) => (
                           <tr key={i.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                             {COLUMNS.map((c) => (
                               <td key={c.key} className="py-1.5 pr-3 whitespace-nowrap">
@@ -109,6 +131,7 @@ export default function IspringTab() {
                       </tbody>
                     </table>
                   </div>
+                  </>
                 )}
               </div>
             )

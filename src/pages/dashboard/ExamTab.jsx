@@ -14,6 +14,7 @@ import {
   isInternResolved,
 } from '../../lib/exam'
 import { downloadGroupReport } from '../../lib/examReport'
+import { filterInternsBySearch } from '../../lib/internSearch'
 import ExamAnswerList from '../../components/ExamAnswerList.jsx'
 
 function nextAnswerState(value) {
@@ -27,6 +28,7 @@ export default function ExamTab() {
   const { settings, interns: allInterns, trainers } = data
   const [endingId, setEndingId] = useState(null)
   const [endComment, setEndComment] = useState('')
+  const [searchByGroup, setSearchByGroup] = useState({})
 
   const myGroups = activeVisibleGroups(data.groups, currentTrainer).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
@@ -34,6 +36,13 @@ export default function ExamTab() {
 
   function patchSettings(patch) {
     update((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
+  }
+
+  function patchInternField(internId, field, value) {
+    update((prev) => ({
+      ...prev,
+      interns: prev.interns.map((i) => (i.id === internId ? { ...i, [field]: value } : i)),
+    }))
   }
 
   function patchInternQuestion(internId, questionIdx, text) {
@@ -127,11 +136,14 @@ export default function ExamTab() {
         <p className="text-navy-400 dark:text-navy-500">Сначала создайте группу во вкладке «Настройки сбора».</p>
       ) : (
         myGroups.map((group) => {
-          const interns = allInterns.filter((i) => i.groupId === group.id)
+          const groupInterns = allInterns.filter((i) => i.groupId === group.id)
+          const interns = groupInterns.filter((i) => !i.withdrawn)
           const statuses = interns.map((i) => getInternExamStatus(i))
           const passedCount = statuses.filter((s) => s.code === 'passed').length
           const droppedCount = statuses.filter((s) => s.code === 'ended' || s.code === 'training').length
           const allResolved = interns.length > 0 && statuses.every((s) => isInternResolved(s))
+          const groupSearch = searchByGroup[group.id] || ''
+          const visibleInterns = filterInternsBySearch(interns, groupSearch)
 
           return (
             <div key={group.id} className="card space-y-4">
@@ -139,8 +151,8 @@ export default function ExamTab() {
                 <h2 className="font-semibold">{group.name}</h2>
                 <div className="flex flex-wrap gap-2">
                   <button
-                    onClick={() => downloadGroupReport(group, interns, trainers)}
-                    disabled={interns.length === 0}
+                    onClick={() => downloadGroupReport(group, groupInterns, trainers)}
+                    disabled={groupInterns.length === 0}
                     className="btn-secondary text-sm"
                   >
                     Выгрузить отчёт
@@ -173,6 +185,14 @@ export default function ExamTab() {
                     {interns.length - passedCount - droppedCount}
                   </span>
                 </div>
+                {groupInterns.length - interns.length > 0 && (
+                  <div>
+                    Отказались:{' '}
+                    <span className="font-semibold text-navy-400 dark:text-navy-500">
+                      {groupInterns.length - interns.length}
+                    </span>
+                  </div>
+                )}
               </div>
               {!allResolved && interns.length > 0 && (
                 <p className="text-xs text-warning-600 dark:text-warning-500">
@@ -184,9 +204,19 @@ export default function ExamTab() {
               {interns.length === 0 ? (
                 <p className="text-navy-400 dark:text-navy-500 text-sm">В группе пока нет стажёров.</p>
               ) : (
+                <>
+                  <input
+                    className="field-input max-w-xs"
+                    placeholder="Поиск по ФИО, email, телефону..."
+                    value={groupSearch}
+                    onChange={(e) => setSearchByGroup((prev) => ({ ...prev, [group.id]: e.target.value }))}
+                  />
+                  {visibleInterns.length === 0 && (
+                    <p className="text-navy-400 dark:text-navy-500 text-sm">Совпадений не найдено.</p>
+                  )}
                 <div className="space-y-3">
-                  {interns.map((i, idx) => {
-                    const status = statuses[idx]
+                  {visibleInterns.map((i) => {
+                    const status = getInternExamStatus(i)
                     const questions = getExamQuestions(i)
                     const first = getExamAnswers(i)
                     const retake = getRetakeAnswers(i)
@@ -206,15 +236,23 @@ export default function ExamTab() {
                           </span>
                         </div>
 
-                        {status.code === 'passed' && (
+                        {(status.code === 'passed' || status.code === 'training') && (
                           <Link to={`/certificate/${i.id}`} target="_blank" rel="noreferrer" className="btn-secondary text-xs px-3 py-1.5 inline-flex">
-                            🎓 Сертификат
+                            {status.code === 'passed' ? '🎓 Сертификат' : '📄 Уведомление'}
                           </Link>
                         )}
 
                         <div className="space-y-1.5">
-                          <div className="text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
-                            Первая попытка · {examCorrectCount(first)}/{EXAM_QUESTION_COUNT} ({examPercent(first)}%)
+                          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
+                            <span>
+                              Первая попытка · {examCorrectCount(first)}/{EXAM_QUESTION_COUNT} ({examPercent(first)}%)
+                            </span>
+                            <input
+                              type="date"
+                              className="field-input text-xs py-0.5 px-1.5 normal-case font-normal tracking-normal w-auto"
+                              value={i.examDate || ''}
+                              onChange={(e) => patchInternField(i.id, 'examDate', e.target.value)}
+                            />
                           </div>
                           <ExamAnswerList
                             questions={questions}
@@ -226,8 +264,16 @@ export default function ExamTab() {
 
                         {retake && (
                           <div className="space-y-1.5">
-                            <div className="text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
-                              Пересдача · {examCorrectCount(retake)}/{EXAM_QUESTION_COUNT} ({examPercent(retake)}%)
+                            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
+                              <span>
+                                Пересдача · {examCorrectCount(retake)}/{EXAM_QUESTION_COUNT} ({examPercent(retake)}%)
+                              </span>
+                              <input
+                                type="date"
+                                className="field-input text-xs py-0.5 px-1.5 normal-case font-normal tracking-normal w-auto"
+                                value={i.examRetakeDate || ''}
+                                onChange={(e) => patchInternField(i.id, 'examRetakeDate', e.target.value)}
+                              />
                             </div>
                             <ExamAnswerList
                               questions={questions}
@@ -297,6 +343,7 @@ export default function ExamTab() {
                     )
                   })}
                 </div>
+                </>
               )}
             </div>
           )

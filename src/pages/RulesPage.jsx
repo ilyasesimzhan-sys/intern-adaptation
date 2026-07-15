@@ -16,7 +16,12 @@ export default function RulesPage() {
         </div>
 
         <div className="card">
-          <h1 className="text-xl font-bold mb-4">Правила адаптационной программы</h1>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-10 h-10 rounded-xl bg-navy-700 dark:bg-sky-500 flex items-center justify-center text-lg shrink-0">
+              📋
+            </span>
+            <h1 className="text-xl font-bold">Правила адаптационной программы</h1>
+          </div>
           {data.settings.programRules ? (
             <p className="text-sm whitespace-pre-wrap text-navy-700 dark:text-navy-200">
               {data.settings.programRules}

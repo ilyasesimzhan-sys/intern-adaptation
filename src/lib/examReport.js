@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
 import { getExamAnswers, getRetakeAnswers, getActiveAnswers, getExamQuestions, examPercent, getInternExamStatus } from './exam'
-import { formatDate } from './date'
+import { formatDate, trainingPeriod } from './date'
 
 const HOMEWORK_SCORE = { done: 100, partial: 50, not_done: 0 }
 
@@ -51,14 +51,6 @@ function buildRecommendation(intern, lessons) {
   return notes.length > 0 ? notes.join('. ') : 'Замечаний и предложений нет'
 }
 
-function trainingPeriod(lessons) {
-  const dates = lessons.map((l) => l.date).filter(Boolean).sort()
-  if (dates.length === 0) return ''
-  const first = dates[0]
-  const last = dates[dates.length - 1]
-  return first === last ? formatDate(first) : `${formatDate(first)} — ${formatDate(last)}`
-}
-
 // Сводная выгрузка по группе для служебных целей: одна строка на стажёра с итоговыми процентами,
 // а не детализация по дням и вопросам. Доступна только из кабинета тренера.
 export function downloadGroupReport(group, interns, trainers) {
@@ -82,9 +74,9 @@ export function downloadGroupReport(group, interns, trainers) {
       'Результат экзамена, %': `${examPercent(first)}%`,
       Пересдача: retake ? `${examPercent(retake)}%` : '',
       'Бизнес-тренер': ownerName,
-      Итог: OUTCOME_LABEL[status.code] || status.label,
+      Итог: i.withdrawn ? 'Отказался от обучения' : OUTCOME_LABEL[status.code] || status.label,
       Рекомендации: buildRecommendation(i, lessons),
-      Комментарий: i.examFinalComment || '',
+      Комментарий: i.withdrawn ? i.withdrawnReason || 'Причина не указана' : i.examFinalComment || '',
       Руководитель: i.managerName,
       'Контакты руководителя': i.managerContact,
     }

@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
 import { getActiveAnswers, examPercent, getInternExamStatus } from '../../lib/exam'
 import { formatDate } from '../../lib/date'
+import { filterInternsBySearch } from '../../lib/internSearch'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -19,6 +21,7 @@ export default function ArchiveTab() {
   const { data, update, currentTrainer } = useStore()
   const { groups, interns, trainers } = data
   const admin = isTrainerAdmin(currentTrainer)
+  const [searchByGroup, setSearchByGroup] = useState({})
 
   const archived = groups
     .filter((g) => g.archived)
@@ -49,6 +52,8 @@ export default function ArchiveTab() {
             const ownerName = trainers.find((t) => t.id === g.ownerId)?.name || 'без владельца'
             const statuses = members.map((i) => getInternExamStatus(i))
             const passed = statuses.filter((s) => s.code === 'passed')
+            const groupSearch = searchByGroup[g.id] || ''
+            const visibleMembers = filterInternsBySearch(members, groupSearch)
 
             return (
               <div key={g.id} className="card space-y-4">
@@ -80,6 +85,15 @@ export default function ArchiveTab() {
                   </div>
                 </div>
 
+                {members.length > 0 && (
+                  <input
+                    className="field-input max-w-xs"
+                    placeholder="Поиск по ФИО, email, телефону..."
+                    value={groupSearch}
+                    onChange={(e) => setSearchByGroup((prev) => ({ ...prev, [g.id]: e.target.value }))}
+                  />
+                )}
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm min-w-[900px]">
                     <thead>
@@ -94,9 +108,9 @@ export default function ArchiveTab() {
                       </tr>
                     </thead>
                     <tbody>
-                      {members.map((i, idx) => {
+                      {visibleMembers.map((i) => {
                         const answers = getActiveAnswers(i)
-                        const status = statuses[idx]
+                        const status = getInternExamStatus(i)
                         return (
                           <tr key={i.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                             {COLUMNS.map((c) => (
@@ -120,6 +134,16 @@ export default function ArchiveTab() {
                             className="py-4 text-center text-navy-400 dark:text-navy-500"
                           >
                             В группе не было стажёров
+                          </td>
+                        </tr>
+                      )}
+                      {members.length > 0 && visibleMembers.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={COLUMNS.length + 2}
+                            className="py-4 text-center text-navy-400 dark:text-navy-500"
+                          >
+                            Совпадений не найдено
                           </td>
                         </tr>
                       )}

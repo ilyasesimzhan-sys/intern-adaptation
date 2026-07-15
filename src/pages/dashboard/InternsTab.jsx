@@ -6,6 +6,7 @@ import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
 import { formatDate } from '../../lib/date'
 import { computeGroupStats } from '../../lib/groupStats'
 import { copyText } from '../../lib/clipboard'
+import { filterInternsBySearch, internMatchesQuery } from '../../lib/internSearch'
 import Avatar from '../../components/Avatar.jsx'
 import EmptyState from '../../components/EmptyState.jsx'
 
@@ -39,10 +40,7 @@ export default function InternsTab() {
 
   const q = search.trim().toLowerCase()
 
-  const filtered = useMemo(() => {
-    if (!q) return groupInterns
-    return groupInterns.filter((i) => COLUMNS.some((c) => String(i[c.key] ?? '').toLowerCase().includes(q)))
-  }, [groupInterns, q])
+  const filtered = useMemo(() => filterInternsBySearch(groupInterns, q), [groupInterns, q])
 
   const visibleInterns = useMemo(() => {
     const ids = new Set(sortedGroups.map((g) => g.id))
@@ -51,9 +49,7 @@ export default function InternsTab() {
 
   const crossMatches = useMemo(() => {
     if (!q) return []
-    return visibleInterns
-      .filter((i) => i.groupId !== groupId && COLUMNS.some((c) => String(i[c.key] ?? '').toLowerCase().includes(q)))
-      .slice(0, 8)
+    return visibleInterns.filter((i) => i.groupId !== groupId && internMatchesQuery(i, q)).slice(0, 8)
   }, [visibleInterns, groupId, q])
 
   function patchIntern(id, patch) {
@@ -115,7 +111,7 @@ export default function InternsTab() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <input
           className="field-input max-w-xs"
-          placeholder="Поиск по всем группам..."
+          placeholder="Поиск по ФИО, email, телефону..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -208,7 +204,9 @@ export default function InternsTab() {
         </table>
       </div>
 
-      {group && !group.isOpen && <GroupProgress group={group} interns={groupInterns} update={update} />}
+      {group && !group.isOpen && (
+        <GroupProgress group={group} interns={filtered} totalCount={groupInterns.length} update={update} />
+      )}
       {group && group.isOpen && (
         <p className="text-sm text-navy-400 dark:text-navy-500">
           Посещаемость и домашние задания станут доступны здесь после закрытия группы.
@@ -234,7 +232,22 @@ function GroupSummary({ group, interns }) {
     <div className="card">
       <h2 className="font-semibold mb-4">Сводка по группе</h2>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Stat label="Стажёров" value={interns.length} />
+        <Stat
+          label="Стажёров"
+          value={
+            stats.withdrawnCount > 0 ? (
+              <>
+                {stats.internCount}
+                <span className="text-sm font-normal text-navy-400 dark:text-navy-500">
+                  {' '}
+                  (+{stats.withdrawnCount} отказались)
+                </span>
+              </>
+            ) : (
+              interns.length
+            )
+          }
+        />
         <Stat label="Посещаемость" value={stats.attendancePct === null ? '—' : `${stats.attendancePct}%`} />
         <Stat label="ДЗ выполнено" value={stats.homeworkPct === null ? '—' : `${stats.homeworkPct}%`} />
         <Stat
@@ -253,7 +266,7 @@ function GroupSummary({ group, interns }) {
   )
 }
 
-function GroupProgress({ group, interns, update }) {
+function GroupProgress({ group, interns, totalCount, update }) {
   const [newLessonName, setNewLessonName] = useState('')
   const [newLessonDate, setNewLessonDate] = useState('')
 
@@ -304,6 +317,29 @@ function GroupProgress({ group, interns, update }) {
     }))
   }
 
+  function withdrawIntern(internId) {
+    if (!confirm('Отметить стажёра как отказавшегося от обучения? Он будет исключён из статистики группы, но останется в списке.')) return
+    const reason = (window.prompt('Причина отказа (необязательно, будет видна в прогрессе стажёра):', '') || '').trim()
+    update((prev) => ({
+      ...prev,
+      interns: prev.interns.map((i) =>
+        i.id === internId
+          ? { ...i, withdrawn: true, withdrawnAt: new Date().toISOString(), withdrawnReason: reason }
+          : i,
+      ),
+    }))
+  }
+
+  function restoreIntern(internId) {
+    if (!confirm('Вернуть стажёра в активное обучение?')) return
+    update((prev) => ({
+      ...prev,
+      interns: prev.interns.map((i) =>
+        i.id === internId ? { ...i, withdrawn: false, withdrawnAt: '', withdrawnReason: '' } : i,
+      ),
+    }))
+  }
+
   return (
     <div className="card space-y-4">
       <h2 className="font-semibold">Прогресс — {group.name}</h2>
@@ -333,7 +369,9 @@ function GroupProgress({ group, interns, update }) {
       </div>
 
       {interns.length === 0 ? (
-        <p className="text-navy-400 dark:text-navy-500">В группе нет стажёров.</p>
+        <p className="text-navy-400 dark:text-navy-500">
+          {totalCount > 0 ? 'Совпадений не найдено.' : 'В группе нет стажёров.'}
+        </p>
       ) : group.lessons.length === 0 ? (
         <p className="text-navy-400 dark:text-navy-500">Добавьте занятие, чтобы отмечать посещаемость.</p>
       ) : (
@@ -368,13 +406,46 @@ function GroupProgress({ group, interns, update }) {
             </thead>
             <tbody>
               {interns.map((i) => (
-                <tr key={i.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
+                <tr
+                  key={i.id}
+                  className={
+                    'border-b border-navy-50 dark:border-navy-800 last:border-0 ' +
+                    (i.withdrawn ? 'opacity-50' : '')
+                  }
+                >
                   <td className="sticky left-0 z-10 bg-white dark:bg-navy-900 py-2 pr-3 whitespace-nowrap font-medium align-top">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-start gap-2">
                       <Avatar name={`${i.firstName} ${i.lastName}`} size={28} />
-                      <span>
-                        {i.lastName} {i.firstName}
-                      </span>
+                      <div>
+                        <span className={i.withdrawn ? 'line-through text-navy-400 dark:text-navy-500' : ''}>
+                          {i.lastName} {i.firstName}
+                        </span>
+                        {i.withdrawn ? (
+                          <div className="mt-1 space-y-0.5">
+                            <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400">
+                              Отказался{i.withdrawnAt ? ` · ${formatDate(i.withdrawnAt)}` : ''}
+                            </span>
+                            {i.withdrawnReason && (
+                              <p className="text-[11px] text-navy-400 dark:text-navy-500 max-w-[160px] whitespace-normal">
+                                {i.withdrawnReason}
+                              </p>
+                            )}
+                            <button
+                              onClick={() => restoreIntern(i.id)}
+                              className="block text-[11px] text-navy-400 hover:text-success-600 dark:hover:text-success-400 underline"
+                            >
+                              Восстановить
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => withdrawIntern(i.id)}
+                            className="block mt-1 text-[11px] text-navy-400 hover:text-danger-500 dark:hover:text-danger-400 underline font-normal"
+                          >
+                            Отказался от обучения
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </td>
                   {group.lessons.map((l) => (
