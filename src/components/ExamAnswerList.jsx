@@ -26,11 +26,11 @@ export default function ExamAnswerList({ questions, answers, onToggle, onQuestio
         const key = stateKey(a)
         const questionText = questions?.[idx]?.trim()
         return (
-          <div key={idx} className="flex items-center gap-3 px-3 py-2 text-sm">
+          <div key={idx} className="flex items-center gap-3 px-4 py-2.5 text-base">
             <span className="text-navy-400 dark:text-navy-500 shrink-0">{idx + 1}.</span>
             {onQuestionChange ? (
               <input
-                className="flex-1 min-w-0 border-none bg-transparent px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-navy-300 dark:focus:ring-sky-500 rounded"
+                className="flex-1 min-w-0 border-none bg-transparent px-1 py-0.5 text-base focus:outline-none focus:ring-1 focus:ring-navy-300 dark:focus:ring-sky-500 rounded"
                 value={questions?.[idx] || ''}
                 onChange={(e) => onQuestionChange(idx, e.target.value)}
                 placeholder={`Текст вопроса ${idx + 1}`}
@@ -48,12 +48,12 @@ export default function ExamAnswerList({ questions, answers, onToggle, onQuestio
               <button
                 type="button"
                 onClick={() => onToggle(idx)}
-                className={'shrink-0 px-2.5 py-1 rounded-md text-xs font-semibold border transition-colors ' + BUTTON_CLASSES[key]}
+                className={'shrink-0 px-3 py-1.5 rounded-md text-sm font-semibold border transition-colors ' + BUTTON_CLASSES[key]}
               >
                 {LABEL[key]}
               </button>
             ) : (
-              <span className={'shrink-0 px-2.5 py-1 rounded-md text-xs font-semibold ' + READONLY_CLASSES[key]}>
+              <span className={'shrink-0 px-3 py-1.5 rounded-md text-sm font-semibold ' + READONLY_CLASSES[key]}>
                 {LABEL[key]}
               </span>
             )}
