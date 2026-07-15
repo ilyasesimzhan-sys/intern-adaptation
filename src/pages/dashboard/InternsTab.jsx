@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
-import { HOMEWORK_STATUSES } from '../../lib/constants'
+import { HOMEWORK_STATUSES, KZ_CITIES, DEPARTMENTS } from '../../lib/constants'
 import { uid } from '../../store/defaultData'
+import { emptyExamAnswers, emptyExamQuestions } from '../../lib/exam'
 import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
 import { formatDate } from '../../lib/date'
 import { computeGroupStats } from '../../lib/groupStats'
@@ -9,6 +10,19 @@ import { copyText } from '../../lib/clipboard'
 import { filterInternsBySearch, internMatchesQuery } from '../../lib/internSearch'
 import Avatar from '../../components/Avatar.jsx'
 import EmptyState from '../../components/EmptyState.jsx'
+
+const EMPTY_MANUAL_FORM = {
+  lastName: '',
+  firstName: '',
+  email: '',
+  department: '',
+  position: '',
+  phone: '',
+  managerName: '',
+  managerContact: '',
+  city: '',
+  cityOther: '',
+}
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
@@ -34,6 +48,8 @@ export default function InternsTab() {
   const [search, setSearch] = useState('')
   const [copied, setCopied] = useState(false)
   const [linkCopiedId, setLinkCopiedId] = useState(null)
+  const [addingManually, setAddingManually] = useState(false)
+  const [manualForm, setManualForm] = useState(EMPTY_MANUAL_FORM)
 
   const group = groups.find((g) => g.id === groupId) || null
   const groupInterns = useMemo(() => interns.filter((i) => i.groupId === groupId), [interns, groupId])
@@ -62,6 +78,35 @@ export default function InternsTab() {
   function deleteIntern(id) {
     if (!confirm('Удалить эту анкету?')) return
     update((prev) => ({ ...prev, interns: prev.interns.filter((i) => i.id !== id) }))
+  }
+
+  function addInternManually(e) {
+    e.preventDefault()
+    if (!manualForm.lastName.trim() || !manualForm.firstName.trim()) return
+    const { cityOther, ...rest } = manualForm
+    const now = new Date().toISOString()
+    update((prev) => ({
+      ...prev,
+      interns: [
+        ...prev.interns,
+        {
+          id: uid(),
+          ...rest,
+          city: manualForm.city === 'Другой' ? cityOther.trim() : manualForm.city,
+          groupId,
+          attendance: {},
+          homework: {},
+          comments: {},
+          examQuestions: emptyExamQuestions(),
+          examAnswers: emptyExamAnswers(),
+          createdAt: now,
+          addedByTrainer: true,
+          joinedAt: now.slice(0, 10),
+        },
+      ],
+    }))
+    setManualForm(EMPTY_MANUAL_FORM)
+    setAddingManually(false)
   }
 
   async function copyTable() {
@@ -115,10 +160,141 @@ export default function InternsTab() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button onClick={copyTable} className="btn-secondary shrink-0">
-          {copied === 'success' ? 'Скопировано!' : copied === 'error' ? 'Не удалось скопировать' : 'Копировать таблицу'}
-        </button>
+        <div className="flex gap-2 shrink-0">
+          <button onClick={() => setAddingManually((v) => !v)} className="btn-secondary">
+            {addingManually ? 'Отмена' : '+ Добавить стажёра'}
+          </button>
+          <button onClick={copyTable} className="btn-secondary">
+            {copied === 'success' ? 'Скопировано!' : copied === 'error' ? 'Не удалось скопировать' : 'Копировать таблицу'}
+          </button>
+        </div>
       </div>
+
+      {addingManually && (
+        <form onSubmit={addInternManually} className="card space-y-3">
+          <h2 className="font-semibold">Добавить стажёра вручную</h2>
+          <p className="text-xs text-navy-400 dark:text-navy-500">
+            Будет отмечен как добавленный тренером. Посещаемость и ДЗ будут учитываться в сводке группы только начиная
+            с сегодняшней даты — прошедшие занятия на его статистику не повлияют.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div>
+              <label className="field-label">Фамилия</label>
+              <input
+                className="field-input"
+                value={manualForm.lastName}
+                onChange={(e) => setManualForm((f) => ({ ...f, lastName: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label className="field-label">Имя</label>
+              <input
+                className="field-input"
+                value={manualForm.firstName}
+                onChange={(e) => setManualForm((f) => ({ ...f, firstName: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label className="field-label">Email</label>
+              <input
+                type="email"
+                className="field-input"
+                value={manualForm.email}
+                onChange={(e) => setManualForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="field-label">Подразделение</label>
+              <select
+                className="field-input"
+                value={manualForm.department}
+                onChange={(e) => setManualForm((f) => ({ ...f, department: e.target.value }))}
+              >
+                <option value="">Выберите подразделение</option>
+                {DEPARTMENTS.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="field-label">Должность</label>
+              <input
+                className="field-input"
+                value={manualForm.position}
+                onChange={(e) => setManualForm((f) => ({ ...f, position: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="field-label">Телефон</label>
+              <input
+                className="field-input"
+                value={manualForm.phone}
+                onChange={(e) => setManualForm((f) => ({ ...f, phone: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="field-label">ФИО руководителя</label>
+              <input
+                className="field-input"
+                value={manualForm.managerName}
+                onChange={(e) => setManualForm((f) => ({ ...f, managerName: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="field-label">Контакты руководителя</label>
+              <input
+                className="field-input"
+                value={manualForm.managerContact}
+                onChange={(e) => setManualForm((f) => ({ ...f, managerContact: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="field-label">Город</label>
+              <select
+                className="field-input"
+                value={manualForm.city}
+                onChange={(e) => setManualForm((f) => ({ ...f, city: e.target.value }))}
+              >
+                <option value="">Выберите город</option>
+                {KZ_CITIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {manualForm.city === 'Другой' && (
+              <div>
+                <label className="field-label">Укажите город или село</label>
+                <input
+                  className="field-input"
+                  value={manualForm.cityOther}
+                  onChange={(e) => setManualForm((f) => ({ ...f, cityOther: e.target.value }))}
+                />
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button type="submit" className="btn-primary">
+              Добавить
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAddingManually(false)
+                setManualForm(EMPTY_MANUAL_FORM)
+              }}
+              className="btn-secondary"
+            >
+              Отмена
+            </button>
+          </div>
+        </form>
+      )}
 
       {crossMatches.length > 0 && (
         <div className="text-sm bg-navy-50 dark:bg-navy-800 rounded-lg p-3 space-y-2">
@@ -155,6 +331,7 @@ export default function InternsTab() {
                 </th>
               ))}
               <th className="py-2 pr-3" />
+              <th className="py-2 pr-3" />
               {admin && <th className="py-2 pr-3" />}
             </tr>
           </thead>
@@ -170,6 +347,16 @@ export default function InternsTab() {
                     />
                   </td>
                 ))}
+                <td className="py-1.5 pr-3 whitespace-nowrap">
+                  {intern.addedByTrainer && (
+                    <span
+                      className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400"
+                      title={intern.joinedAt ? `Добавлен тренером · ${formatDate(intern.joinedAt)}` : 'Добавлен тренером'}
+                    >
+                      Добавлен тренером
+                    </span>
+                  )}
+                </td>
                 <td className="py-1.5 pr-3">
                   <button
                     onClick={() => copyLink(intern.id)}
@@ -193,7 +380,7 @@ export default function InternsTab() {
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={COLUMNS.length + 1 + (admin ? 1 : 0)}
+                  colSpan={COLUMNS.length + 2 + (admin ? 1 : 0)}
                   className="py-6 text-center text-navy-400 dark:text-navy-500"
                 >
                   Анкет не найдено
@@ -420,6 +607,16 @@ function GroupProgress({ group, interns, totalCount, update }) {
                         <span className={i.withdrawn ? 'line-through text-navy-400 dark:text-navy-500' : ''}>
                           {i.lastName} {i.firstName}
                         </span>
+                        {i.addedByTrainer && (
+                          <div className="mt-1">
+                            <span
+                              className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400"
+                              title="Добавлен тренером, не через анкету"
+                            >
+                              Добавлен тренером{i.joinedAt ? ` · ${formatDate(i.joinedAt)}` : ''}
+                            </span>
+                          </div>
+                        )}
                         {i.withdrawn ? (
                           <div className="mt-1 space-y-0.5">
                             <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400">
@@ -448,41 +645,53 @@ function GroupProgress({ group, interns, totalCount, update }) {
                       </div>
                     </div>
                   </td>
-                  {group.lessons.map((l) => (
-                    <td key={l.id} className="py-2 px-2 align-top">
-                      <div className="space-y-1.5">
-                        <button
-                          onClick={() => toggleAttendance(i.id, l.id)}
-                          className={
-                            'w-full px-2 py-1 rounded-full text-xs font-semibold ' +
-                            (i.attendance[l.id]
-                              ? 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400'
-                              : 'bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400')
-                          }
-                        >
-                          {i.attendance[l.id] ? 'Присутствовал' : 'Отсутствовал'}
-                        </button>
-                        <select
-                          className="field-input text-xs py-1"
-                          value={i.homework[l.id] || ''}
-                          onChange={(e) => setHomework(i.id, l.id, e.target.value)}
-                        >
-                          <option value="">ДЗ: не указано</option>
-                          {HOMEWORK_STATUSES.map((h) => (
-                            <option key={h.value} value={h.value}>
-                              {h.label}
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          className="field-input text-xs py-1"
-                          placeholder="Комментарий"
-                          value={i.comments?.[l.id] || ''}
-                          onChange={(e) => setComment(i.id, l.id, e.target.value)}
-                        />
-                      </div>
-                    </td>
-                  ))}
+                  {group.lessons.map((l) => {
+                    const beforeJoin = i.joinedAt && l.date && l.date < i.joinedAt
+                    return (
+                      <td key={l.id} className="py-2 px-2 align-top">
+                        {beforeJoin ? (
+                          <div
+                            className="text-xs text-navy-400 dark:text-navy-500 italic py-1"
+                            title="Стажёр добавлен позже этого занятия — не учитывается в статистике"
+                          >
+                            До добавления
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <button
+                              onClick={() => toggleAttendance(i.id, l.id)}
+                              className={
+                                'w-full px-2 py-1 rounded-full text-xs font-semibold ' +
+                                (i.attendance[l.id]
+                                  ? 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400'
+                                  : 'bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400')
+                              }
+                            >
+                              {i.attendance[l.id] ? 'Присутствовал' : 'Отсутствовал'}
+                            </button>
+                            <select
+                              className="field-input text-xs py-1"
+                              value={i.homework[l.id] || ''}
+                              onChange={(e) => setHomework(i.id, l.id, e.target.value)}
+                            >
+                              <option value="">ДЗ: не указано</option>
+                              {HOMEWORK_STATUSES.map((h) => (
+                                <option key={h.value} value={h.value}>
+                                  {h.label}
+                                </option>
+                              ))}
+                            </select>
+                            <input
+                              className="field-input text-xs py-1"
+                              placeholder="Комментарий"
+                              value={i.comments?.[l.id] || ''}
+                              onChange={(e) => setComment(i.id, l.id, e.target.value)}
+                            />
+                          </div>
+                        )}
+                      </td>
+                    )
+                  })}
                 </tr>
               ))}
             </tbody>

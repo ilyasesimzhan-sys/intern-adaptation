@@ -10,7 +10,9 @@ export function computeGroupStats(group, interns) {
   let possible = 0
   let done = 0
   active.forEach((i) => {
-    lessons.forEach((l) => {
+    // Стажёры, добавленные тренером вручную посреди обучения, не штрафуются за занятия до даты добавления.
+    const internLessons = i.joinedAt ? lessons.filter((l) => !l.date || l.date >= i.joinedAt) : lessons
+    internLessons.forEach((l) => {
       possible += 1
       if (i.attendance?.[l.id]) present += 1
       if (i.homework?.[l.id] === 'done') done += 1

@@ -192,7 +192,9 @@ export default function ProgressPage() {
 
                 {intern.examFinalComment && (
                   <div className="text-sm bg-navy-50 dark:bg-navy-800 rounded-lg p-3">
-                    <span className="font-medium">Комментарий по завершению экзамена: </span>
+                    <span className="font-medium">
+                      {status.code === 'training' ? 'Рекомендации к доп. обучению: ' : 'Комментарий по завершению экзамена: '}
+                    </span>
                     {intern.examFinalComment}
                   </div>
                 )}

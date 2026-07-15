@@ -12,6 +12,7 @@ import {
   examPercent,
   getInternExamStatus,
   isInternResolved,
+  getWeakTopics,
 } from '../../lib/exam'
 import { downloadGroupReport } from '../../lib/examReport'
 import { filterInternsBySearch } from '../../lib/internSearch'
@@ -28,6 +29,8 @@ export default function ExamTab() {
   const { settings, interns: allInterns, trainers } = data
   const [endingId, setEndingId] = useState(null)
   const [endComment, setEndComment] = useState('')
+  const [trainingId, setTrainingId] = useState(null)
+  const [trainingComment, setTrainingComment] = useState('')
   const [searchByGroup, setSearchByGroup] = useState({})
 
   const myGroups = activeVisibleGroups(data.groups, currentTrainer).sort(
@@ -103,6 +106,25 @@ export default function ExamTab() {
     setFinalOutcome(internId, 'ended', endComment.trim())
     setEndingId(null)
     setEndComment('')
+  }
+
+  function startTraining(intern) {
+    const weakTopics = getWeakTopics(intern)
+    const suggestion = weakTopics.length > 0 ? `Повторить темы (неверные ответы на экзамене): ${weakTopics.join('; ')}` : ''
+    setTrainingId(intern.id)
+    setTrainingComment(suggestion)
+  }
+
+  function cancelTraining() {
+    setTrainingId(null)
+    setTrainingComment('')
+  }
+
+  function confirmTraining(internId) {
+    if (!trainingComment.trim()) return
+    setFinalOutcome(internId, 'training', trainingComment.trim())
+    setTrainingId(null)
+    setTrainingComment('')
   }
 
   function archiveGroup(groupId) {
@@ -284,9 +306,11 @@ export default function ExamTab() {
                           </div>
                         )}
 
-                        {i.examFinalComment && status.code === 'ended' && (
+                        {i.examFinalComment && (status.code === 'ended' || status.code === 'training') && (
                           <div className="text-sm bg-navy-50 dark:bg-navy-800 rounded-lg p-3">
-                            <span className="font-medium">Комментарий завершения: </span>
+                            <span className="font-medium">
+                              {status.code === 'training' ? 'Рекомендации к доп. обучению: ' : 'Комментарий завершения: '}
+                            </span>
                             {i.examFinalComment}
                           </div>
                         )}
@@ -297,13 +321,38 @@ export default function ExamTab() {
                           </button>
                         )}
 
-                        {status.code === 'retake_failed' && (
-                          <button
-                            onClick={() => setFinalOutcome(i.id, 'training')}
-                            className="btn-secondary text-sm"
-                          >
+                        {status.code === 'retake_failed' && trainingId !== i.id && (
+                          <button onClick={() => startTraining(i)} className="btn-secondary text-sm">
                             Направить на доп. обучение
                           </button>
+                        )}
+
+                        {trainingId === i.id && (
+                          <div className="space-y-2 border border-warning-500/30 bg-warning-50 dark:bg-warning-500/10 rounded-lg p-3">
+                            <label className="field-label">
+                              Рекомендации к доп. обучению (обязательно, будут видны стажёру в уведомлении) — какие
+                              вопросы не сдал и на чём делать акцент при повторном обучении
+                            </label>
+                            <textarea
+                              className="field-input min-h-[80px]"
+                              value={trainingComment}
+                              onChange={(e) => setTrainingComment(e.target.value)}
+                              placeholder="Укажите, какие темы повторить и на что обратить внимание"
+                              autoFocus
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => confirmTraining(i.id)}
+                                disabled={!trainingComment.trim()}
+                                className="btn-secondary text-sm"
+                              >
+                                Подтвердить направление
+                              </button>
+                              <button onClick={cancelTraining} className="btn-secondary text-sm">
+                                Отмена
+                              </button>
+                            </div>
+                          </div>
                         )}
 
                         {canEnd && endingId !== i.id && (

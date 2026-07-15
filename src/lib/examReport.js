@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import { getExamAnswers, getRetakeAnswers, getActiveAnswers, getExamQuestions, examPercent, getInternExamStatus } from './exam'
+import { getExamAnswers, getRetakeAnswers, examPercent, getInternExamStatus, getWeakTopics } from './exam'
 import { formatDate, trainingPeriod } from './date'
 
 const HOMEWORK_SCORE = { done: 100, partial: 50, not_done: 0 }
@@ -41,9 +41,7 @@ function buildRecommendation(intern, lessons) {
     notes.push(`Домашние задания: ${parts.join('; ')}`)
   }
 
-  const questions = getExamQuestions(intern)
-  const answers = getActiveAnswers(intern)
-  const weakTopics = questions.filter((q, idx) => answers[idx] === false && q.trim())
+  const weakTopics = getWeakTopics(intern)
   if (weakTopics.length > 0) {
     notes.push(`Повторить темы (неверные ответы на экзамене): ${weakTopics.join('; ')}`)
   }

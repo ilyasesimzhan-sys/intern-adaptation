@@ -61,6 +61,13 @@ export function examPassed(answers) {
   return examCorrectCount(answers) >= PASS_THRESHOLD
 }
 
+// Темы вопросов, на которые стажёр ответил неверно в текущей (активной) попытке — основа рекомендаций к доп. обучению.
+export function getWeakTopics(intern) {
+  const questions = getExamQuestions(intern)
+  const answers = getActiveAnswers(intern)
+  return questions.filter((q, idx) => answers[idx] === false && q.trim())
+}
+
 const STATUS = {
   ungraded: {
     code: 'ungraded',

@@ -1,4 +1,6 @@
+import { useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import html2pdf from 'html2pdf.js'
 import { useStore } from '../store/StoreContext.jsx'
 import {
   getActiveAnswers,
@@ -6,6 +8,7 @@ import {
   examPercent,
   getInternExamStatus,
   getActiveExamDate,
+  getWeakTopics,
   EXAM_QUESTION_COUNT,
 } from '../lib/exam'
 import { formatDate, trainingPeriod } from '../lib/date'
@@ -18,6 +21,8 @@ export default function CertificatePage() {
   const intern = data.interns.find((i) => i.id === internId)
   const group = intern ? data.groups.find((g) => g.id === intern.groupId) : null
   const trainer = group ? data.trainers.find((t) => t.id === group.ownerId) : null
+  const certRef = useRef(null)
+  const [downloading, setDownloading] = useState(false)
 
   if (!intern) {
     return (
@@ -59,18 +64,30 @@ export default function CertificatePage() {
   const examDate = getActiveExamDate(intern)
   const period = trainingPeriod(group?.lessons)
   const issueDate = group?.endDate ? formatDate(group.endDate) : formatDate(new Date().toISOString())
+  const weakTopics = isTraining ? getWeakTopics(intern) : []
+
+  async function downloadPdf() {
+    if (!certRef.current || downloading) return
+    setDownloading(true)
+    try {
+      await html2pdf()
+        .set({
+          margin: 0,
+          filename: `${isPassed ? 'Сертификат' : 'Уведомление'} — ${intern.lastName} ${intern.firstName}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 1200 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+        })
+        .from(certRef.current)
+        .save()
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
-    <div className="min-h-screen py-8 px-4 print:p-0 print:min-h-0">
-      <style>{`
-        @media print {
-          @page { size: landscape; margin: 0; }
-          body { background: white !important; }
-          .no-print { display: none !important; }
-        }
-      `}</style>
-
-      <div className="max-w-3xl mx-auto space-y-4 no-print">
+    <div className="min-h-screen py-8 px-4">
+      <div className="max-w-3xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <Link
             to={`/progress/${intern.id}`}
@@ -80,42 +97,45 @@ export default function CertificatePage() {
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <button onClick={() => window.print()} className="btn-primary">
-              Печать / Сохранить как PDF
+            <button onClick={downloadPdf} disabled={downloading} className="btn-primary">
+              {downloading ? 'Формируем PDF…' : 'Скачать PDF'}
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto mt-6 print:mt-0 print:max-w-none">
-        <div className="relative bg-white text-navy-900 rounded-2xl shadow-sm border border-navy-100 overflow-hidden flex flex-col sm:flex-row print:rounded-none print:shadow-none print:border-0">
-          <div className="sm:w-48 shrink-0 bg-navy-900 flex flex-row sm:flex-col items-center justify-center gap-4 sm:gap-3 py-6 sm:py-10 px-6 print:bg-navy-900">
-            <div className="bg-white rounded-xl p-3 shrink-0">
-              <img src={logo} alt="Kazakhtelecom Corporate University" className="h-10 sm:h-12 w-auto" />
+      <div className="max-w-5xl mx-auto mt-6">
+        <div
+          ref={certRef}
+          className="relative bg-white text-navy-900 rounded-2xl shadow-sm border border-navy-100 overflow-hidden flex flex-col sm:flex-row sm:aspect-[297/210]"
+        >
+          <div className="sm:w-56 shrink-0 bg-navy-900 flex flex-row sm:flex-col items-center justify-center gap-5 sm:gap-4 py-8 sm:py-10 px-6">
+            <div className="bg-white rounded-xl p-4 shrink-0">
+              <img src={logo} alt="Kazakhtelecom Corporate University" className="h-12 sm:h-14 w-auto" />
             </div>
-            <div className="text-navy-100 text-xs sm:text-[11px] text-left sm:text-center tracking-[0.15em] uppercase leading-relaxed">
+            <div className="text-navy-100 text-sm sm:text-xs text-left sm:text-center tracking-[0.15em] uppercase leading-relaxed">
               Kazakhtelecom
               <br />
               Corporate University
             </div>
           </div>
 
-          <div className="flex-1 p-8 sm:p-12">
+          <div className="flex-1 flex flex-col justify-center p-8 sm:p-16">
             <div
               className={
-                'text-xs font-semibold uppercase tracking-[0.25em] ' + (isPassed ? 'text-sky-600' : 'text-warning-600')
+                'text-sm font-semibold uppercase tracking-[0.3em] ' + (isPassed ? 'text-sky-600' : 'text-warning-600')
               }
             >
               {isPassed ? 'Сертификат' : 'Уведомление о результате'}
             </div>
-            <div className="font-display text-2xl sm:text-3xl font-bold text-navy-900 mt-2">
+            <div className="font-display text-3xl sm:text-4xl font-bold text-navy-900 mt-3">
               {intern.lastName} {intern.firstName}
             </div>
-            <p className="text-sm text-navy-400 mt-1">
+            <p className="text-base text-navy-400 mt-2">
               {intern.department} · {intern.position} · {intern.city}
             </p>
 
-            <p className="text-navy-600 text-sm max-w-xl mt-5 leading-relaxed">
+            <p className="text-navy-600 text-base max-w-2xl mt-6 leading-relaxed">
               {isPassed ? (
                 <>
                   успешно прошёл(-ла) адаптационную программу{group ? ` в группе «${group.name}»` : ''}
@@ -138,26 +158,43 @@ export default function CertificatePage() {
               )}
             </p>
 
-            {isTraining && intern.examFinalComment && (
-              <p className="text-sm text-navy-500 max-w-xl mt-3 italic">«{intern.examFinalComment}»</p>
+            {isTraining && (intern.examFinalComment || weakTopics.length > 0) && (
+              <div className="mt-4 max-w-2xl rounded-xl bg-warning-50 dark:bg-warning-500/10 p-4">
+                <div className="text-xs font-semibold text-warning-600 uppercase tracking-wide">
+                  Рекомендации к дополнительному обучению
+                </div>
+                {intern.examFinalComment && (
+                  <p className="text-sm text-navy-700 mt-2 leading-relaxed">{intern.examFinalComment}</p>
+                )}
+                {weakTopics.length > 0 && (
+                  <div className="mt-2">
+                    <div className="text-xs text-navy-500 mb-1">Вопросы, на которые не был дан верный ответ:</div>
+                    <ul className="text-sm text-navy-700 list-disc list-inside space-y-0.5">
+                      {weakTopics.map((topic, idx) => (
+                        <li key={idx}>{topic}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mt-8 pt-6 border-t border-navy-100">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mt-10 pt-8 border-t border-navy-100">
               <div>
-                <div className="text-xs text-navy-400">Обучение</div>
-                <div className="text-sm font-medium mt-0.5">{period || '—'}</div>
+                <div className="text-sm text-navy-400">Обучение</div>
+                <div className="text-base font-medium mt-1">{period || '—'}</div>
               </div>
               <div>
-                <div className="text-xs text-navy-400">Дата экзамена</div>
-                <div className="text-sm font-medium mt-0.5">{examDate ? formatDate(examDate) : '—'}</div>
+                <div className="text-sm text-navy-400">Дата экзамена</div>
+                <div className="text-base font-medium mt-1">{examDate ? formatDate(examDate) : '—'}</div>
               </div>
               <div>
-                <div className="text-xs text-navy-400">Бизнес-тренер</div>
-                <div className="text-sm font-medium mt-0.5">{trainer?.name || '—'}</div>
+                <div className="text-sm text-navy-400">Бизнес-тренер</div>
+                <div className="text-base font-medium mt-1">{trainer?.name || '—'}</div>
               </div>
               <div>
-                <div className="text-xs text-navy-400">Дата выдачи</div>
-                <div className="text-sm font-medium mt-0.5">{issueDate}</div>
+                <div className="text-sm text-navy-400">Дата выдачи</div>
+                <div className="text-base font-medium mt-1">{issueDate}</div>
               </div>
             </div>
           </div>
