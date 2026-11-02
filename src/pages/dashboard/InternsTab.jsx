@@ -39,7 +39,7 @@ const COLUMNS = [
 
 export default function InternsTab() {
   const { data, update, currentTrainer } = useStore()
-  const { groups, interns } = data
+  const { groups, interns, trainers } = data
   const admin = isTrainerAdmin(currentTrainer)
   const sortedGroups = useMemo(
     () => activeVisibleGroups(groups, currentTrainer).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
@@ -143,12 +143,15 @@ export default function InternsTab() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold">Список стажёров</h1>
-        <select className="field-input max-w-xs" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-          {sortedGroups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name} {g.isOpen ? '(открыта)' : '(закрыта)'}
-            </option>
-          ))}
+        <select className="field-input max-w-md" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+          {sortedGroups.map((g) => {
+            const owner = trainers.find((t) => t.id === g.ownerId)
+            return (
+              <option key={g.id} value={g.id}>
+                {g.name} — {owner ? owner.name : 'без тренера'} {g.isOpen ? '(открыта)' : '(закрыта)'}
+              </option>
+            )
+          })}
         </select>
       </div>
 
