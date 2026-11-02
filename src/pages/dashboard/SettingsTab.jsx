@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { uid } from '../../store/defaultData'
-import { groupsWithCounts } from '../../lib/groups'
+import { groupsWithCounts, splitInternsByCity } from '../../lib/groups'
 import { GROUP_CAPACITY } from '../../lib/constants'
 import { isTrainerAdmin, activeVisibleGroups } from '../../lib/roles'
 
@@ -26,6 +26,8 @@ export default function SettingsTab() {
   // которые некоторые браузеры (в т.ч. встроенные) молча блокируют.
   const [deleteState, setDeleteState] = useState({ id: null, blocked: false })
   const [rename, setRename] = useState({ id: null, value: '' })
+  // Предпросмотр деления группы на две: { groupId, parts: [[...], [...]] }
+  const [split, setSplit] = useState(null)
   const admin = isTrainerAdmin(currentTrainer)
 
   function patchSettings(patch) {
@@ -82,6 +84,31 @@ export default function SettingsTab() {
   function deleteGroup(groupId) {
     setDeleteState({ id: null, blocked: false })
     update((prev) => ({ ...prev, groups: prev.groups.filter((g) => g.id !== groupId) }))
+  }
+
+  function previewSplit(groupId) {
+    setSplit({ groupId, parts: splitInternsByCity(interns.filter((i) => i.groupId === groupId)) })
+  }
+
+  // Вторая группа получает те же занятия (с теми же id), поэтому уже отмеченные посещаемость и ДЗ сохраняются.
+  function confirmSplit(group) {
+    const newId = uid()
+    const movedIds = new Set(split.parts[1].map((i) => i.id))
+    update((prev) => ({
+      ...prev,
+      groups: [
+        ...prev.groups.map((g) => (g.id === group.id ? { ...g, name: `${group.name} (1)` } : g)),
+        {
+          ...group,
+          id: newId,
+          name: `${group.name} (2)`,
+          lessons: (group.lessons || []).map((l) => ({ ...l })),
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      interns: prev.interns.map((i) => (movedIds.has(i.id) ? { ...i, groupId: newId } : i)),
+    }))
+    setSplit(null)
   }
 
   function saveRename() {
@@ -253,6 +280,11 @@ export default function SettingsTab() {
                         Открыть приём
                       </button>
                     )}
+                    {!g.isOpen && members.length >= 2 && split?.groupId !== g.id && (
+                      <button onClick={() => previewSplit(g.id)} className="btn-secondary text-sm">
+                        Поделить на 2
+                      </button>
+                    )}
                     {deleteState.id !== g.id && (
                       <button
                         onClick={() => askDeleteGroup(g.id)}
@@ -291,6 +323,48 @@ export default function SettingsTab() {
                         </button>
                       </div>
                     ))}
+
+                  {split?.groupId === g.id && (
+                    <div className="rounded-xl border border-sky-200 dark:border-sky-800 p-3 space-y-3">
+                      <div className="text-sm">
+                        <span className="font-semibold">Предпросмотр деления.</span>{' '}
+                        <span className="text-navy-500 dark:text-navy-400">
+                          Стажёры распределены случайно, каждый город/район — поровну между группами. Можно
+                          перемешать ещё раз.
+                        </span>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {split.parts.map((part, idx) => (
+                          <div key={idx} className="rounded-lg bg-navy-50 dark:bg-navy-800/60 p-3">
+                            <div className="font-semibold text-sm mb-2">
+                              {g.name} ({idx + 1}) — {part.length} чел.
+                            </div>
+                            <ul className="text-sm space-y-0.5">
+                              {[...part]
+                                .sort((a, b) => (a.city || '').localeCompare(b.city || '', 'ru'))
+                                .map((i) => (
+                                  <li key={i.id}>
+                                    {i.lastName} {i.firstName}
+                                    <span className="text-navy-400 dark:text-navy-500"> · {i.city || 'город не указан'}</span>
+                                  </li>
+                                ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => confirmSplit(g)} className="btn-primary text-sm">
+                          Поделить
+                        </button>
+                        <button onClick={() => previewSplit(g.id)} className="btn-secondary text-sm">
+                          Перемешать ещё раз
+                        </button>
+                        <button onClick={() => setSplit(null)} className="btn-secondary text-sm">
+                          Отмена
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="overflow-x-auto pt-2 border-t border-navy-50 dark:border-navy-800">
                     {members.length === 0 ? (
