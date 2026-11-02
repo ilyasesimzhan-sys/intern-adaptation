@@ -9,7 +9,7 @@ const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
   { key: 'firstName', label: 'Имя' },
   { key: 'department', label: 'Подразделение' },
-  { key: 'city', label: 'Город' },
+  { key: 'city', label: 'Город/район' },
 ]
 
 function today() {
@@ -21,6 +21,11 @@ export default function SettingsTab() {
   const { settings, groups, interns, trainers } = data
   const [newGroupName, setNewGroupName] = useState('')
   const [newGroupOwnerId, setNewGroupOwnerId] = useState('')
+  const [createError, setCreateError] = useState('')
+  // Подтверждение удаления и переименование — прямо в карточке группы, без системных окон confirm/alert,
+  // которые некоторые браузеры (в т.ч. встроенные) молча блокируют.
+  const [deleteState, setDeleteState] = useState({ id: null, blocked: false })
+  const [rename, setRename] = useState({ id: null, value: '' })
   const admin = isTrainerAdmin(currentTrainer)
 
   function patchSettings(patch) {
@@ -38,9 +43,10 @@ export default function SettingsTab() {
     const name = newGroupName.trim()
     if (!name) return
     if (admin && !newGroupOwnerId) {
-      alert('Назначьте владельца группы — себя или любого другого тренера.')
+      setCreateError('Назначьте владельца группы — себя или любого другого тренера.')
       return
     }
+    setCreateError('')
     const group = {
       id: uid(),
       name,
@@ -68,14 +74,21 @@ export default function SettingsTab() {
     patchGroup(group.id, { isOpen: false, endDate: group.endDate || today() })
   }
 
+  function askDeleteGroup(groupId) {
+    const blocked = interns.some((i) => i.groupId === groupId)
+    setDeleteState({ id: groupId, blocked })
+  }
+
   function deleteGroup(groupId) {
-    const count = interns.filter((i) => i.groupId === groupId).length
-    if (count > 0) {
-      alert('В этой группе есть стажёры — сначала перенесите или удалите их в «Списке стажёров».')
-      return
-    }
-    if (!confirm('Удалить эту группу?')) return
+    setDeleteState({ id: null, blocked: false })
     update((prev) => ({ ...prev, groups: prev.groups.filter((g) => g.id !== groupId) }))
+  }
+
+  function saveRename() {
+    const name = rename.value.trim()
+    if (!name) return
+    patchGroup(rename.id, { name })
+    setRename({ id: null, value: '' })
   }
 
   const groupsInfo = groupsWithCounts(activeVisibleGroups(groups, currentTrainer), interns)
@@ -135,6 +148,7 @@ export default function SettingsTab() {
             Создать группу
           </button>
         </div>
+        {createError && <p className="text-sm text-danger-500">{createError}</p>}
 
         <div className="space-y-3">
           {groupsInfo.length === 0 && <p className="text-navy-400 dark:text-navy-500">Групп пока нет.</p>}
@@ -143,8 +157,39 @@ export default function SettingsTab() {
             return (
               <div key={g.id} className="border border-navy-100 dark:border-navy-700 rounded-xl overflow-hidden">
                 <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-                  <div>
-                    <div className="font-semibold">{g.name}</div>
+                  <div className="flex-1 min-w-[200px]">
+                    {rename.id === g.id ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          className="field-input flex-1 min-w-[200px]"
+                          value={rename.value}
+                          autoFocus
+                          onChange={(e) => setRename({ id: g.id, value: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveRename()
+                            if (e.key === 'Escape') setRename({ id: null, value: '' })
+                          }}
+                        />
+                        <button onClick={saveRename} disabled={!rename.value.trim()} className="btn-primary text-sm">
+                          Сохранить
+                        </button>
+                        <button onClick={() => setRename({ id: null, value: '' })} className="btn-secondary text-sm">
+                          Отмена
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <div className="font-semibold">{g.name}</div>
+                        {admin && (
+                          <button
+                            onClick={() => setRename({ id: g.id, value: g.name })}
+                            className="text-xs text-sky-600 hover:text-sky-700 dark:text-sky-400"
+                          >
+                            Переименовать
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <div className="text-sm text-navy-500 dark:text-navy-400">
                       {g.count}/{GROUP_CAPACITY} участников
                     </div>
@@ -208,13 +253,44 @@ export default function SettingsTab() {
                         Открыть приём
                       </button>
                     )}
-                    <button
-                      onClick={() => deleteGroup(g.id)}
-                      className="text-danger-500 hover:text-danger-600 text-xs ml-auto"
-                    >
-                      Удалить
-                    </button>
+                    {deleteState.id !== g.id && (
+                      <button
+                        onClick={() => askDeleteGroup(g.id)}
+                        className="text-danger-500 hover:text-danger-600 text-xs ml-auto"
+                      >
+                        Удалить
+                      </button>
+                    )}
                   </div>
+
+                  {deleteState.id === g.id &&
+                    (deleteState.blocked ? (
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-danger-500">
+                        В этой группе есть стажёры — сначала перенесите или удалите их в «Списке стажёров».
+                        <button
+                          onClick={() => setDeleteState({ id: null, blocked: false })}
+                          className="btn-secondary text-sm"
+                        >
+                          Понятно
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-3 text-sm">
+                        <span className="text-danger-500 font-semibold">Удалить группу «{g.name}»?</span>
+                        <button
+                          onClick={() => deleteGroup(g.id)}
+                          className="text-sm px-3 py-1.5 rounded-lg bg-danger-500 hover:bg-danger-600 text-white font-semibold"
+                        >
+                          Да, удалить
+                        </button>
+                        <button
+                          onClick={() => setDeleteState({ id: null, blocked: false })}
+                          className="btn-secondary text-sm"
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    ))}
 
                   <div className="overflow-x-auto pt-2 border-t border-navy-50 dark:border-navy-800">
                     {members.length === 0 ? (

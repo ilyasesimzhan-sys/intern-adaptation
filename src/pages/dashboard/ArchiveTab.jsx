@@ -14,7 +14,7 @@ const COLUMNS = [
   { key: 'phone', label: 'Телефон' },
   { key: 'managerName', label: 'Руководитель' },
   { key: 'managerContact', label: 'Контакты руководителя' },
-  { key: 'city', label: 'Город' },
+  { key: 'city', label: 'Город/район' },
 ]
 
 export default function ArchiveTab() {

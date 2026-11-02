@@ -6,6 +6,7 @@ import { emptyExamAnswers, emptyExamQuestions } from '../../lib/exam'
 import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
 import { formatDate } from '../../lib/date'
 import { computeGroupStats } from '../../lib/groupStats'
+import SearchSelect from '../../components/SearchSelect.jsx'
 import { copyText } from '../../lib/clipboard'
 import { filterInternsBySearch, internMatchesQuery } from '../../lib/internSearch'
 import Avatar from '../../components/Avatar.jsx'
@@ -33,7 +34,7 @@ const COLUMNS = [
   { key: 'phone', label: 'Телефон' },
   { key: 'managerName', label: 'Руководитель' },
   { key: 'managerContact', label: 'Контакты руководителя' },
-  { key: 'city', label: 'Город' },
+  { key: 'city', label: 'Город/район' },
 ]
 
 export default function InternsTab() {
@@ -253,19 +254,13 @@ export default function InternsTab() {
               />
             </div>
             <div>
-              <label className="field-label">Город</label>
-              <select
-                className="field-input"
+              <label className="field-label">Город/район</label>
+              <SearchSelect
                 value={manualForm.city}
-                onChange={(e) => setManualForm((f) => ({ ...f, city: e.target.value }))}
-              >
-                <option value="">Выберите город</option>
-                {KZ_CITIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+                onChange={(city) => setManualForm((f) => ({ ...f, city }))}
+                options={KZ_CITIES}
+                placeholder="Выберите или начните вводить город/район"
+              />
             </div>
             {manualForm.city === 'Другой' && (
               <div>

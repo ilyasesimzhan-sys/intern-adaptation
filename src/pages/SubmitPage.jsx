@@ -6,6 +6,7 @@ import { uid } from '../store/defaultData'
 import { openGroupsWithSpace } from '../lib/groups'
 import { emptyExamAnswers, emptyExamQuestions } from '../lib/exam'
 import ThemeToggle from '../components/ThemeToggle.jsx'
+import SearchSelect from '../components/SearchSelect.jsx'
 
 const EMPTY_FORM = {
   lastName: '',
@@ -213,10 +214,10 @@ export default function SubmitPage() {
 
           <SectionHeader icon="👤" title="Данные стажёра" />
           <div className="space-y-4 pl-8">
-            {renderField({ key: 'lastName', label: 'Фамилия стажёра' })}
-            {renderField({ key: 'firstName', label: 'Имя стажёра' })}
+            {renderField({ key: 'lastName', label: 'Фамилия' })}
+            {renderField({ key: 'firstName', label: 'Имя' })}
             {renderField({ key: 'email', label: 'Электронная почта', type: 'email' })}
-            {renderPhoneField('phone', 'Контактный телефон стажёра')}
+            {renderPhoneField('phone', 'Контактный телефон')}
           </div>
 
           <div className="border-t border-navy-100 dark:border-navy-800" />
@@ -243,19 +244,13 @@ export default function SubmitPage() {
             {renderField({ key: 'position', label: 'Должность' })}
 
             <div>
-              <label className="field-label">Город</label>
-              <select
-                className="field-input"
+              <label className="field-label">Город/район</label>
+              <SearchSelect
                 value={form.city}
-                onChange={(e) => handleChange('city', e.target.value)}
-              >
-                <option value="">Выберите город</option>
-                {KZ_CITIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+                onChange={(city) => handleChange('city', city)}
+                options={KZ_CITIES}
+                placeholder="Выберите или начните вводить город/район"
+              />
               {errors.city && <p className="text-danger-500 text-xs mt-1">{errors.city}</p>}
             </div>
 
