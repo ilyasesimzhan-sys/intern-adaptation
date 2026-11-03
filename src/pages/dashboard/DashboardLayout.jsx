@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
+import { ensureDailyBackup } from '../../lib/backup'
 import Avatar from '../../components/Avatar.jsx'
 import CreatorCard from '../../components/CreatorCard.jsx'
 import ThemeToggle from '../../components/ThemeToggle.jsx'
@@ -14,17 +16,23 @@ const TABS = [
   { to: 'exam', label: 'Итоговый экзамен' },
   { to: 'rules', label: 'Правила адаптационной программы' },
   { to: 'trainers', label: 'Тренеры', adminOnly: true },
+  { to: 'reports', label: 'Отчёты' },
   { to: 'archive', label: 'Архив' },
   { to: 'ispring', label: 'Логины iSpring' },
   { to: 'knowledge', label: 'База знаний' },
   { to: 'journal', label: 'Журнал действий', adminOnly: true },
+  { to: 'backups', label: 'Резервные копии', adminOnly: true },
 ]
 
 export default function DashboardLayout() {
-  const { currentTrainer, logout } = useStore()
+  const { data, currentTrainer, logout } = useStore()
   const navigate = useNavigate()
   const location = useLocation()
   const admin = isTrainerAdmin(currentTrainer)
+
+  useEffect(() => {
+    ensureDailyBackup(data, currentTrainer)
+  }, [data, currentTrainer])
   const visibleTabs = TABS.filter((tab) => !tab.adminOnly || admin)
 
   function handleLogout() {

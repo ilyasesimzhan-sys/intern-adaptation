@@ -121,6 +121,105 @@ export function changedSince(entry, data) {
   return entry.changes.filter((c) => !same(currentDoc(c, data), c.after))
 }
 
+// Поля, которые админ может исправить через журнал: то, что тренер вписывает руками.
+const EDITABLE_FIELDS = {
+  groups: { name: 'text', startDate: 'date', endDate: 'date' },
+  interns: {
+    lastName: 'text',
+    firstName: 'text',
+    email: 'text',
+    phone: 'text',
+    department: 'text',
+    position: 'text',
+    city: 'text',
+    managerName: 'text',
+    managerContact: 'text',
+    examDate: 'date',
+    examRetakeDate: 'date',
+    examFinalComment: 'textarea',
+    withdrawnReason: 'textarea',
+  },
+}
+
+function lessonTitle(lesson) {
+  return `«${lesson.name || 'занятие'}»`
+}
+
+// Список полей записи журнала, которые можно откорректировать, с текущими значениями.
+// key — уникальный ключ поля, path — путь внутри записи: [field] | ['lessons', lessonId, 'name'|'date'] | ['comments', lessonId].
+export function correctableFields(entry, data) {
+  const result = []
+  entry.changes.forEach((c) => {
+    const editable = EDITABLE_FIELDS[c.coll]
+    if (!editable || !c.after) return
+    const current = currentDoc(c, data)
+    if (!current) return
+    const before = c.before || {}
+    const after = c.after
+    const entity = entityName({ ...c, after: current })
+    const push = (path, label, type, trainerValue, beforeValue, currentValue) =>
+      result.push({
+        key: `${c.coll}/${c.id}/${path.join('/')}`,
+        coll: c.coll,
+        id: c.id,
+        entity,
+        path,
+        label,
+        type,
+        trainerValue: trainerValue ?? '',
+        beforeValue: c.before ? beforeValue ?? '' : null,
+        currentValue: currentValue ?? '',
+      })
+
+    Object.entries(editable).forEach(([field, type]) => {
+      const touched = !c.before ? after[field] !== undefined : !same(before[field], after[field])
+      if (!touched) return
+      push([field], FIELD_LABELS[c.coll][field], type, after[field], before[field], current[field])
+    })
+
+    if (c.coll === 'groups') {
+      const beforeLessons = before.lessons || []
+      ;(after.lessons || []).forEach((l) => {
+        const now = (current.lessons || []).find((x) => x.id === l.id)
+        if (!now) return
+        const old = beforeLessons.find((x) => x.id === l.id)
+        if (!old || old.name !== l.name) push(['lessons', l.id, 'name'], `занятие ${lessonTitle(now)}: название`, 'text', l.name, old?.name, now.name)
+        if (!old || old.date !== l.date) push(['lessons', l.id, 'date'], `занятие ${lessonTitle(now)}: дата`, 'date', l.date, old?.date, now.date)
+      })
+    }
+
+    if (c.coll === 'interns') {
+      const lessons = data.groups.find((g) => g.id === current.groupId)?.lessons || []
+      Object.entries(after.comments || {}).forEach(([lessonId, text]) => {
+        if ((before.comments || {})[lessonId] === text) return
+        const lesson = lessons.find((l) => l.id === lessonId)
+        const label = `комментарий тренера${lesson ? ` к занятию ${lessonTitle(lesson)}` : ''}`
+        push(['comments', lessonId], label, 'textarea', text, before.comments?.[lessonId], current.comments?.[lessonId])
+      })
+    }
+  })
+  return result
+}
+
+function setPath(item, path, value) {
+  const [field, ...rest] = path
+  if (field === 'lessons') {
+    const [lessonId, key] = rest
+    return { ...item, lessons: (item.lessons || []).map((l) => (l.id === lessonId ? { ...l, [key]: value } : l)) }
+  }
+  if (field === 'comments') return { ...item, comments: { ...(item.comments || {}), [rest[0]]: value } }
+  return { ...item, [field]: value }
+}
+
+// Данные с применёнными исправлениями: edits — [{ coll, id, path, value }].
+export function applyCorrections(prev, edits) {
+  const next = { ...prev }
+  edits.forEach((e) => {
+    next[e.coll] = next[e.coll].map((item) => (item.id === e.id ? setPath(item, e.path, e.value) : item))
+  })
+  return next
+}
+
 // Состояние данных с возвращёнными «до действия» версиями всех затронутых записей.
 export function revertEntry(prev, entry) {
   const next = { ...prev }

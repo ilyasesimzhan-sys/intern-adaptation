@@ -52,36 +52,39 @@ function buildRecommendation(intern, lessons) {
   return notes.length > 0 ? notes.join('. ') : 'Замечаний и предложений нет'
 }
 
+// Одна строка отчёта на стажёра с итоговыми процентами — общая для отчёта по группе и сводного отчёта.
+export function internReportRow(intern, group, ownerName) {
+  const i = intern
+  const lessons = group.lessons || []
+  const first = getExamAnswers(i)
+  const retake = getRetakeAnswers(i)
+  const status = getInternExamStatus(i)
+
+  return {
+    Фамилия: i.lastName,
+    Имя: i.firstName,
+    Подразделение: i.department,
+    Должность: i.position,
+    'Город/район': i.city,
+    'Период обучения': trainingPeriod(lessons),
+    'Посещаемость, %': attendancePercent(i, lessons),
+    'Выполнение домашних заданий, %': homeworkPercent(i, lessons),
+    'Результат экзамена, %': `${examPercent(first)}%`,
+    Пересдача: retake ? `${examPercent(retake)}%` : '',
+    'Бизнес-тренер': ownerName,
+    Итог: i.withdrawn ? 'Отказался от обучения' : OUTCOME_LABEL[status.code] || status.label,
+    Рекомендации: buildRecommendation(i, lessons),
+    Комментарий: i.withdrawn ? i.withdrawnReason || 'Причина не указана' : i.examFinalComment || '',
+    Руководитель: i.managerName,
+    'Контакты руководителя': i.managerContact,
+  }
+}
+
 // Сводная выгрузка по группе для служебных целей: одна строка на стажёра с итоговыми процентами,
 // а не детализация по дням и вопросам. Доступна только из кабинета тренера.
 export function downloadGroupReport(group, interns, trainers) {
   const ownerName = trainers.find((t) => t.id === group.ownerId)?.name || 'без владельца'
-  const lessons = group.lessons || []
-
-  const rows = interns.map((i) => {
-    const first = getExamAnswers(i)
-    const retake = getRetakeAnswers(i)
-    const status = getInternExamStatus(i)
-
-    return {
-      Фамилия: i.lastName,
-      Имя: i.firstName,
-      Подразделение: i.department,
-      Должность: i.position,
-      'Город/район': i.city,
-      'Период обучения': trainingPeriod(lessons),
-      'Посещаемость, %': attendancePercent(i, lessons),
-      'Выполнение домашних заданий, %': homeworkPercent(i, lessons),
-      'Результат экзамена, %': `${examPercent(first)}%`,
-      Пересдача: retake ? `${examPercent(retake)}%` : '',
-      'Бизнес-тренер': ownerName,
-      Итог: i.withdrawn ? 'Отказался от обучения' : OUTCOME_LABEL[status.code] || status.label,
-      Рекомендации: buildRecommendation(i, lessons),
-      Комментарий: i.withdrawn ? i.withdrawnReason || 'Причина не указана' : i.examFinalComment || '',
-      Руководитель: i.managerName,
-      'Контакты руководителя': i.managerContact,
-    }
-  })
+  const rows = interns.map((i) => internReportRow(i, group, ownerName))
 
   const sheet = XLSX.utils.json_to_sheet(rows)
   const workbook = XLSX.utils.book_new()

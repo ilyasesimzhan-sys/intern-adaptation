@@ -3,7 +3,16 @@ import { collection, doc, limit, onSnapshot, orderBy, query, setDoc } from 'fire
 import { useStore, LOG_PREFIX } from '../../store/StoreContext.jsx'
 import { getDb, hasFirebaseConfig } from '../../lib/firebase'
 import { isTrainerAdmin } from '../../lib/roles'
-import { changedSince, describeChange, describeEntry, entityName, revertEntry } from '../../lib/journal'
+import { formatDate } from '../../lib/date'
+import {
+  applyCorrections,
+  changedSince,
+  correctableFields,
+  describeChange,
+  describeEntry,
+  entityName,
+  revertEntry,
+} from '../../lib/journal'
 
 const PAGE = 100
 
@@ -29,6 +38,9 @@ export default function JournalTab() {
   const [openId, setOpenId] = useState(null)
   // Подтверждение отмены: { id, conflicts: [...] }
   const [confirming, setConfirming] = useState(null)
+  // Корректировка: { id, fields: [...], values: { [key]: value } }
+  const [correcting, setCorrecting] = useState(null)
+  const [savedId, setSavedId] = useState(null)
 
   useEffect(() => {
     if (!hasFirebaseConfig || !admin) return
@@ -69,13 +81,47 @@ export default function JournalTab() {
     ).catch((err) => console.error('Journal undo mark failed', err))
   }
 
+  function startCorrection(entry) {
+    const fields = correctableFields(entry, data)
+    setConfirming(null)
+    setSavedId(null)
+    setCorrecting({ id: entry.id, fields, values: Object.fromEntries(fields.map((f) => [f.key, f.currentValue])) })
+  }
+
+  function saveCorrection() {
+    const edits = correcting.fields
+      .map((f) => {
+        const raw = correcting.values[f.key] ?? ''
+        const value = f.type === 'text' ? raw.trim() : raw
+        return value === f.currentValue ? null : { ...f, value }
+      })
+      .filter(Boolean)
+    if (edits.length > 0) {
+      const byEntity = {}
+      edits.forEach((e) => (byEntity[e.entity] = [...(byEntity[e.entity] || []), e.label]))
+      const what = Object.entries(byEntity)
+        .map(([entity, labels]) => `${entity} — ${labels.join(', ')}`)
+        .join('; ')
+      update((prev) => applyCorrections(prev, edits), { label: `Корректировка: ${what}` })
+    }
+    setSavedId(correcting.id)
+    setCorrecting(null)
+  }
+
+  function showValue(f, value) {
+    if (value === null) return null
+    if (!value) return '—'
+    return f.type === 'date' ? formatDate(value) : value
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Журнал действий</h1>
       <p className="text-sm text-navy-500 dark:text-navy-400">
         Все изменения, сделанные любыми логинами: кто, что и когда. Кнопка «Отменить» возвращает затронутые записи в
         состояние до этого действия — например, снова объединяет поделённую группу или возвращает удалённого стажёра.
-        Подряд идущие правки одного поля (набор текста) собраны в одну запись.
+        Кнопка «Исправить» позволяет поправить то, что внёс тренер (ФИО, названия, даты, комментарии), не отменяя
+        действие целиком. Подряд идущие правки одного поля (набор текста) собраны в одну запись.
       </p>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -102,6 +148,7 @@ export default function JournalTab() {
           {filtered.slice(0, shown).map((e) => {
             const who = e.trainerId ? `${e.trainerName || '—'}${e.trainerLogin ? ` (${e.trainerLogin})` : ''}` : 'Без входа'
             const isOpen = openId === e.id
+            const canCorrect = correcting?.id !== e.id && correctableFields(e, data).length > 0
             return (
               <div key={e.id} className="p-3 sm:p-4 space-y-2">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -121,6 +168,11 @@ export default function JournalTab() {
                     <button onClick={() => setOpenId(isOpen ? null : e.id)} className="btn-secondary text-xs px-3 py-1.5">
                       {isOpen ? 'Скрыть' : 'Подробнее'}
                     </button>
+                    {canCorrect && (
+                      <button onClick={() => startCorrection(e)} className="btn-secondary text-xs px-3 py-1.5">
+                        ✏️ Исправить
+                      </button>
+                    )}
                     {!e.undoneAt && confirming?.id !== e.id && (
                       <button onClick={() => askUndo(e)} className="btn-secondary text-xs px-3 py-1.5">
                         ↩ Отменить
@@ -135,6 +187,50 @@ export default function JournalTab() {
                       <li key={`${c.coll}/${c.id}`}>{describeChange(c, data.groups)}</li>
                     ))}
                   </ul>
+                )}
+
+                {savedId === e.id && (
+                  <p className="text-sm text-success-600 dark:text-success-400">Исправления сохранены и записаны в журнал.</p>
+                )}
+
+                {correcting?.id === e.id && (
+                  <div className="rounded-lg border border-sky-500/30 bg-sky-50 dark:bg-sky-500/10 p-3 space-y-3 text-sm">
+                    <p className="font-semibold">Исправьте нужные поля. Сейчас в полях — текущие значения на сайте.</p>
+                    {correcting.fields.map((f) => {
+                      const set = (value) =>
+                        setCorrecting((c) => ({ ...c, values: { ...c.values, [f.key]: value } }))
+                      const value = correcting.values[f.key] ?? ''
+                      return (
+                        <label key={f.key} className="block space-y-1">
+                          <span className="font-medium">
+                            {f.entity[0].toUpperCase() + f.entity.slice(1)}: {f.label}
+                          </span>
+                          {f.type === 'textarea' ? (
+                            <textarea className="field-input" rows={2} value={value} onChange={(ev) => set(ev.target.value)} />
+                          ) : (
+                            <input
+                              type={f.type}
+                              className="field-input"
+                              value={value}
+                              onChange={(ev) => set(ev.target.value)}
+                            />
+                          )}
+                          <span className="block text-xs text-navy-400 dark:text-navy-500">
+                            {f.beforeValue !== null && <>Было до действия: {showValue(f, f.beforeValue)} · </>}
+                            Внесено в этом действии: {showValue(f, f.trainerValue)}
+                          </span>
+                        </label>
+                      )
+                    })}
+                    <div className="flex gap-2">
+                      <button onClick={saveCorrection} className="btn-primary text-sm">
+                        Сохранить
+                      </button>
+                      <button onClick={() => setCorrecting(null)} className="btn-secondary text-sm">
+                        Отмена
+                      </button>
+                    </div>
+                  </div>
                 )}
 
                 {confirming?.id === e.id && (
