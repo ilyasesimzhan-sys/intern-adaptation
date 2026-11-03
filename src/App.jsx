@@ -59,7 +59,8 @@ export default function App() {
         <Route path="knowledge" element={<KnowledgeBaseTab />} />
         <Route path="journal" element={<JournalTab />} />
         <Route path="reports" element={<ReportsTab />} />
-        <Route path="backups" element={<BackupsTab />} />      </Route>
+        <Route path="backups" element={<BackupsTab />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
