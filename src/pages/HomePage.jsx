@@ -54,12 +54,23 @@ const INFO_CARDS = [
 ]
 
 export default function HomePage() {
-  const { data } = useStore()
+  const { data, archiveLoaded, requestArchive } = useStore()
   const { settings, groups, interns, trainers } = data
-  const stage = getCurrentStage(groups, interns)
   const [search, setSearch] = useState('')
+  // Завершённые (архивные) группы и их стажёры загружаются только по кнопке — так открытие главной
+  // не тратит чтения базы на весь архив.
+  const [showArchive, setShowArchive] = useState(false)
+  const activeGroups = groups.filter((g) => !g.archived)
+  const archivedCount = groups.length - activeGroups.length
+  const shownGroups = showArchive && archiveLoaded ? groups : activeGroups
+  const stage = getCurrentStage(activeGroups, interns)
 
-  const groupsInfo = groupsWithCounts(groups, interns).sort(
+  function toggleArchive() {
+    if (!showArchive) requestArchive()
+    setShowArchive((v) => !v)
+  }
+
+  const groupsInfo = groupsWithCounts(shownGroups, interns).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
   )
   const openGroups = openGroupsWithSpace(groups, interns)
@@ -167,7 +178,7 @@ export default function HomePage() {
           {groupsInfo.length === 0 ? (
             <EmptyState
               icon="🗂️"
-              title="Пока нет ни одной группы"
+              title={archivedCount > 0 ? 'Сейчас нет текущих групп' : 'Пока нет ни одной группы'}
               description="Как только тренер создаст группу и откроет приём анкет, она появится здесь."
             />
           ) : (
@@ -211,7 +222,7 @@ export default function HomePage() {
                             : 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400')
                         }
                       >
-                        {g.isOpen ? 'приём открыт' : 'сбор закрыт — идёт обучение'}
+                        {g.archived ? 'обучение завершено' : g.isOpen ? 'приём открыт' : 'сбор закрыт — идёт обучение'}
                       </span>
                       <span className="text-xs text-navy-400 dark:text-navy-500 font-normal">{formatWindow(g)}</span>
                     </h3>
@@ -278,6 +289,15 @@ export default function HomePage() {
                 </div>
               )}
             </>
+          )}
+          {archivedCount > 0 && (
+            <button onClick={toggleArchive} className="btn-secondary text-sm mt-5">
+              {!showArchive
+                ? `Показать завершённые группы (${archivedCount})`
+                : archiveLoaded
+                  ? 'Скрыть завершённые группы'
+                  : 'Загрузка...'}
+            </button>
           )}
         </section>
       </main>

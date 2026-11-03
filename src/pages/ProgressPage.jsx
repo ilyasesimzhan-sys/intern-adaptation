@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
 import { HOMEWORK_STATUSES } from '../lib/constants'
@@ -24,9 +25,18 @@ function homeworkLabel(value) {
 
 export default function ProgressPage() {
   const { internId } = useParams()
-  const { data, currentTrainer } = useStore()
+  const { data, currentTrainer, archiveLoaded, requestArchive } = useStore()
   const intern = data.interns.find((i) => i.id === internId)
   const group = intern ? data.groups.find((g) => g.id === intern.groupId) : null
+
+  // Стажёр мог уже уйти в архив — тогда его данные подгружаются отдельно.
+  useEffect(() => {
+    if (!intern) requestArchive()
+  }, [intern, requestArchive])
+
+  if (!intern && !archiveLoaded) {
+    return <div className="min-h-screen flex items-center justify-center text-sm text-navy-400">Загрузка...</div>
+  }
 
   if (!intern) {
     return (

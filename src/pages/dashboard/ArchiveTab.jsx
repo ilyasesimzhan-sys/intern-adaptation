@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
 import { getActiveAnswers, examPercent, getInternExamStatus } from '../../lib/exam'
@@ -100,9 +100,13 @@ function ArchiveReport({ archived, interns, trainers }) {
 }
 
 export default function ArchiveTab() {
-  const { data, update, currentTrainer } = useStore()
+  const { data, update, currentTrainer, archiveLoaded, requestArchive } = useStore()
   const { groups, interns, trainers } = data
   const admin = isTrainerAdmin(currentTrainer)
+
+  useEffect(() => {
+    requestArchive()
+  }, [requestArchive])
   const [searchByGroup, setSearchByGroup] = useState({})
   const [unarchivingId, setUnarchivingId] = useState(null)
 
@@ -126,12 +130,13 @@ export default function ArchiveTab() {
         {admin ? '; главный логин может вернуть группу из архива.' : '.'}
       </p>
 
-      {archived.length > 0 && <ArchiveReport archived={archived} interns={interns} trainers={trainers} />}
-
-      {archived.length === 0 ? (
+      {!archiveLoaded ? (
+        <p className="text-navy-400 dark:text-navy-500">Загрузка архива...</p>
+      ) : archived.length === 0 ? (
         <p className="text-navy-400 dark:text-navy-500">В архиве пока пусто.</p>
       ) : (
         <div className="space-y-6">
+          <ArchiveReport archived={archived} interns={interns} trainers={trainers} />
           {archived.map((g) => {
             const members = interns.filter((i) => i.groupId === g.id)
             const ownerName = trainers.find((t) => t.id === g.ownerId)?.name || 'без владельца'

@@ -17,7 +17,7 @@ function formatDateTime(iso) {
 }
 
 export default function BackupsTab() {
-  const { data, update, currentTrainer } = useStore()
+  const { data, update, currentTrainer, archiveLoaded, requestArchive } = useStore()
   const admin = isTrainerAdmin(currentTrainer)
   const [backups, setBackups] = useState(null)
   const [error, setError] = useState('')
@@ -40,8 +40,17 @@ export default function BackupsTab() {
     if (admin) refresh()
   }, [admin])
 
+  // Копия и восстановление работают только со всеми данными, включая стажёров архивных групп.
+  useEffect(() => {
+    if (admin) requestArchive()
+  }, [admin, requestArchive])
+
   if (!admin) {
     return <p className="text-navy-400 dark:text-navy-500">Раздел доступен только администратору.</p>
+  }
+
+  if (!archiveLoaded) {
+    return <p className="text-navy-400 dark:text-navy-500">Загрузка всех данных...</p>
   }
 
   async function run(action) {

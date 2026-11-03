@@ -1,4 +1,4 @@
-import { arrayUnion, deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore'
+import { arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore'
 import { getDb, hasFirebaseConfig } from './firebase'
 import { backupPayload, parsePayload } from './backupFile'
 
@@ -98,7 +98,9 @@ export async function ensureDailyBackup(data, trainer) {
   try {
     const list = await listBackups()
     if (list.some((b) => b.id === `day-${localDay()}`)) return
-    await saveBackup(data, 'auto', trainer)
+    // На сайте обычно загружены только стажёры текущих групп — для копии читаем всех, включая архив.
+    const snap = await getDocs(collection(getDb(), 'interns'))
+    await saveBackup({ ...data, interns: snap.docs.map((d) => d.data()) }, 'auto', trainer)
   } catch (err) {
     console.error('Daily backup failed', err)
   }

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import html2pdf from 'html2pdf.js'
 import { useStore } from '../store/StoreContext.jsx'
@@ -18,7 +18,7 @@ import { canManageGroup } from '../lib/roles'
 
 export default function CertificatePage() {
   const { internId } = useParams()
-  const { data, currentTrainer } = useStore()
+  const { data, currentTrainer, archiveLoaded, requestArchive } = useStore()
   const intern = data.interns.find((i) => i.id === internId)
   const group = intern ? data.groups.find((g) => g.id === intern.groupId) : null
   const trainer = group ? data.trainers.find((t) => t.id === group.ownerId) : null
@@ -32,6 +32,15 @@ export default function CertificatePage() {
     observerRef.current = new ResizeObserver(([entry]) => setScale(Math.min(1, entry.contentRect.width / CERT_W)))
     observerRef.current.observe(node)
   }, [])
+
+  // Стажёр мог уже уйти в архив — тогда его данные подгружаются отдельно.
+  useEffect(() => {
+    if (!intern) requestArchive()
+  }, [intern, requestArchive])
+
+  if (!intern && !archiveLoaded) {
+    return <div className="min-h-screen flex items-center justify-center text-sm text-navy-400">Загрузка...</div>
+  }
 
   if (!intern) {
     return (

@@ -29,7 +29,7 @@ function formatDateTime(iso) {
 }
 
 export default function JournalTab() {
-  const { data, update, currentTrainer } = useStore()
+  const { data, update, currentTrainer, requestArchive } = useStore()
   const admin = isTrainerAdmin(currentTrainer)
   const [entries, setEntries] = useState(null)
   const [error, setError] = useState('')
@@ -42,9 +42,16 @@ export default function JournalTab() {
   const [correcting, setCorrecting] = useState(null)
   const [savedId, setSavedId] = useState(null)
 
+  // Записи журнала могут касаться стажёров архивных групп — для отмены и исправления нужны все данные.
+  useEffect(() => {
+    if (admin) requestArchive()
+  }, [admin, requestArchive])
+
+  // Каждая загруженная запись — одно чтение Firestore, поэтому грузим с небольшим запасом к показанным,
+  // а «Показать ещё» догружает следующую порцию.
   useEffect(() => {
     if (!hasFirebaseConfig || !admin) return
-    const q = query(collection(getDb(), 'app'), orderBy('at', 'desc'), limit(1000))
+    const q = query(collection(getDb(), 'app'), orderBy('at', 'desc'), limit(shown + PAGE))
     return onSnapshot(
       q,
       (snap) => setEntries(snap.docs.map((d) => d.data()).filter((e) => e.id?.startsWith(LOG_PREFIX))),
@@ -53,7 +60,7 @@ export default function JournalTab() {
         setError('Не удалось загрузить журнал.')
       },
     )
-  }, [admin])
+  }, [admin, shown])
 
   const filtered = useMemo(
     () => (entries || []).filter((e) => !trainerFilter || (e.trainerId || 'guest') === trainerFilter),
@@ -263,7 +270,7 @@ export default function JournalTab() {
         </div>
       )}
 
-      {filtered.length > shown && (
+      {(filtered.length > shown || (entries || []).length >= shown + PAGE) && (
         <button onClick={() => setShown((n) => n + PAGE)} className="btn-secondary">
           Показать ещё
         </button>

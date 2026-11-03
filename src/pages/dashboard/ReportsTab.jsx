@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin, visibleGroups } from '../../lib/roles'
 import { trainingPeriod } from '../../lib/date'
@@ -7,13 +7,19 @@ import { downloadPeriodReport, groupInPeriod } from '../../lib/periodReport'
 const ALL = ''
 
 export default function ReportsTab() {
-  const { data, currentTrainer } = useStore()
+  const { data, currentTrainer, archiveLoaded, requestArchive } = useStore()
   const admin = isTrainerAdmin(currentTrainer)
   const [trainerId, setTrainerId] = useState(ALL)
   const [groupId, setGroupId] = useState(ALL)
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [withArchive, setWithArchive] = useState(true)
+  // Стажёры архивных групп загружаются отдельно — до этого отчёт по ним был бы пустым.
+  const loading = withArchive && !archiveLoaded
+
+  useEffect(() => {
+    if (withArchive) requestArchive()
+  }, [withArchive, requestArchive])
 
   const available = visibleGroups(data.groups, currentTrainer)
   // Тренеры, у которых есть группы, — для выбора администратором.
@@ -108,7 +114,7 @@ export default function ReportsTab() {
 
         <div className="rounded-lg bg-navy-50 dark:bg-navy-800 p-3 text-sm space-y-1">
           <div className="font-semibold">
-            В отчёт попадут: групп — {selected.length}, стажёров — {internCount}
+            В отчёт попадут: групп — {selected.length}, стажёров — {loading ? '…' : internCount}
           </div>
           {selected.length > 0 && (
             <ul className="text-navy-500 dark:text-navy-400 max-h-48 overflow-y-auto">
@@ -123,8 +129,8 @@ export default function ReportsTab() {
           )}
         </div>
 
-        <button disabled={selected.length === 0} onClick={download} className="btn-primary">
-          ⬇ Скачать отчёт в Excel
+        <button disabled={loading || selected.length === 0} onClick={download} className="btn-primary">
+          {loading ? 'Загрузка архива...' : '⬇ Скачать отчёт в Excel'}
         </button>
       </div>
     </div>

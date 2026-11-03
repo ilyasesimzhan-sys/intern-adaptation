@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
-import { doc, collection, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore'
+import { doc, collection, onSnapshot, setDoc, deleteDoc, query, where } from 'firebase/firestore'
 import { makeDefaultData } from './defaultData'
 import { getDb, hasFirebaseConfig } from '../lib/firebase'
 
@@ -9,6 +9,8 @@ const WRITE_DEBOUNCE_MS = 400
 // Подряд идущие правки одного и того же человека над теми же записями (набор текста в поле и т.п.)
 // склеиваются в одну запись журнала, если между ними прошло меньше этого времени.
 const LOG_MERGE_MS = 2 * 60 * 1000
+// Сколько групп в одном запросе стажёров (ограничение Firestore на оператор «in»).
+const GROUPS_PER_QUERY = 10
 
 // Журнал действий хранится документами app/log_<id>: правила Firestore разрешают запись только в
 // app/, groups/ и interns/, а отдельная коллекция потребовала бы правки правил в консоли.
@@ -94,6 +96,29 @@ export function StoreProvider({ children }) {
   const lastLogRef = useRef(null)
   // Последнее известное состояние сервера — база для сравнения при записи (какие документы реально менялись).
   const remoteRef = useRef(null)
+  // Последние снимки из базы по частям; publish собирает из них общее состояние.
+  const currentRef = useRef({ settings: null, groups: null, interns: null })
+  // Стажёры загружаются только из текущих (не архивных) групп — каждое открытие сайта стоит столько чтений
+  // Firestore, сколько стажёров загружено, а архив растёт постоянно. Весь архив подгружается по запросу
+  // (requestArchive) — во вкладках «Архив», «Отчёты», «Резервные копии», «Журнал» и на старых ссылках прогресса.
+  // activeKey — id текущих групп через запятую (null, пока группы не загружены).
+  const [activeKey, setActiveKey] = useState(null)
+  const [archiveWanted, setArchiveWanted] = useState(false)
+  const [archiveLoaded, setArchiveLoaded] = useState(!hasFirebaseConfig)
+
+  const publish = useCallback(() => {
+    const current = currentRef.current
+    if (!current.settings || !current.groups || !current.interns) return
+    const merged = {
+      settings: current.settings.settings,
+      trainers: current.settings.trainers,
+      groups: current.groups,
+      interns: current.interns,
+    }
+    remoteRef.current = merged
+    setData(merged)
+    setReady(true)
+  }, [])
 
   // Общий режим: стажёры и группы — отдельные документы в своих коллекциях (без ограничения в 1 МБ на всех
   // разом), настройки и тренеры — один маленький общий документ. Если какого-то документа/коллекции ещё нет,
@@ -103,20 +128,7 @@ export function StoreProvider({ children }) {
     if (!hasFirebaseConfig) return
     const db = getDb()
     const defaults = makeDefaultData()
-    const current = { settings: null, groups: null, interns: null }
-
-    function publish() {
-      if (!current.settings || !current.groups || !current.interns) return
-      const merged = {
-        settings: current.settings.settings,
-        trainers: current.settings.trainers,
-        groups: current.groups,
-        interns: current.interns,
-      }
-      remoteRef.current = merged
-      setData(merged)
-      setReady(true)
-    }
+    const current = currentRef.current
 
     const unsubSettings = onSnapshot(
       doc(db, 'app', 'settings'),
@@ -143,24 +155,14 @@ export function StoreProvider({ children }) {
       collection(db, 'groups'),
       (snap) => {
         current.groups = snap.docs.map((d) => d.data())
+        const activeIds = current.groups.filter((g) => !g.archived).map((g) => g.id)
+        setActiveKey(activeIds.sort().join(','))
         publish()
       },
       (err) => {
         console.error('Firestore groups sync error', err)
         current.groups = current.groups || []
-        publish()
-      },
-    )
-
-    const unsubInterns = onSnapshot(
-      collection(db, 'interns'),
-      (snap) => {
-        current.interns = snap.docs.map((d) => d.data())
-        publish()
-      },
-      (err) => {
-        console.error('Firestore interns sync error', err)
-        current.interns = current.interns || []
+        setActiveKey((key) => key ?? '')
         publish()
       },
     )
@@ -168,9 +170,59 @@ export function StoreProvider({ children }) {
     return () => {
       unsubSettings()
       unsubGroups()
-      unsubInterns()
     }
-  }, [])
+  }, [publish])
+
+  // Стажёры: либо все (когда нужен архив), либо только текущих групп — пачками по GROUPS_PER_QUERY групп.
+  // Пока новая подписка не пришла, на экране остаются прежние данные.
+  useEffect(() => {
+    if (!hasFirebaseConfig || activeKey === null) return
+    const db = getDb()
+    const current = currentRef.current
+    const onError = (err) => {
+      console.error('Firestore interns sync error', err)
+      current.interns = current.interns || []
+      publish()
+    }
+
+    if (archiveWanted) {
+      return onSnapshot(
+        collection(db, 'interns'),
+        (snap) => {
+          current.interns = snap.docs.map((d) => d.data())
+          setArchiveLoaded(true)
+          publish()
+        },
+        onError,
+      )
+    }
+
+    const ids = activeKey ? activeKey.split(',') : []
+    if (ids.length === 0) {
+      current.interns = []
+      publish()
+      return
+    }
+    const chunks = []
+    for (let i = 0; i < ids.length; i += GROUPS_PER_QUERY) chunks.push(ids.slice(i, i + GROUPS_PER_QUERY))
+    const parts = chunks.map(() => null)
+    const unsubs = chunks.map((chunk, n) =>
+      onSnapshot(
+        query(collection(db, 'interns'), where('groupId', 'in', chunk)),
+        (snap) => {
+          parts[n] = snap.docs.map((d) => d.data())
+          if (parts.every(Boolean)) {
+            current.interns = parts.flat()
+            publish()
+          }
+        },
+        onError,
+      ),
+    )
+    return () => unsubs.forEach((u) => u())
+  }, [activeKey, archiveWanted, publish])
+
+  const requestArchive = useCallback(() => setArchiveWanted(true), [])
 
   // Демо-режим: хранение в localStorage одного браузера.
   useEffect(() => {
@@ -298,7 +350,7 @@ export function StoreProvider({ children }) {
   }
 
   return (
-    <StoreContext.Provider value={{ data, update, login, logout, currentTrainer }}>
+    <StoreContext.Provider value={{ data, update, login, logout, currentTrainer, archiveLoaded, requestArchive }}>
       {children}
     </StoreContext.Provider>
   )
