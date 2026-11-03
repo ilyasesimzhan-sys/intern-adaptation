@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import html2pdf from 'html2pdf.js'
 import { useStore } from '../store/StoreContext.jsx'
@@ -12,17 +12,26 @@ import {
   EXAM_QUESTION_COUNT,
 } from '../lib/exam'
 import { formatDate, trainingPeriod } from '../lib/date'
-import logo from '../assets/logo.jpeg'
 import ThemeToggle from '../components/ThemeToggle.jsx'
+import CertificateSheet, { CERT_W, CERT_H, CERT_COLORS } from '../components/CertificateSheet.jsx'
+import { canManageGroup } from '../lib/roles'
 
 export default function CertificatePage() {
   const { internId } = useParams()
-  const { data } = useStore()
+  const { data, currentTrainer } = useStore()
   const intern = data.interns.find((i) => i.id === internId)
   const group = intern ? data.groups.find((g) => g.id === intern.groupId) : null
   const trainer = group ? data.trainers.find((t) => t.id === group.ownerId) : null
   const certRef = useRef(null)
   const [downloading, setDownloading] = useState(false)
+  const [scale, setScale] = useState(1)
+  const observerRef = useRef(null)
+  const frameRef = useCallback((node) => {
+    observerRef.current?.disconnect()
+    if (!node) return
+    observerRef.current = new ResizeObserver(([entry]) => setScale(Math.min(1, entry.contentRect.width / CERT_W)))
+    observerRef.current.observe(node)
+  }, [])
 
   if (!intern) {
     return (
@@ -32,6 +41,27 @@ export default function CertificatePage() {
           <Link to="/" className="btn-secondary">
             На главную
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!canManageGroup(group, currentTrainer)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="card max-w-md text-center">
+          <h1 className="text-xl font-bold mb-2">Документ недоступен</h1>
+          <p className="text-navy-500 dark:text-navy-400 mb-4">
+            Скачать уведомление о завершении АП может только тренер группы стажёра или администратор — войдите в кабинет тренера.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Link to="/login" className="btn-primary">
+              Вход для тренеров
+            </Link>
+            <Link to={`/progress/${intern.id}`} className="btn-secondary">
+              К прогрессу стажёра
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -47,7 +77,7 @@ export default function CertificatePage() {
         <div className="card max-w-md text-center">
           <h1 className="text-xl font-bold mb-2">Документ недоступен</h1>
           <p className="text-navy-500 dark:text-navy-400 mb-4">
-            Сертификат или уведомление о результате появляются здесь только после того, как по итоговому экзамену
+            Уведомление о завершении АП или о результате появляется здесь только после того, как по итоговому экзамену
             принято окончательное решение.
           </p>
           <Link to={`/progress/${intern.id}`} className="btn-secondary">
@@ -70,13 +100,23 @@ export default function CertificatePage() {
     if (!certRef.current || downloading) return
     setDownloading(true)
     try {
+      // Без загруженного Nunito html2canvas нарисовал бы текст запасным шрифтом.
+      await document.fonts?.ready
       await html2pdf()
         .set({
           margin: 0,
-          filename: `${isPassed ? 'Сертификат' : 'Уведомление'} — ${intern.lastName} ${intern.firstName}.pdf`,
+          filename: `${isPassed ? 'Уведомление о завершении АП' : 'Уведомление о результате АП'} — ${intern.lastName} ${intern.firstName}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 1200 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: CERT_COLORS.paper,
+            width: CERT_W,
+            height: CERT_H,
+            windowWidth: CERT_W,
+          },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+          pagebreak: { mode: 'avoid-all' },
         })
         .from(certRef.current)
         .save()
@@ -87,7 +127,7 @@ export default function CertificatePage() {
 
   return (
     <div className="min-h-screen py-8 px-4">
-      <div className="max-w-3xl mx-auto space-y-4">
+      <div className="max-w-[1123px] mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <Link
             to={`/progress/${intern.id}`}
@@ -102,101 +142,28 @@ export default function CertificatePage() {
             </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-5xl mx-auto mt-6">
-        <div
-          ref={certRef}
-          className="relative bg-white text-navy-900 rounded-2xl shadow-sm border border-navy-100 overflow-hidden flex flex-col sm:flex-row sm:aspect-[297/210]"
-        >
-          <div className="sm:w-56 shrink-0 bg-navy-900 flex flex-row sm:flex-col items-center justify-center gap-5 sm:gap-4 py-8 sm:py-10 px-6">
-            <div className="bg-white rounded-xl p-4 shrink-0">
-              <img src={logo} alt="Kazakhtelecom Corporate University" className="h-12 sm:h-14 w-auto" />
-            </div>
-            <div className="text-navy-100 text-sm sm:text-xs text-left sm:text-center tracking-[0.15em] uppercase leading-relaxed">
-              Kazakhtelecom
-              <br />
-              Corporate University
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center p-8 sm:p-16">
-            <div
-              className={
-                'text-sm font-semibold uppercase tracking-[0.3em] ' + (isPassed ? 'text-sky-600' : 'text-warning-600')
-              }
-            >
-              {isPassed ? 'Сертификат' : 'Уведомление о результате'}
-            </div>
-            <div className="font-display text-3xl sm:text-4xl font-bold text-navy-900 mt-3">
-              {intern.lastName} {intern.firstName}
-            </div>
-            <p className="text-base text-navy-400 mt-2">
-              {intern.department} · {intern.position} · {intern.city}
-            </p>
-
-            <p className="text-navy-600 text-base max-w-2xl mt-6 leading-relaxed">
-              {isPassed ? (
-                <>
-                  успешно прошёл(-ла) адаптационную программу{group ? ` в группе «${group.name}»` : ''}
-                  {period ? ` (${period})` : ''} и сдал(-а) итоговый экзамен с результатом{' '}
-                  <span className="font-semibold text-success-600">
-                    {correct}/{EXAM_QUESTION_COUNT} ({percent}%)
-                  </span>
-                  .
-                </>
-              ) : (
-                <>
-                  прошёл(-ла) адаптационную программу{group ? ` в группе «${group.name}»` : ''}
-                  {period ? ` (${period})` : ''}, но, к сожалению, по итогам итогового экзамена не набрал(а)
-                  проходной балл — результат{' '}
-                  <span className="font-semibold text-danger-500">
-                    {correct}/{EXAM_QUESTION_COUNT} ({percent}%)
-                  </span>{' '}
-                  — и направлен(а) на дополнительное обучение.
-                </>
-              )}
-            </p>
-
-            {isTraining && (intern.examFinalComment || weakTopics.length > 0) && (
-              <div className="mt-4 max-w-2xl rounded-xl bg-warning-50 dark:bg-warning-500/10 p-4">
-                <div className="text-xs font-semibold text-warning-600 uppercase tracking-wide">
-                  Рекомендации к дополнительному обучению
-                </div>
-                {intern.examFinalComment && (
-                  <p className="text-sm text-navy-700 mt-2 leading-relaxed">{intern.examFinalComment}</p>
-                )}
-                {weakTopics.length > 0 && (
-                  <div className="mt-2">
-                    <div className="text-xs text-navy-500 mb-1">Вопросы, на которые не был дан верный ответ:</div>
-                    <ul className="text-sm text-navy-700 list-disc list-inside space-y-0.5">
-                      {weakTopics.map((topic, idx) => (
-                        <li key={idx}>{topic}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mt-10 pt-8 border-t border-navy-100">
-              <div>
-                <div className="text-sm text-navy-400">Обучение</div>
-                <div className="text-base font-medium mt-1">{period || '—'}</div>
-              </div>
-              <div>
-                <div className="text-sm text-navy-400">Дата экзамена</div>
-                <div className="text-base font-medium mt-1">{examDate ? formatDate(examDate) : '—'}</div>
-              </div>
-              <div>
-                <div className="text-sm text-navy-400">Бизнес-тренер</div>
-                <div className="text-base font-medium mt-1">{trainer?.name || '—'}</div>
-              </div>
-              <div>
-                <div className="text-sm text-navy-400">Дата выдачи</div>
-                <div className="text-base font-medium mt-1">{issueDate}</div>
-              </div>
-            </div>
+        {/* На экране лист целиком уменьшается под ширину окна; в PDF уходит в исходном размере. */}
+        <div ref={frameRef} className="w-full" style={{ height: CERT_H * scale }}>
+          <div
+            className="shadow-lg overflow-hidden"
+            style={{ width: CERT_W, height: CERT_H, transform: `scale(${scale})`, transformOrigin: 'top left' }}
+          >
+            <CertificateSheet
+              ref={certRef}
+              kind={isPassed ? 'passed' : 'training'}
+              fullName={`${intern.lastName} ${intern.firstName}`}
+              details={[intern.department, intern.position, intern.city].filter(Boolean).join(' · ')}
+              groupName={group?.name}
+              result={`${correct}/${EXAM_QUESTION_COUNT} (${percent}%)`}
+              recommendation={intern.examFinalComment || (weakTopics.length ? `повторить темы — ${weakTopics.join('; ')}` : '')}
+              footer={[
+                ['Обучение', period || '—'],
+                ['Дата экзамена', examDate ? formatDate(examDate) : '—'],
+                ['Бизнес-тренер', trainer?.name || '—'],
+                ['Дата выдачи', issueDate],
+              ]}
+            />
           </div>
         </div>
       </div>

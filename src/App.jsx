@@ -18,6 +18,7 @@ import WhatsAppTab from './pages/dashboard/WhatsAppTab.jsx'
 import IspringTab from './pages/dashboard/IspringTab.jsx'
 import ArchiveTab from './pages/dashboard/ArchiveTab.jsx'
 import KnowledgeBaseTab from './pages/dashboard/KnowledgeBaseTab.jsx'
+import JournalTab from './pages/dashboard/JournalTab.jsx'
 
 function RequireAuth({ children }) {
   const { currentTrainer } = useStore()
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="ispring" element={<IspringTab />} />
         <Route path="archive" element={<ArchiveTab />} />
         <Route path="knowledge" element={<KnowledgeBaseTab />} />
+        <Route path="journal" element={<JournalTab />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

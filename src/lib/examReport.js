@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx'
 import { getExamAnswers, getRetakeAnswers, examPercent, getInternExamStatus, getWeakTopics } from './exam'
 import { formatDate, trainingPeriod } from './date'
+import { homeworkLessons } from './lessons'
 
 const HOMEWORK_SCORE = { done: 100, partial: 50, not_done: 0 }
 
@@ -17,9 +18,10 @@ function attendancePercent(intern, lessons) {
 }
 
 function homeworkPercent(intern, lessons) {
-  if (lessons.length === 0) return ''
-  const total = lessons.reduce((sum, l) => sum + (HOMEWORK_SCORE[intern.homework?.[l.id]] ?? 0), 0)
-  return `${Math.round(total / lessons.length)}%`
+  const hwLessons = homeworkLessons(lessons)
+  if (hwLessons.length === 0) return ''
+  const total = hwLessons.reduce((sum, l) => sum + (HOMEWORK_SCORE[intern.homework?.[l.id]] ?? 0), 0)
+  return `${Math.round(total / hwLessons.length)}%`
 }
 
 // Автоматическая рекомендация «над чем работать» — дисциплина (пропуски), домашние задания и темы,
@@ -32,8 +34,9 @@ function buildRecommendation(intern, lessons) {
     notes.push(`Дисциплина — пропущено занятий: ${missed.length} из ${lessons.length} (${missed.map((l) => l.name).join(', ')})`)
   }
 
-  const notDone = lessons.filter((l) => intern.homework?.[l.id] === 'not_done').map((l) => l.name)
-  const partial = lessons.filter((l) => intern.homework?.[l.id] === 'partial').map((l) => l.name)
+  const hwLessons = homeworkLessons(lessons)
+  const notDone = hwLessons.filter((l) => intern.homework?.[l.id] === 'not_done').map((l) => l.name)
+  const partial = hwLessons.filter((l) => intern.homework?.[l.id] === 'partial').map((l) => l.name)
   if (notDone.length > 0 || partial.length > 0) {
     const parts = []
     if (notDone.length > 0) parts.push(`не выполнено — ${notDone.join(', ')}`)

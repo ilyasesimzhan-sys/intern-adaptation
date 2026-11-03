@@ -19,6 +19,45 @@ export function getExamQuestions(intern) {
   return intern.examQuestions || emptyExamQuestions()
 }
 
+// У пересдачи свой список вопросов: неверно отвеченные повторяются, верно отвеченные заменяются новыми.
+// Старые пересдачи (до появления банка вопросов) своего списка не имеют — у них вопросы те же, что в первой попытке.
+export function getRetakeQuestions(intern) {
+  return intern.examRetakeQuestions || getExamQuestions(intern)
+}
+
+export function getActiveQuestions(intern) {
+  return getRetakeAnswers(intern) ? getRetakeQuestions(intern) : getExamQuestions(intern)
+}
+
+// Общий банк вопросов (загружается из Excel во вкладке «Итоговый экзамен»).
+export function getQuestionBank(settings) {
+  return settings?.examQuestionBank || []
+}
+
+function shuffle(list) {
+  const arr = list.slice()
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
+// Случайные EXAM_QUESTION_COUNT разных вопросов из банка для первой попытки.
+export function drawExamQuestions(bank) {
+  return shuffle(bank).slice(0, EXAM_QUESTION_COUNT)
+}
+
+// Вопросы пересдачи: на неверно отвеченные — те же вопросы, на верно отвеченные — новые из банка,
+// которых у стажёра ещё не было. Если новых не хватает, вопрос остаётся прежним.
+export function drawRetakeQuestions(intern, bank) {
+  const questions = getExamQuestions(intern)
+  const answers = getExamAnswers(intern)
+  const used = new Set(questions.map((q) => q.trim()).filter(Boolean))
+  const fresh = shuffle(bank.filter((q) => !used.has(q.trim())))
+  return questions.map((q, idx) => (answers[idx] === true && fresh.length > 0 ? fresh.pop() : q))
+}
+
 export function getRetakeAnswers(intern) {
   return intern.examRetakeAnswers || null
 }
@@ -63,7 +102,7 @@ export function examPassed(answers) {
 
 // Темы вопросов, на которые стажёр ответил неверно в текущей (активной) попытке — основа рекомендаций к доп. обучению.
 export function getWeakTopics(intern) {
-  const questions = getExamQuestions(intern)
+  const questions = getActiveQuestions(intern)
   const answers = getActiveAnswers(intern)
   return questions.filter((q, idx) => answers[idx] === false && q.trim())
 }

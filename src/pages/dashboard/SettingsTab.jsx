@@ -26,7 +26,8 @@ export default function SettingsTab() {
   // которые некоторые браузеры (в т.ч. встроенные) молча блокируют.
   const [deleteState, setDeleteState] = useState({ id: null, blocked: false })
   const [rename, setRename] = useState({ id: null, value: '' })
-  // Предпросмотр деления группы на две: { groupId, parts: [[...], [...]] }
+  // Предпросмотр деления группы на две: { groupId, parts: [[...], [...]], ownerId }
+  // ownerId — тренер, которому передаётся вторая группа; после деления она пропадает у исходного тренера.
   const [split, setSplit] = useState(null)
   const admin = isTrainerAdmin(currentTrainer)
 
@@ -83,15 +84,22 @@ export default function SettingsTab() {
 
   function deleteGroup(groupId) {
     setDeleteState({ id: null, blocked: false })
-    update((prev) => ({ ...prev, groups: prev.groups.filter((g) => g.id !== groupId) }))
+    update((prev) => ({ ...prev, groups: prev.groups.filter((g) => g.id !== groupId) }), {
+      label: `Удалена группа «${groups.find((g) => g.id === groupId)?.name || '—'}»`,
+    })
   }
 
   function previewSplit(groupId) {
-    setSplit({ groupId, parts: splitInternsByCity(interns.filter((i) => i.groupId === groupId)) })
+    setSplit((prev) => ({
+      groupId,
+      parts: splitInternsByCity(interns.filter((i) => i.groupId === groupId)),
+      ownerId: prev?.groupId === groupId ? prev.ownerId : '',
+    }))
   }
 
   // Вторая группа получает те же занятия (с теми же id), поэтому уже отмеченные посещаемость и ДЗ сохраняются.
   function confirmSplit(group) {
+    if (!split.ownerId) return
     const newId = uid()
     const movedIds = new Set(split.parts[1].map((i) => i.id))
     update((prev) => ({
@@ -102,12 +110,15 @@ export default function SettingsTab() {
           ...group,
           id: newId,
           name: `${group.name} (2)`,
+          ownerId: split.ownerId,
           lessons: (group.lessons || []).map((l) => ({ ...l })),
           createdAt: new Date().toISOString(),
         },
       ],
       interns: prev.interns.map((i) => (movedIds.has(i.id) ? { ...i, groupId: newId } : i)),
-    }))
+    }), {
+      label: `Группа «${group.name}» поделена на две; вторая передана тренеру ${trainers.find((t) => t.id === split.ownerId)?.name || '—'}`,
+    })
     setSplit(null)
   }
 
@@ -352,8 +363,30 @@ export default function SettingsTab() {
                           </div>
                         ))}
                       </div>
+                      <div>
+                        <label className="field-label">Тренер для группы «{g.name} (2)»</label>
+                        <select
+                          className="field-input max-w-sm"
+                          value={split.ownerId}
+                          onChange={(e) => setSplit((s) => ({ ...s, ownerId: e.target.value }))}
+                        >
+                          <option value="">Выберите тренера</option>
+                          {trainers
+                            .filter((t) => t.id !== g.ownerId)
+                            .map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.name}
+                              </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-navy-400 dark:text-navy-500 mt-1">
+                          {admin
+                            ? 'Вторая группа перейдёт выбранному тренеру. Сменить тренера позже можно в поле «Владелец группы».'
+                            : 'Вторая группа перейдёт выбранному тренеру и пропадёт из вашего кабинета.'}
+                        </p>
+                      </div>
                       <div className="flex flex-wrap gap-2">
-                        <button onClick={() => confirmSplit(g)} className="btn-primary text-sm">
+                        <button onClick={() => confirmSplit(g)} disabled={!split.ownerId} className="btn-primary text-sm">
                           Поделить
                         </button>
                         <button onClick={() => previewSplit(g.id)} className="btn-secondary text-sm">

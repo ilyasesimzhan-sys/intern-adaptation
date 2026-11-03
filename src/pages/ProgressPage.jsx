@@ -5,6 +5,7 @@ import {
   getExamAnswers,
   getRetakeAnswers,
   getExamQuestions,
+  getRetakeQuestions,
   examCorrectCount,
   examPercent,
   getInternExamStatus,
@@ -12,7 +13,10 @@ import {
 } from '../lib/exam'
 import ExamAnswerList from '../components/ExamAnswerList.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
+import logo from '../assets/logo.jpeg'
 import { formatDate } from '../lib/date'
+import { firstLessonId, homeworkLessons } from '../lib/lessons'
+import { canManageGroup } from '../lib/roles'
 
 function homeworkLabel(value) {
   return HOMEWORK_STATUSES.find((h) => h.value === value)?.label || 'Не указано'
@@ -20,7 +24,7 @@ function homeworkLabel(value) {
 
 export default function ProgressPage() {
   const { internId } = useParams()
-  const { data } = useStore()
+  const { data, currentTrainer } = useStore()
   const intern = data.interns.find((i) => i.id === internId)
   const group = intern ? data.groups.find((g) => g.id === intern.groupId) : null
 
@@ -42,12 +46,20 @@ export default function ProgressPage() {
 
   const attended = lessons.filter((l) => intern.attendance[l.id]).length
   const attendancePct = lessons.length ? Math.round((attended / lessons.length) * 100) : null
-  const homeworkDone = lessons.filter((l) => intern.homework[l.id] === 'done').length
-  const homeworkPct = lessons.length ? Math.round((homeworkDone / lessons.length) * 100) : null
+  const hwLessons = homeworkLessons(lessons)
+  const noHomeworkId = firstLessonId(lessons)
+  const homeworkDone = hwLessons.filter((l) => intern.homework[l.id] === 'done').length
+  const homeworkPct = hwLessons.length ? Math.round((homeworkDone / hwLessons.length) * 100) : null
 
   return (
-    <div className="min-h-screen py-8 px-4">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="relative min-h-screen py-8 px-4 bg-gradient-to-br from-navy-50 via-sky-50 to-violet-50 dark:from-navy-950 dark:via-navy-900 dark:to-navy-950">
+      <img
+        src={logo}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none select-none fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[130%] max-w-none sm:w-[900px] opacity-90 dark:opacity-10 mix-blend-multiply saturate-[2] contrast-125"
+      />
+      <div className="relative max-w-5xl mx-auto space-y-6 [&_.card]:!bg-white/45 dark:[&_.card]:!bg-navy-900/70 [&_.card]:backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-sm text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200">
             ← На главную
@@ -78,9 +90,9 @@ export default function ProgressPage() {
               {status.label}
             </span>
           </div>
-          {(status.code === 'passed' || status.code === 'training') && (
+          {(status.code === 'passed' || status.code === 'training') && canManageGroup(group, currentTrainer) && (
             <Link to={`/certificate/${intern.id}`} className="btn-secondary text-base mb-4 inline-flex">
-              {status.code === 'passed' ? '🎓 Скачать сертификат' : '📄 Уведомление о результате'}
+              {status.code === 'passed' ? '🎓 Уведомление о завершении АП' : '📄 Уведомление о результате'}
             </Link>
           )}
           <p className="text-navy-500 dark:text-navy-400 text-base mb-4">
@@ -105,10 +117,10 @@ export default function ProgressPage() {
             <div>
               <div className="text-2xl font-bold">
                 {homeworkPct === null ? '—' : `${homeworkPct}%`}
-                {lessons.length > 0 && (
+                {hwLessons.length > 0 && (
                   <span className="text-base font-normal text-navy-400 dark:text-navy-500">
                     {' '}
-                    ({homeworkDone}/{lessons.length})
+                    ({homeworkDone}/{hwLessons.length})
                   </span>
                 )}
               </div>
@@ -151,7 +163,9 @@ export default function ProgressPage() {
                           {intern.attendance[l.id] ? 'Присутствовал' : 'Отсутствовал'}
                         </span>
                       </td>
-                      <td className="py-2.5 pr-4">{homeworkLabel(intern.homework[l.id])}</td>
+                      <td className="py-2.5 pr-4">
+                        {l.id === noHomeworkId ? 'Не задаётся (первый день)' : homeworkLabel(intern.homework[l.id])}
+                      </td>
                       <td className="py-2.5 pr-4">{intern.comments?.[l.id] || '—'}</td>
                     </tr>
                   ))}
@@ -186,7 +200,7 @@ export default function ProgressPage() {
                     <div className="text-sm font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
                       Пересдача · {examCorrectCount(retake)}/{EXAM_QUESTION_COUNT} ({examPercent(retake)}%)
                     </div>
-                    <ExamAnswerList questions={questions} answers={retake} />
+                    <ExamAnswerList questions={getRetakeQuestions(intern)} answers={retake} />
                   </div>
                 )}
 

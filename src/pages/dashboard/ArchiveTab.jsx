@@ -22,17 +22,18 @@ export default function ArchiveTab() {
   const { groups, interns, trainers } = data
   const admin = isTrainerAdmin(currentTrainer)
   const [searchByGroup, setSearchByGroup] = useState({})
+  const [unarchivingId, setUnarchivingId] = useState(null)
 
   const archived = groups
     .filter((g) => g.archived)
     .sort((a, b) => new Date(b.archivedAt || 0) - new Date(a.archivedAt || 0))
 
   function unarchive(groupId) {
-    if (!confirm('Вернуть эту группу из архива в активные?')) return
+    setUnarchivingId(null)
     update((prev) => ({
       ...prev,
       groups: prev.groups.map((g) => (g.id === groupId ? { ...g, archived: false, archivedAt: '' } : g)),
-    }))
+    }), { label: `Группа «${groups.find((g) => g.id === groupId)?.name || '—'}» возвращена из архива` })
   }
 
   return (
@@ -77,11 +78,25 @@ export default function ArchiveTab() {
                       <span className="font-semibold text-success-600 dark:text-success-400">{passed.length}</span>/
                       {members.length}
                     </div>
-                    {admin && (
-                      <button onClick={() => unarchive(g.id)} className="btn-secondary text-xs px-3 py-1.5">
-                        Вернуть из архива
-                      </button>
-                    )}
+                    {admin &&
+                      (unarchivingId === g.id ? (
+                        <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
+                          <span className="font-semibold">Вернуть группу в активные?</span>
+                          <button onClick={() => unarchive(g.id)} className="btn-primary text-xs px-3 py-1.5">
+                            Да, вернуть
+                          </button>
+                          <button
+                            onClick={() => setUnarchivingId(null)}
+                            className="btn-secondary text-xs px-3 py-1.5"
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setUnarchivingId(g.id)} className="btn-secondary text-xs px-3 py-1.5">
+                          Вернуть из архива
+                        </button>
+                      ))}
                   </div>
                 </div>
 

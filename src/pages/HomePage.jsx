@@ -194,7 +194,15 @@ export default function HomePage() {
                     }
                   >
                     <h3 className="font-semibold text-navy-700 dark:text-navy-100 mb-1 flex flex-wrap items-center gap-2">
-                      {g.name}
+                      <span
+                        className={
+                          'inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-display font-extrabold text-[15px] tracking-wide text-white shadow-md ring-1 ring-white/20 bg-gradient-to-r ' +
+                          (g.isOpen ? 'from-success-600 to-success-500' : 'from-navy-600 to-sky-500')
+                        }
+                      >
+                        <span aria-hidden="true">🎓</span>
+                        {g.name}
+                      </span>
                       <span
                         className={
                           'text-xs font-medium px-2 py-0.5 rounded-full ' +

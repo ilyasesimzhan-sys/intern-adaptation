@@ -6,6 +6,46 @@ import { getDb, hasFirebaseConfig } from '../lib/firebase'
 const STORAGE_KEY = 'intern-adaptation:data'
 const AUTH_KEY = 'intern-adaptation:trainerId'
 const WRITE_DEBOUNCE_MS = 400
+// Подряд идущие правки одного и того же человека над теми же записями (набор текста в поле и т.п.)
+// склеиваются в одну запись журнала, если между ними прошло меньше этого времени.
+const LOG_MERGE_MS = 2 * 60 * 1000
+
+// Журнал действий хранится документами app/log_<id>: правила Firestore разрешают запись только в
+// app/, groups/ и interns/, а отдельная коллекция потребовала бы правки правил в консоли.
+export const LOG_PREFIX = 'log_'
+
+// Изменения документов между двумя состояниями — для журнала: что было до и что стало после.
+function collectChanges(prev, next) {
+  const changes = []
+  if (
+    JSON.stringify(prev.settings) !== JSON.stringify(next.settings) ||
+    JSON.stringify(prev.trainers) !== JSON.stringify(next.trainers)
+  ) {
+    changes.push({
+      coll: 'settings',
+      id: 'settings',
+      before: { settings: prev.settings, trainers: prev.trainers },
+      after: { settings: next.settings, trainers: next.trainers },
+    })
+  }
+  for (const coll of ['groups', 'interns']) {
+    const prevMap = new Map((prev[coll] || []).map((item) => [item.id, item]))
+    const nextMap = new Map((next[coll] || []).map((item) => [item.id, item]))
+    for (const [id, item] of nextMap) {
+      const before = prevMap.get(id) || null
+      if (JSON.stringify(before) !== JSON.stringify(item)) changes.push({ coll, id, before, after: item })
+    }
+    for (const [id, item] of prevMap) {
+      if (!nextMap.has(id)) changes.push({ coll, id, before: item, after: null })
+    }
+  }
+  return changes
+}
+
+// Firestore не хранит undefined — JSON-копия убирает такие поля.
+function plain(value) {
+  return JSON.parse(JSON.stringify(value))
+}
 
 function loadLocalData() {
   try {
@@ -48,6 +88,10 @@ export function StoreProvider({ children }) {
   const [ready, setReady] = useState(!hasFirebaseConfig)
   const [trainerId, setTrainerId] = useState(() => localStorage.getItem(AUTH_KEY) || null)
   const writeTimer = useRef(null)
+  const trainerRef = useRef(null)
+  // Подпись действия для журнала (например, «Деление группы»), переданная в update до ближайшей записи.
+  const pendingMetaRef = useRef(null)
+  const lastLogRef = useRef(null)
   // Последнее известное состояние сервера — база для сравнения при записи (какие документы реально менялись).
   const remoteRef = useRef(null)
 
@@ -149,7 +193,51 @@ export function StoreProvider({ children }) {
     return () => window.removeEventListener('storage', onStorage)
   }, [])
 
-  const update = useCallback((updater) => {
+  function writeLog(db, baseline, next) {
+    const meta = pendingMetaRef.current || {}
+    pendingMetaRef.current = null
+    const changes = collectChanges(baseline, next)
+    if (changes.length === 0) return
+    const trainer = trainerRef.current
+    const keys = changes.map((c) => `${c.coll}/${c.id}`).sort().join('|')
+    const now = new Date()
+    const last = lastLogRef.current
+    const canMerge =
+      last &&
+      !meta.label &&
+      !last.label &&
+      last.trainerId === (trainer?.id || null) &&
+      last.keys === keys &&
+      now - last.time < LOG_MERGE_MS
+
+    let entry
+    if (canMerge) {
+      // Склейка: «до» остаётся от первой правки серии, «после» — от последней.
+      entry = {
+        ...last.entry,
+        at: now.toISOString(),
+        changes: last.entry.changes.map((c) => ({ ...c, after: changes.find((n) => n.coll === c.coll && n.id === c.id).after })),
+      }
+    } else {
+      entry = {
+        id: LOG_PREFIX + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        at: now.toISOString(),
+        trainerId: trainer?.id || null,
+        trainerName: trainer?.name || '',
+        trainerLogin: trainer?.login || '',
+        label: meta.label || '',
+        undoOf: meta.undoOf || null,
+        changes,
+      }
+    }
+    entry = plain(entry)
+    lastLogRef.current = { entry, keys, trainerId: entry.trainerId, label: entry.label, time: now }
+    setDoc(doc(db, 'app', entry.id), entry).catch((err) => console.error('Firestore log write failed', err))
+  }
+
+  // meta.label — человеческое название действия для журнала; meta.undoOf — id отменяемой записи журнала.
+  const update = useCallback((updater, meta) => {
+    if (meta) pendingMetaRef.current = meta
     setData((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : updater
       if (hasFirebaseConfig) {
@@ -167,6 +255,7 @@ export function StoreProvider({ children }) {
           }
           ops.push(...diffCollection(db, 'groups', baseline.groups, next.groups))
           ops.push(...diffCollection(db, 'interns', baseline.interns, next.interns))
+          if (ops.length > 0) writeLog(db, baseline, next)
 
           // Считаем это состояние актуальным сразу, не дожидаясь эха от onSnapshot — иначе повторная
           // правка в течение того же цикла синхронизации переписала бы уже отправленные документы заново.
@@ -197,6 +286,7 @@ export function StoreProvider({ children }) {
   }, [])
 
   const currentTrainer = data.trainers.find((t) => t.id === trainerId) || null
+  trainerRef.current = currentTrainer
 
   if (!ready) {
     return (

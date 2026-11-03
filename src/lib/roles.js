@@ -16,6 +16,12 @@ export function visibleGroups(groups, currentTrainer) {
   return groups.filter((g) => g.ownerId === currentTrainer?.id)
 }
 
+// Управлять группой (и выдавать по ней уведомления о завершении АП) может только её владелец или админ.
+export function canManageGroup(group, currentTrainer) {
+  if (!group || !currentTrainer) return false
+  return isTrainerAdmin(currentTrainer) || group.ownerId === currentTrainer.id
+}
+
 // Группы, которыми тренер сейчас управляет — свои (или все, если админ) и ещё не отправленные в архив.
 export function activeVisibleGroups(groups, currentTrainer) {
   return visibleGroups(groups, currentTrainer).filter((g) => !g.archived)

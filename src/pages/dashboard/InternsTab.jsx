@@ -6,6 +6,7 @@ import { emptyExamAnswers, emptyExamQuestions } from '../../lib/exam'
 import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
 import { formatDate } from '../../lib/date'
 import { computeGroupStats } from '../../lib/groupStats'
+import { firstLessonId } from '../../lib/lessons'
 import SearchSelect from '../../components/SearchSelect.jsx'
 import { copyText } from '../../lib/clipboard'
 import { filterInternsBySearch, internMatchesQuery } from '../../lib/internSearch'
@@ -51,6 +52,7 @@ export default function InternsTab() {
   const [linkCopiedId, setLinkCopiedId] = useState(null)
   const [addingManually, setAddingManually] = useState(false)
   const [manualForm, setManualForm] = useState(EMPTY_MANUAL_FORM)
+  const [deletingId, setDeletingId] = useState(null)
 
   const group = groups.find((g) => g.id === groupId) || null
   const groupInterns = useMemo(() => interns.filter((i) => i.groupId === groupId), [interns, groupId])
@@ -77,8 +79,11 @@ export default function InternsTab() {
   }
 
   function deleteIntern(id) {
-    if (!confirm('Удалить эту анкету?')) return
-    update((prev) => ({ ...prev, interns: prev.interns.filter((i) => i.id !== id) }))
+    const intern = interns.find((i) => i.id === id)
+    update((prev) => ({ ...prev, interns: prev.interns.filter((i) => i.id !== id) }), {
+      label: `Удалена анкета стажёра ${intern ? `${intern.lastName} ${intern.firstName}` : ''}`.trim(),
+    })
+    setDeletingId(null)
   }
 
   function addInternManually(e) {
@@ -365,12 +370,27 @@ export default function InternsTab() {
                 </td>
                 {admin && (
                   <td className="py-1.5 pr-3">
-                    <button
-                      onClick={() => deleteIntern(intern.id)}
-                      className="text-danger-500 hover:text-danger-600 text-xs whitespace-nowrap"
-                    >
-                      Удалить
-                    </button>
+                    {deletingId === intern.id ? (
+                      <div className="flex items-center gap-2 text-xs whitespace-nowrap">
+                        <span className="text-danger-500 font-semibold">Удалить анкету?</span>
+                        <button
+                          onClick={() => deleteIntern(intern.id)}
+                          className="px-2 py-1 rounded-lg bg-danger-500 hover:bg-danger-600 text-white font-semibold"
+                        >
+                          Да
+                        </button>
+                        <button onClick={() => setDeletingId(null)} className="btn-secondary text-xs px-2 py-1">
+                          Отмена
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeletingId(intern.id)}
+                        className="text-danger-500 hover:text-danger-600 text-xs whitespace-nowrap"
+                      >
+                        Удалить
+                      </button>
+                    )}
                   </td>
                 )}
               </tr>
@@ -454,6 +474,10 @@ function GroupSummary({ group, interns }) {
 function GroupProgress({ group, interns, totalCount, update }) {
   const [newLessonName, setNewLessonName] = useState('')
   const [newLessonDate, setNewLessonDate] = useState('')
+  const [removingLessonId, setRemovingLessonId] = useState(null)
+  const [withdrawing, setWithdrawing] = useState({ id: null, reason: '' })
+  const [restoringId, setRestoringId] = useState(null)
+  const noHomeworkId = firstLessonId(group.lessons)
 
   function patchGroup(patch) {
     update((prev) => ({
@@ -471,8 +495,16 @@ function GroupProgress({ group, interns, totalCount, update }) {
   }
 
   function removeLesson(id) {
-    if (!confirm('Удалить это занятие? Отметки посещаемости и ДЗ по нему будут потеряны.')) return
-    patchGroup({ lessons: group.lessons.filter((l) => l.id !== id) })
+    update(
+      (prev) => ({
+        ...prev,
+        groups: prev.groups.map((g) =>
+          g.id === group.id ? { ...g, lessons: g.lessons.filter((l) => l.id !== id) } : g,
+        ),
+      }),
+      { label: `Удалено занятие «${group.lessons.find((l) => l.id === id)?.name || '—'}» в группе «${group.name}»` },
+    )
+    setRemovingLessonId(null)
   }
 
   function toggleAttendance(internId, lessonId) {
@@ -503,8 +535,8 @@ function GroupProgress({ group, interns, totalCount, update }) {
   }
 
   function withdrawIntern(internId) {
-    if (!confirm('Отметить стажёра как отказавшегося от обучения? Он будет исключён из статистики группы, но останется в списке.')) return
-    const reason = (window.prompt('Причина отказа (необязательно, будет видна в прогрессе стажёра):', '') || '').trim()
+    const reason = withdrawing.reason.trim()
+    setWithdrawing({ id: null, reason: '' })
     update((prev) => ({
       ...prev,
       interns: prev.interns.map((i) =>
@@ -516,7 +548,7 @@ function GroupProgress({ group, interns, totalCount, update }) {
   }
 
   function restoreIntern(internId) {
-    if (!confirm('Вернуть стажёра в активное обучение?')) return
+    setRestoringId(null)
     update((prev) => ({
       ...prev,
       interns: prev.interns.map((i) =>
@@ -578,13 +610,34 @@ function GroupProgress({ group, interns, totalCount, update }) {
                         {l.date ? ` · ${formatDate(l.date)}` : ''}
                       </span>
                       <span
-                        onClick={() => removeLesson(l.id)}
+                        onClick={() => setRemovingLessonId(l.id)}
                         className="opacity-60 hover:opacity-100 cursor-pointer shrink-0"
                         title="Удалить занятие"
                       >
                         ✕
                       </span>
                     </div>
+                    {removingLessonId === l.id && (
+                      <div className="mt-2 space-y-1.5 font-normal text-xs">
+                        <p className="text-danger-500 font-semibold whitespace-normal">
+                          Удалить занятие? Отметки посещаемости и ДЗ по нему будут потеряны.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => removeLesson(l.id)}
+                            className="px-2 py-1 rounded-lg bg-danger-500 hover:bg-danger-600 text-white font-semibold"
+                          >
+                            Да, удалить
+                          </button>
+                          <button
+                            onClick={() => setRemovingLessonId(null)}
+                            className="btn-secondary text-xs px-2 py-1"
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </th>
                 ))}
               </tr>
@@ -625,16 +678,64 @@ function GroupProgress({ group, interns, totalCount, update }) {
                                 {i.withdrawnReason}
                               </p>
                             )}
-                            <button
-                              onClick={() => restoreIntern(i.id)}
-                              className="block text-[11px] text-navy-400 hover:text-success-600 dark:hover:text-success-400 underline"
-                            >
-                              Восстановить
-                            </button>
+                            {restoringId === i.id ? (
+                              <div className="space-y-1 text-[11px] font-normal">
+                                <p className="whitespace-normal max-w-[180px]">Вернуть стажёра в активное обучение?</p>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => restoreIntern(i.id)}
+                                    className="btn-primary text-[11px] px-2 py-1"
+                                  >
+                                    Да, вернуть
+                                  </button>
+                                  <button
+                                    onClick={() => setRestoringId(null)}
+                                    className="btn-secondary text-[11px] px-2 py-1"
+                                  >
+                                    Отмена
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setRestoringId(i.id)}
+                                className="block text-[11px] text-navy-400 hover:text-success-600 dark:hover:text-success-400 underline"
+                              >
+                                Восстановить
+                              </button>
+                            )}
+                          </div>
+                        ) : withdrawing.id === i.id ? (
+                          <div className="mt-1 space-y-1.5 text-[11px] font-normal max-w-[220px]">
+                            <p className="whitespace-normal">
+                              Отметить как отказавшегося? Стажёр будет исключён из статистики группы, но останется в
+                              списке.
+                            </p>
+                            <input
+                              className="field-input text-xs py-1"
+                              placeholder="Причина (необязательно)"
+                              value={withdrawing.reason}
+                              onChange={(e) => setWithdrawing((w) => ({ ...w, reason: e.target.value }))}
+                              autoFocus
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => withdrawIntern(i.id)}
+                                className="px-2 py-1 rounded-lg bg-danger-500 hover:bg-danger-600 text-white font-semibold"
+                              >
+                                Подтвердить
+                              </button>
+                              <button
+                                onClick={() => setWithdrawing({ id: null, reason: '' })}
+                                className="btn-secondary text-[11px] px-2 py-1"
+                              >
+                                Отмена
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <button
-                            onClick={() => withdrawIntern(i.id)}
+                            onClick={() => setWithdrawing({ id: i.id, reason: '' })}
                             className="block mt-1 text-[11px] text-navy-400 hover:text-danger-500 dark:hover:text-danger-400 underline font-normal"
                           >
                             Отказался от обучения
@@ -667,18 +768,24 @@ function GroupProgress({ group, interns, totalCount, update }) {
                             >
                               {i.attendance[l.id] ? 'Присутствовал' : 'Отсутствовал'}
                             </button>
-                            <select
-                              className="field-input text-xs py-1"
-                              value={i.homework[l.id] || ''}
-                              onChange={(e) => setHomework(i.id, l.id, e.target.value)}
-                            >
-                              <option value="">ДЗ: не указано</option>
-                              {HOMEWORK_STATUSES.map((h) => (
-                                <option key={h.value} value={h.value}>
-                                  {h.label}
-                                </option>
-                              ))}
-                            </select>
+                            {l.id === noHomeworkId ? (
+                              <div className="text-xs text-navy-400 dark:text-navy-500 italic py-1.5 text-center">
+                                Первый день — без ДЗ
+                              </div>
+                            ) : (
+                              <select
+                                className="field-input text-xs py-1"
+                                value={i.homework[l.id] || ''}
+                                onChange={(e) => setHomework(i.id, l.id, e.target.value)}
+                              >
+                                <option value="">ДЗ: не указано</option>
+                                {HOMEWORK_STATUSES.map((h) => (
+                                  <option key={h.value} value={h.value}>
+                                    {h.label}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                             <input
                               className="field-input text-xs py-1"
                               placeholder="Комментарий"

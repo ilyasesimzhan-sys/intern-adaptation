@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../../store/StoreContext.jsx'
-import { activeVisibleGroups } from '../../lib/roles'
+import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
 import {
   EXAM_QUESTION_COUNT,
   emptyExamAnswers,
   getExamAnswers,
   getRetakeAnswers,
   getExamQuestions,
+  getRetakeQuestions,
+  getQuestionBank,
+  drawExamQuestions,
+  drawRetakeQuestions,
+  examStarted,
   examCorrectCount,
   examPercent,
   getInternExamStatus,
@@ -17,6 +22,7 @@ import {
 import { downloadGroupReport } from '../../lib/examReport'
 import { filterInternsBySearch } from '../../lib/internSearch'
 import ExamAnswerList from '../../components/ExamAnswerList.jsx'
+import { readQuestionsFromFile } from '../../lib/questionBankFile'
 
 function nextAnswerState(value) {
   if (value === null || value === undefined) return true
@@ -32,6 +38,44 @@ export default function ExamTab() {
   const [trainingId, setTrainingId] = useState(null)
   const [trainingComment, setTrainingComment] = useState('')
   const [searchByGroup, setSearchByGroup] = useState({})
+  const [archivingId, setArchivingId] = useState(null)
+  const admin = isTrainerAdmin(currentTrainer)
+  const bank = getQuestionBank(settings)
+  const [bankMessage, setBankMessage] = useState(null)
+  const [showBank, setShowBank] = useState(false)
+
+  async function uploadBank(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const questions = await readQuestionsFromFile(file)
+      if (questions.length === 0) {
+        setBankMessage({ error: true, text: 'В файле не найдено ни одного вопроса — вопросы должны быть в первом столбце.' })
+        return
+      }
+      patchSettings({ examQuestionBank: questions })
+      setBankMessage({ error: false, text: `Загружено вопросов: ${questions.length} (из файла «${file.name}»).` })
+    } catch {
+      setBankMessage({ error: true, text: 'Не удалось прочитать файл. Загрузите файл Excel (.xlsx).' })
+    }
+  }
+
+  function assignQuestions(internId) {
+    patchInternField(internId, 'examQuestions', drawExamQuestions(bank))
+  }
+
+  function patchRetakeQuestion(internId, questionIdx, text) {
+    update((prev) => ({
+      ...prev,
+      interns: prev.interns.map((i) => {
+        if (i.id !== internId) return i
+        const nextQuestions = getRetakeQuestions(i).slice()
+        nextQuestions[questionIdx] = text
+        return { ...i, examRetakeQuestions: nextQuestions }
+      }),
+    }))
+  }
 
   const myGroups = activeVisibleGroups(data.groups, currentTrainer).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
@@ -77,7 +121,14 @@ export default function ExamTab() {
     update((prev) => ({
       ...prev,
       interns: prev.interns.map((i) =>
-        i.id === internId ? { ...i, examRetakeAnswers: emptyExamAnswers(), examFinalOutcome: null } : i,
+        i.id === internId
+          ? {
+              ...i,
+              examRetakeAnswers: emptyExamAnswers(),
+              examRetakeQuestions: drawRetakeQuestions(i, bank),
+              examFinalOutcome: null,
+            }
+          : i,
       ),
     }))
   }
@@ -128,30 +179,78 @@ export default function ExamTab() {
   }
 
   function archiveGroup(groupId) {
-    if (!confirm('Отправить группу в архив? Она пропадёт из активных, но данные сохранятся в разделе «Архив».')) return
+    setArchivingId(null)
     update((prev) => ({
       ...prev,
       groups: prev.groups.map((g) =>
         g.id === groupId ? { ...g, archived: true, archivedAt: new Date().toISOString().slice(0, 10) } : g,
       ),
-    }))
+    }), { label: `Группа «${data.groups.find((g) => g.id === groupId)?.name || '—'}» отправлена в архив` })
   }
 
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold">Итоговый экзамен</h1>
       <p className="text-sm text-navy-500 dark:text-navy-400">
-        Вопросы задаются отдельно для каждого стажёра — впишите их прямо в списке под именем стажёра. Текст виден
-        стажёру на публичной странице прогресса вместе с результатом по каждому вопросу.
+        Загрузите файл с вопросами, затем у каждого стажёра нажмите «Выдать вопросы» — ему случайно достанутся{' '}
+        {EXAM_QUESTION_COUNT} вопросов из банка. При пересдаче вопросы, на которые стажёр ответил неверно, повторяются, а
+        верно отвеченные заменяются новыми. Текст вопроса можно поправить вручную прямо в списке.
       </p>
+
+      <div className="card space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold">Банк вопросов</h2>
+            <p className="text-sm text-navy-500 dark:text-navy-400">
+              {bank.length > 0 ? `В банке ${bank.length} вопросов.` : 'Банк вопросов пока пуст.'} Файл Excel: один вопрос
+              в строке, в первом столбце. Новый файл полностью заменяет прежний список.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {bank.length > 0 && (
+              <button onClick={() => setShowBank((v) => !v)} className="btn-secondary text-sm">
+                {showBank ? 'Скрыть вопросы' : 'Показать вопросы'}
+              </button>
+            )}
+            <label className="btn-primary text-sm cursor-pointer">
+              {bank.length > 0 ? 'Загрузить новый файл' : 'Загрузить файл'}
+              <input type="file" accept=".xlsx,.xls" className="hidden" onChange={uploadBank} />
+            </label>
+          </div>
+        </div>
+        {bankMessage && (
+          <p className={'text-sm ' + (bankMessage.error ? 'text-danger-500' : 'text-success-600 dark:text-success-400')}>
+            {bankMessage.text}
+          </p>
+        )}
+        {bank.length > 0 && bank.length < EXAM_QUESTION_COUNT && (
+          <p className="text-sm text-warning-600 dark:text-warning-500">
+            Для выдачи нужно хотя бы {EXAM_QUESTION_COUNT} вопросов в банке.
+          </p>
+        )}
+        {showBank && (
+          <ol className="list-decimal pl-6 text-sm space-y-0.5 max-h-80 overflow-y-auto">
+            {bank.map((q, idx) => (
+              <li key={idx}>{q}</li>
+            ))}
+          </ol>
+        )}
+      </div>
 
       <div className="card space-y-2">
         <h2 className="font-semibold">Правила экзамена</h2>
-        <textarea
-          className="field-input min-h-[160px] font-mono text-sm"
-          value={settings.examRules}
-          onChange={(e) => patchSettings({ examRules: e.target.value })}
-        />
+        {admin ? (
+          <textarea
+            className="field-input min-h-[160px] font-mono text-sm"
+            value={settings.examRules}
+            onChange={(e) => patchSettings({ examRules: e.target.value })}
+          />
+        ) : (
+          <>
+            <p className="text-sm whitespace-pre-wrap text-navy-700 dark:text-navy-200">{settings.examRules}</p>
+            <p className="text-xs text-navy-400 dark:text-navy-500">Редактировать правила может только главный логин.</p>
+          </>
+        )}
       </div>
 
       {myGroups.length === 0 ? (
@@ -180,7 +279,7 @@ export default function ExamTab() {
                     Выгрузить отчёт
                   </button>
                   <button
-                    onClick={() => archiveGroup(group.id)}
+                    onClick={() => setArchivingId(group.id)}
                     disabled={!allResolved}
                     title={allResolved ? '' : 'Доступно, когда по каждому стажёру принято итоговое решение'}
                     className="btn-secondary text-sm"
@@ -189,6 +288,20 @@ export default function ExamTab() {
                   </button>
                 </div>
               </div>
+
+              {archivingId === group.id && (
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <span className="font-semibold">
+                    Отправить группу в архив? Она пропадёт из активных, но данные сохранятся в разделе «Архив».
+                  </span>
+                  <button onClick={() => archiveGroup(group.id)} className="btn-primary text-sm">
+                    Да, в архив
+                  </button>
+                  <button onClick={() => setArchivingId(null)} className="btn-secondary text-sm">
+                    Отмена
+                  </button>
+                </div>
+              )}
 
               <div className="flex flex-wrap gap-6 text-sm">
                 <div>
@@ -260,7 +373,7 @@ export default function ExamTab() {
 
                         {(status.code === 'passed' || status.code === 'training') && (
                           <Link to={`/certificate/${i.id}`} target="_blank" rel="noreferrer" className="btn-secondary text-xs px-3 py-1.5 inline-flex">
-                            {status.code === 'passed' ? '🎓 Сертификат' : '📄 Уведомление'}
+                            {status.code === 'passed' ? '🎓 Уведомление о завершении' : '📄 Уведомление о результате'}
                           </Link>
                         )}
 
@@ -275,6 +388,14 @@ export default function ExamTab() {
                               value={i.examDate || ''}
                               onChange={(e) => patchInternField(i.id, 'examDate', e.target.value)}
                             />
+                            {!retake && !examStarted(first) && bank.length >= EXAM_QUESTION_COUNT && (
+                              <button
+                                onClick={() => assignQuestions(i.id)}
+                                className="btn-primary text-xs px-3 py-1 normal-case tracking-normal"
+                              >
+                                {questions.some((q) => q.trim()) ? '🎲 Выдать другие вопросы' : '🎲 Выдать вопросы'}
+                              </button>
+                            )}
                           </div>
                           <ExamAnswerList
                             questions={questions}
@@ -298,10 +419,10 @@ export default function ExamTab() {
                               />
                             </div>
                             <ExamAnswerList
-                              questions={questions}
+                              questions={getRetakeQuestions(i)}
                               answers={retake}
                               onToggle={(qIdx) => toggleAnswer(i.id, 'examRetakeAnswers', qIdx)}
-                              onQuestionChange={(qIdx, text) => patchInternQuestion(i.id, qIdx, text)}
+                              onQuestionChange={(qIdx, text) => patchRetakeQuestion(i.id, qIdx, text)}
                             />
                           </div>
                         )}

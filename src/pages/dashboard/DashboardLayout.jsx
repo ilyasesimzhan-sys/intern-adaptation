@@ -17,6 +17,7 @@ const TABS = [
   { to: 'archive', label: 'Архив' },
   { to: 'ispring', label: 'Логины iSpring' },
   { to: 'knowledge', label: 'База знаний' },
+  { to: 'journal', label: 'Журнал действий', adminOnly: true },
 ]
 
 export default function DashboardLayout() {
