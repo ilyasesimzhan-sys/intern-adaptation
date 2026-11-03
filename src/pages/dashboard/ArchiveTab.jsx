@@ -4,11 +4,15 @@ import { isTrainerAdmin } from '../../lib/roles'
 import { getActiveAnswers, examPercent, getInternExamStatus } from '../../lib/exam'
 import { formatDate } from '../../lib/date'
 import { filterInternsBySearch } from '../../lib/internSearch'
+import { REGIONS } from '../../lib/constants'
+import { groupInPeriod } from '../../lib/periodReport'
+import { countOutcomes, downloadArchiveReport } from '../../lib/archiveReport'
 
 const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
   { key: 'firstName', label: 'Имя' },
   { key: 'email', label: 'Email' },
+  { key: 'region', label: 'Регион' },
   { key: 'department', label: 'Подразделение' },
   { key: 'position', label: 'Должность' },
   { key: 'phone', label: 'Телефон' },
@@ -16,6 +20,84 @@ const COLUMNS = [
   { key: 'managerContact', label: 'Контакты руководителя' },
   { key: 'city', label: 'Город/район' },
 ]
+
+const NO_REGION = 'none'
+
+function Stat({ label, value, cls = '' }) {
+  return (
+    <div className="rounded-lg bg-navy-50 dark:bg-navy-800 p-3">
+      <div className={'text-2xl font-bold ' + cls}>{value}</div>
+      <div className="text-xs text-navy-500 dark:text-navy-400">{label}</div>
+    </div>
+  )
+}
+
+// Отчёт по архиву: сколько стажёров прошло обучение за период и в каком регионе, с выгрузкой в Excel.
+function ArchiveReport({ archived, interns, trainers }) {
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const [region, setRegion] = useState('')
+
+  const groups = archived.filter((g) => groupInPeriod(g, from, to))
+  const ids = new Set(groups.map((g) => g.id))
+  const people = interns.filter(
+    (i) => ids.has(i.groupId) && (!region || (region === NO_REGION ? !i.region : i.region === region)),
+  )
+  const counts = countOutcomes(people)
+
+  const periodText = from || to ? `${from ? formatDate(from) : '…'} — ${to ? formatDate(to) : '…'}` : 'за всё время'
+  const regionText =
+    region === NO_REGION ? 'регион не указан' : REGIONS.find((r) => r.value === region)?.label || 'все регионы'
+
+  return (
+    <div className="card space-y-4">
+      <h2 className="font-semibold text-lg">Отчёт: сколько стажёров прошло обучение</h2>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label className="field-label">Период обучения с</label>
+          <input type="date" className="field-input" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </div>
+        <div>
+          <label className="field-label">по</label>
+          <input type="date" className="field-input" value={to} onChange={(e) => setTo(e.target.value)} />
+        </div>
+        <div>
+          <label className="field-label">Регион</label>
+          <select className="field-input" value={region} onChange={(e) => setRegion(e.target.value)}>
+            <option value="">Все регионы</option>
+            {REGIONS.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+            <option value={NO_REGION}>Регион не указан</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-5">
+        <Stat label="Групп" value={groups.length} />
+        <Stat label="Всего стажёров" value={counts.total} />
+        <Stat label="Прошли обучение" value={counts.passed} cls="text-success-600 dark:text-success-400" />
+        <Stat label="Не прошли" value={counts.failed} cls="text-danger-500" />
+        <Stat label="Отказались" value={counts.withdrawn} cls="text-warning-600 dark:text-warning-500" />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          disabled={people.length === 0}
+          onClick={() => downloadArchiveReport({ groups, interns: people, trainers, periodText, regionText })}
+          className="btn-primary"
+        >
+          ⬇ Скачать отчёт в Excel
+        </button>
+        <span className="text-xs text-navy-400 dark:text-navy-500">
+          В файле: итоги, разбивка по регионам и группам, список стажёров со всеми данными.
+        </span>
+      </div>
+    </div>
+  )
+}
 
 export default function ArchiveTab() {
   const { data, update, currentTrainer } = useStore()
@@ -43,6 +125,8 @@ export default function ArchiveTab() {
         Группы, прошедшие весь путь обучения и итоговый экзамен. Доступно всем тренерам на просмотр
         {admin ? '; главный логин может вернуть группу из архива.' : '.'}
       </p>
+
+      {archived.length > 0 && <ArchiveReport archived={archived} interns={interns} trainers={trainers} />}
 
       {archived.length === 0 ? (
         <p className="text-navy-400 dark:text-navy-500">В архиве пока пусто.</p>

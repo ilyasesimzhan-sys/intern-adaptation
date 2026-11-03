@@ -3,6 +3,7 @@ export const INTERN_SEARCH_FIELDS = [
   'lastName',
   'firstName',
   'email',
+  'region',
   'department',
   'position',
   'phone',

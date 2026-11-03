@@ -245,6 +245,16 @@ export const KZ_CITIES = [
 
 export const DEPARTMENTS = ['ЦОО', 'ЦРК', 'ЦАП', 'СОЛиТ']
 
+// Региональные дирекции телекоммуникаций. В анкете хранится код (value).
+export const REGIONS = [
+  { value: 'АРДТ', label: 'АРДТ — Алматы' },
+  { value: 'ЦРДТ', label: 'ЦРДТ — Центр' },
+  { value: 'ВРДТ', label: 'ВРДТ — Восток' },
+  { value: 'СРДТ', label: 'СРДТ — Север' },
+  { value: 'ЮРДТ', label: 'ЮРДТ — Юг' },
+  { value: 'ЗРДТ', label: 'ЗРДТ — Запад' },
+]
+
 export const HOMEWORK_STATUSES = [
   { value: 'done', label: 'Выполнено' },
   { value: 'partial', label: 'Частично' },

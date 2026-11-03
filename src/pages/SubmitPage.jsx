@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
-import { KZ_CITIES, DEPARTMENTS, GROUP_CAPACITY } from '../lib/constants'
+import { KZ_CITIES, DEPARTMENTS, GROUP_CAPACITY, REGIONS } from '../lib/constants'
 import { uid } from '../store/defaultData'
 import { openGroupsWithSpace } from '../lib/groups'
 import { emptyExamAnswers, emptyExamQuestions } from '../lib/exam'
@@ -12,6 +12,7 @@ const EMPTY_FORM = {
   lastName: '',
   firstName: '',
   email: '',
+  region: '',
   department: '',
   position: '',
   phone: '',
@@ -20,6 +21,9 @@ const EMPTY_FORM = {
   city: '',
   cityOther: '',
 }
+
+// Незаполненное поле подсвечивается красным (правило с data-field-error в index.css), под ним — эта подпись.
+const REQUIRED = 'Заполнение обязательно'
 
 export default function SubmitPage() {
   const { data, update } = useStore()
@@ -34,8 +38,17 @@ export default function SubmitPage() {
   const [errors, setErrors] = useState({})
   const [submitted, setSubmitted] = useState(false)
 
+  function clearError(field) {
+    setErrors((errs) => {
+      if (!errs[field]) return errs
+      const { [field]: _, ...rest } = errs
+      return rest
+    })
+  }
+
   function handleChange(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
+    clearError(field)
   }
 
   function handlePhoneChange(field, raw) {
@@ -47,10 +60,10 @@ export default function SubmitPage() {
     const errs = {}
     for (const key of Object.keys(EMPTY_FORM)) {
       if (key === 'cityOther') continue
-      if (!form[key].trim()) errs[key] = 'Обязательное поле'
+      if (!form[key].trim()) errs[key] = REQUIRED
     }
     if (form.city === 'Другой' && !form.cityOther.trim()) {
-      errs.cityOther = 'Укажите город или село'
+      errs.cityOther = REQUIRED
     }
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       errs.email = 'Некорректный email'
@@ -61,7 +74,7 @@ export default function SubmitPage() {
     if (form.managerContact && !/^\+7\d{10}$/.test(form.managerContact)) {
       errs.managerContact = 'Введите номер полностью, пример: +77077777777'
     }
-    if (!groupId) errs.groupId = 'Выберите группу'
+    if (!groupId) errs.groupId = REQUIRED
     return errs
   }
 
@@ -69,7 +82,13 @@ export default function SubmitPage() {
     e.preventDefault()
     const errs = validate()
     setErrors(errs)
-    if (Object.keys(errs).length > 0) return
+    if (Object.keys(errs).length > 0) {
+      // Прокручиваем к первому незаполненному полю, чтобы руководитель сразу увидел, что не так.
+      setTimeout(() => {
+        document.querySelector('[data-field-error]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 0)
+      return
+    }
 
     update((prev) => {
       const stillOpen = openGroupsWithSpace(prev.groups, prev.interns).some((g) => g.id === groupId)
@@ -146,7 +165,7 @@ export default function SubmitPage() {
           value={form[key]}
           onChange={(e) => handleChange(key, e.target.value)}
         />
-        {errors[key] && <p className="text-danger-500 text-xs mt-1">{errors[key]}</p>}
+        {errors[key] && <p data-field-error className="text-danger-500 text-xs mt-1">{errors[key]}</p>}
       </div>
     )
   }
@@ -168,7 +187,7 @@ export default function SubmitPage() {
             placeholder="7077777777"
           />
         </div>
-        {errors[key] && <p className="text-danger-500 text-xs mt-1">{errors[key]}</p>}
+        {errors[key] && <p data-field-error className="text-danger-500 text-xs mt-1">{errors[key]}</p>}
       </div>
     )
   }
@@ -201,7 +220,11 @@ export default function SubmitPage() {
         <form onSubmit={handleSubmit} className="card space-y-4">
           <div>
             <label className="field-label">Группа</label>
-            <select className="field-input" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
+            <select className="field-input" value={groupId} onChange={(e) => {
+                setGroupId(e.target.value)
+                clearError('groupId')
+              }}
+            >
               <option value="">Выберите группу</option>
               {openGroups.map((g) => (
                 <option key={g.id} value={g.id}>
@@ -209,7 +232,7 @@ export default function SubmitPage() {
                 </option>
               ))}
             </select>
-            {errors.groupId && <p className="text-danger-500 text-xs mt-1">{errors.groupId}</p>}
+            {errors.groupId && <p data-field-error className="text-danger-500 text-xs mt-1">{errors.groupId}</p>}
           </div>
 
           <SectionHeader icon="👤" title="Данные стажёра" />
@@ -222,8 +245,21 @@ export default function SubmitPage() {
 
           <div className="border-t border-navy-100 dark:border-navy-800" />
 
-          <SectionHeader icon="🏢" title="Подразделение и город" />
+          <SectionHeader icon="🏢" title="Регион, подразделение и город" />
           <div className="space-y-4 pl-8">
+            <div>
+              <label className="field-label">Регион</label>
+              <select className="field-input" value={form.region} onChange={(e) => handleChange('region', e.target.value)}>
+                <option value="">Выберите регион</option>
+                {REGIONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+              {errors.region && <p data-field-error className="text-danger-500 text-xs mt-1">{errors.region}</p>}
+            </div>
+
             <div>
               <label className="field-label">Подразделение</label>
               <select
@@ -238,7 +274,7 @@ export default function SubmitPage() {
                   </option>
                 ))}
               </select>
-              {errors.department && <p className="text-danger-500 text-xs mt-1">{errors.department}</p>}
+              {errors.department && <p data-field-error className="text-danger-500 text-xs mt-1">{errors.department}</p>}
             </div>
 
             {renderField({ key: 'position', label: 'Должность' })}
@@ -251,7 +287,7 @@ export default function SubmitPage() {
                 options={KZ_CITIES}
                 placeholder="Выберите или начните вводить город/район"
               />
-              {errors.city && <p className="text-danger-500 text-xs mt-1">{errors.city}</p>}
+              {errors.city && <p data-field-error className="text-danger-500 text-xs mt-1">{errors.city}</p>}
             </div>
 
             {form.city === 'Другой' && (
@@ -262,7 +298,7 @@ export default function SubmitPage() {
                   value={form.cityOther}
                   onChange={(e) => handleChange('cityOther', e.target.value)}
                 />
-                {errors.cityOther && <p className="text-danger-500 text-xs mt-1">{errors.cityOther}</p>}
+                {errors.cityOther && <p data-field-error className="text-danger-500 text-xs mt-1">{errors.cityOther}</p>}
               </div>
             )}
           </div>

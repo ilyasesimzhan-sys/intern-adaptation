@@ -63,6 +63,7 @@ export function internReportRow(intern, group, ownerName) {
   return {
     Фамилия: i.lastName,
     Имя: i.firstName,
+    Регион: i.region || '',
     Подразделение: i.department,
     Должность: i.position,
     'Город/район': i.city,

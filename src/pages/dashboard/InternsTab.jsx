@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
-import { HOMEWORK_STATUSES, KZ_CITIES, DEPARTMENTS } from '../../lib/constants'
+import { HOMEWORK_STATUSES, KZ_CITIES, DEPARTMENTS, REGIONS } from '../../lib/constants'
 import { uid } from '../../store/defaultData'
 import { emptyExamAnswers, emptyExamQuestions } from '../../lib/exam'
 import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
@@ -17,6 +17,7 @@ const EMPTY_MANUAL_FORM = {
   lastName: '',
   firstName: '',
   email: '',
+  region: '',
   department: '',
   position: '',
   phone: '',
@@ -30,6 +31,7 @@ const COLUMNS = [
   { key: 'lastName', label: 'Фамилия' },
   { key: 'firstName', label: 'Имя' },
   { key: 'email', label: 'Email' },
+  { key: 'region', label: 'Регион', options: REGIONS },
   { key: 'department', label: 'Подразделение' },
   { key: 'position', label: 'Должность' },
   { key: 'phone', label: 'Телефон' },
@@ -215,6 +217,21 @@ export default function InternsTab() {
               />
             </div>
             <div>
+              <label className="field-label">Регион</label>
+              <select
+                className="field-input"
+                value={manualForm.region}
+                onChange={(e) => setManualForm((f) => ({ ...f, region: e.target.value }))}
+              >
+                <option value="">Выберите регион</option>
+                {REGIONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label className="field-label">Подразделение</label>
               <select
                 className="field-input"
@@ -343,11 +360,26 @@ export default function InternsTab() {
               <tr key={intern.id} className="border-b border-navy-50 dark:border-navy-800 last:border-0">
                 {COLUMNS.map((c) => (
                   <td key={c.key} className="py-1.5 pr-3">
-                    <input
-                      className="field-input min-w-[130px]"
-                      value={intern[c.key] ?? ''}
-                      onChange={(e) => patchIntern(intern.id, { [c.key]: e.target.value })}
-                    />
+                    {c.options ? (
+                      <select
+                        className="field-input min-w-[100px]"
+                        value={intern[c.key] ?? ''}
+                        onChange={(e) => patchIntern(intern.id, { [c.key]: e.target.value })}
+                      >
+                        <option value="">—</option>
+                        {c.options.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        className="field-input min-w-[130px]"
+                        value={intern[c.key] ?? ''}
+                        onChange={(e) => patchIntern(intern.id, { [c.key]: e.target.value })}
+                      />
+                    )}
                   </td>
                 ))}
                 <td className="py-1.5 pr-3 whitespace-nowrap">

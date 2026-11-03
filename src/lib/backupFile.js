@@ -70,6 +70,7 @@ function readableSheets(data) {
       Тренер: trainerName(group?.ownerId),
       Телефон: i.phone,
       Email: i.email,
+      Регион: i.region || '',
       Подразделение: i.department,
       Должность: i.position,
       'Город/район': i.city,
