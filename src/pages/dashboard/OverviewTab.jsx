@@ -499,7 +499,7 @@ export default function OverviewTab() {
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-navy-800 via-navy-700 to-sky-600 text-white p-6 sm:p-8 shadow-lg">
         <div className="absolute -right-20 -top-20 w-72 h-72 rounded-full bg-sky-400/20 blur-2xl" />
         <div className="absolute right-40 -bottom-24 w-64 h-64 rounded-full bg-violet-500/20 blur-2xl" />
-        <div className="relative flex flex-col lg:flex-row lg:items-center gap-6">
+        <div className="relative flex flex-col xl:flex-row xl:items-center gap-6">
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <div className="rounded-full ring-4 ring-white/20 shrink-0">
               <Avatar src={currentTrainer?.photo} name={currentTrainer?.name} position={currentTrainer?.photoPosition} size={84} />
@@ -517,7 +517,7 @@ export default function OverviewTab() {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3 sm:gap-6 lg:min-w-[440px]">
+          <div className="grid grid-cols-3 gap-3 sm:gap-6 xl:min-w-[440px]">
             {[
               { v: s.totalGroups, l: plural(s.totalGroups, 'группа', 'группы', 'групп'), sub: 'за всё время' },
               { v: s.people, l: plural(s.people, 'стажёр', 'стажёра', 'стажёров'), sub: 'прошли через программу' },
