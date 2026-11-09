@@ -18,6 +18,7 @@ import {
   getInternExamStatus,
   isInternResolved,
   getWeakTopics,
+  hasExamNotice,
 } from '../../lib/exam'
 import { downloadGroupReport } from '../../lib/examReport'
 import { filterInternsBySearch } from '../../lib/internSearch'
@@ -371,7 +372,7 @@ export default function ExamTab() {
                           </span>
                         </div>
 
-                        {(status.code === 'passed' || status.code === 'training') && (
+                        {hasExamNotice(status) && (
                           <Link to={`/certificate/${i.id}`} target="_blank" rel="noreferrer" className="btn-secondary text-xs px-3 py-1.5 inline-flex">
                             {status.code === 'passed' ? '🎓 Уведомление о завершении' : '📄 Уведомление о результате'}
                           </Link>

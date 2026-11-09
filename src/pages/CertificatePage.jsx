@@ -9,6 +9,7 @@ import {
   getInternExamStatus,
   getActiveExamDate,
   getWeakTopics,
+  hasExamNotice,
   EXAM_QUESTION_COUNT,
 } from '../lib/exam'
 import { formatDate, trainingPeriod } from '../lib/date'
@@ -80,14 +81,14 @@ export default function CertificatePage() {
   const isPassed = status.code === 'passed'
   const isTraining = status.code === 'training'
 
-  if (!isPassed && !isTraining) {
+  if (!hasExamNotice(status)) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="card max-w-md text-center">
           <h1 className="text-xl font-bold mb-2">Документ недоступен</h1>
           <p className="text-navy-500 dark:text-navy-400 mb-4">
-            Уведомление о завершении АП или о результате появляется здесь только после того, как по итоговому экзамену
-            принято окончательное решение.
+            Уведомление о завершении АП или о результате появляется здесь только после того, как итоговый экзамен
+            оценён.
           </p>
           <Link to={`/progress/${intern.id}`} className="btn-secondary">
             К прогрессу стажёра
@@ -103,7 +104,10 @@ export default function CertificatePage() {
   const examDate = getActiveExamDate(intern)
   const period = trainingPeriod(group?.lessons)
   const issueDate = group?.endDate ? formatDate(group.endDate) : formatDate(new Date().toISOString())
-  const weakTopics = isTraining ? getWeakTopics(intern) : []
+  const weakTopics = isPassed ? [] : getWeakTopics(intern)
+  // Комментарий тренера, если это не автоподсказка «Повторить темы…» (темы и так перечислены на листе).
+  const comment = (intern.examFinalComment || '').trim()
+  const trainerComment = weakTopics.length && comment.startsWith('Повторить темы') ? '' : comment
 
   async function downloadPdf() {
     if (!certRef.current || downloading) return
@@ -160,12 +164,13 @@ export default function CertificatePage() {
           >
             <CertificateSheet
               ref={certRef}
-              kind={isPassed ? 'passed' : 'training'}
+              kind={isPassed ? 'passed' : isTraining ? 'training' : 'failed'}
+              topics={weakTopics}
               fullName={`${intern.lastName} ${intern.firstName}`}
               details={[intern.department, intern.position, intern.city].filter(Boolean).join(' · ')}
               groupName={group?.name}
               result={`${correct}/${EXAM_QUESTION_COUNT} (${percent}%)`}
-              recommendation={intern.examFinalComment || (weakTopics.length ? `повторить темы — ${weakTopics.join('; ')}` : '')}
+              recommendation={trainerComment}
               footer={[
                 ['Обучение', period || '—'],
                 ['Дата экзамена', examDate ? formatDate(examDate) : '—'],

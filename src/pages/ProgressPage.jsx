@@ -10,6 +10,7 @@ import {
   examCorrectCount,
   examPercent,
   getInternExamStatus,
+  hasExamNotice,
   EXAM_QUESTION_COUNT,
 } from '../lib/exam'
 import ExamAnswerList from '../components/ExamAnswerList.jsx'
@@ -100,7 +101,7 @@ export default function ProgressPage() {
               {status.label}
             </span>
           </div>
-          {(status.code === 'passed' || status.code === 'training') && canManageGroup(group, currentTrainer) && (
+          {hasExamNotice(status) && canManageGroup(group, currentTrainer) && (
             <Link to={`/certificate/${intern.id}`} className="btn-secondary text-base mb-4 inline-flex">
               {status.code === 'passed' ? '🎓 Уведомление о завершении АП' : '📄 Уведомление о результате'}
             </Link>

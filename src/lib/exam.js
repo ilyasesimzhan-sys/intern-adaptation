@@ -172,6 +172,12 @@ export function getInternExamStatus(intern) {
   return STATUS.retakeFailed
 }
 
+// Уведомление (PDF) выдаётся, когда экзамен оценён: о завершении — если сдал, о результате с темами
+// неверных ответов — если не сдал (в том числе до решения о пересдаче).
+export function hasExamNotice(status) {
+  return ['passed', 'training', 'ended', 'failed', 'retake_failed'].includes(status.code)
+}
+
 // true, если по стажёру больше не нужно никаких действий (сдал, завершён или направлен на доп. обучение).
 export function isInternResolved(status) {
   return status.code === 'passed' || status.code === 'ended' || status.code === 'training'

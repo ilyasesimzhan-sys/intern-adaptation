@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import KtLogoMark from './KtLogoMark.jsx'
 
 // Лист A4 альбомной ориентации в CSS-пикселях (297×210 мм при 96 dpi; высота на 2px меньше, чтобы PDF
@@ -21,15 +21,44 @@ const FONT = "'Nunito', 'Inter', system-ui, sans-serif"
 const TONES = {
   passed: { bg: '#e7f4f1', label: '#47766d', value: '#207c65' },
   training: { bg: '#fdf3df', label: '#8a6a2a', value: '#b07a0b' },
+  failed: { bg: '#fbeaea', label: '#8a3b3b', value: '#c22f29' },
 }
 
-// Сам лист уведомления о завершении АП (или о направлении на доп. обучение) — его же html2pdf снимает в PDF.
+// Список тем справа: шрифт уменьшается, пока все темы целиком не поместятся в панель.
+const TOPIC_FONT_MAX = 14
+const TOPIC_FONT_MIN = 9
+
+function TopicList({ topics, color }) {
+  const listRef = useRef(null)
+  const [font, setFont] = useState(TOPIC_FONT_MAX)
+  // Массив тем создаётся заново при каждой отрисовке — сравниваем по содержимому.
+  const key = topics.join('\n')
+  useEffect(() => setFont(TOPIC_FONT_MAX), [key])
+  useLayoutEffect(() => {
+    const el = listRef.current
+    if (el && el.scrollHeight > el.clientHeight + 1 && font > TOPIC_FONT_MIN) setFont((f) => f - 0.5)
+  }, [font, key])
+  return (
+    <div ref={listRef} style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      {topics.map((t, idx) => (
+        <div key={idx} style={{ display: 'flex', gap: 8, marginTop: idx ? font * 0.45 : 0, fontSize: font, lineHeight: 1.3 }}>
+          <span style={{ fontWeight: 800, color, minWidth: font * 1.4 }}>{idx + 1}.</span>
+          <span style={{ wordBreak: 'break-word' }}>{t}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Сам лист уведомления о завершении АП (или о результате, если экзамен не сдан) — его же html2pdf снимает в PDF.
 const CertificateSheet = forwardRef(function CertificateSheet(
-  { kind, fullName, details, groupName, result, footer, recommendation },
+  { kind, fullName, details, groupName, result, footer, recommendation, topics = [] },
   ref,
 ) {
   const isPassed = kind === 'passed'
   const tone = TONES[kind]
+  const showTopics = !isPassed && topics.length > 0
+  const leftWidth = isPassed ? 640 : showTopics ? 490 : 900
   return (
     <div
       ref={ref}
@@ -62,7 +91,7 @@ const CertificateSheet = forwardRef(function CertificateSheet(
 
       {/* Основной текст */}
       {/* У уведомления больше текста (рекомендации), поэтому оно плотнее и шире — так всё помещается над подвалом. */}
-      <div style={{ position: 'absolute', left: 85, top: 236, width: isPassed ? 640 : 900 }}>
+      <div style={{ position: 'absolute', left: 85, top: 236, width: leftWidth }}>
         <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: '0.32em', lineHeight: 1.2 }}>
           УВЕДОМЛЕНИЕ
         </div>
@@ -81,10 +110,15 @@ const CertificateSheet = forwardRef(function CertificateSheet(
               <br />
               {groupName ? `в группе «${groupName}» ` : ''}и сдал(-а) итоговый экзамен
             </>
-          ) : (
+          ) : kind === 'training' ? (
             <>
               прошёл(-ла) адаптационную программу{groupName ? ` в группе «${groupName}»` : ''}, но по итогам экзамена не
               набрал(а) проходной балл и направлен(а) на дополнительное обучение
+            </>
+          ) : (
+            <>
+              прошёл(-ла) адаптационную программу{groupName ? ` в группе «${groupName}»` : ''}, но не сдал(а) итоговый
+              экзамен — проходной балл не набран
             </>
           )}
         </div>
@@ -104,11 +138,40 @@ const CertificateSheet = forwardRef(function CertificateSheet(
         </div>
         {!isPassed && recommendation && (
           <div style={{ fontSize: 14, lineHeight: 1.45, marginTop: 10, maxHeight: 14 * 1.45 * 3, overflow: 'hidden' }}>
-            <span style={{ fontWeight: 700 }}>Рекомендации: </span>
+            <span style={{ fontWeight: 700 }}>{showTopics ? 'Комментарий тренера: ' : 'Рекомендации: '}</span>
             {recommendation}
           </div>
         )}
       </div>
+
+      {/* Темы вопросов, на которые стажёр ответил неверно */}
+      {showTopics && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 604,
+            top: 228,
+            width: 434,
+            height: 372,
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '16px 22px 14px',
+            background: 'rgba(244, 248, 250, 0.94)',
+            border: `1px solid ${C.line}`,
+            borderLeft: `4px solid ${tone.value}`,
+            borderRadius: 6,
+          }}
+        >
+          <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, lineHeight: 1.3 }}>
+            Темы, по которым не дан верный ответ
+          </div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 2, marginBottom: 10 }}>
+            рекомендуется повторить перед пересдачей / дополнительным обучением
+          </div>
+          <TopicList topics={topics} color={tone.value} />
+        </div>
+      )}
 
       {/* Подвал */}
       <div style={{ position: 'absolute', left: 85, top: 614, width: 952, height: 1, background: C.line }} />
