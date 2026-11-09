@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
 import StagePath from '../components/StagePath.jsx'
-import { groupsWithCounts, openGroupsWithSpace } from '../lib/groups'
+import { groupsWithCounts, openGroupsWithSpace, AUTO_CLOSE_TIME } from '../lib/groups'
 import { getCurrentStage } from '../lib/stage'
 import { computeGroupStats } from '../lib/groupStats'
 import { filterInternsBySearch } from '../lib/internSearch'
@@ -14,9 +14,10 @@ import { formatDate } from '../lib/date'
 
 function formatWindow(g) {
   if (g.isOpen) {
-    if (g.startDate && g.endDate) return `Открыта с ${formatDate(g.startDate)} по ${formatDate(g.endDate)}`
+    if (g.startDate && g.endDate)
+      return `Открыта с ${formatDate(g.startDate)} по ${formatDate(g.endDate)} (до ${AUTO_CLOSE_TIME})`
     if (g.startDate) return `Открыта с ${formatDate(g.startDate)}`
-    if (g.endDate) return `Открыта до ${formatDate(g.endDate)}`
+    if (g.endDate) return `Открыта до ${formatDate(g.endDate)} ${AUTO_CLOSE_TIME}`
     return 'Открыта'
   }
   if (g.endDate) return `Закрыта ${formatDate(g.endDate)}`

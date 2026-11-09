@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { doc, collection, onSnapshot, setDoc, deleteDoc, query, where } from 'firebase/firestore'
 import { makeDefaultData } from './defaultData'
 import { getDb, hasFirebaseConfig } from '../lib/firebase'
+import { isPastCloseDeadline, AUTO_CLOSE_TIME } from '../lib/groups'
 
 const STORAGE_KEY = 'intern-adaptation:data'
 const AUTH_KEY = 'intern-adaptation:trainerId'
@@ -336,6 +337,29 @@ export function StoreProvider({ children }) {
     localStorage.removeItem(AUTH_KEY)
     setTrainerId(null)
   }, [])
+
+  // Автозакрытие приёма: как только наступила дата закрытия (10:00 по Казахстану), группа помечается закрытой.
+  // Сервера нет, поэтому это делает любой открытый экземпляр сайта — при загрузке и затем раз в 30 секунд.
+  useEffect(() => {
+    if (!ready) return
+    function closeOverdue() {
+      const now = new Date()
+      const overdue = data.groups.filter((g) => g.isOpen && !g.archived && isPastCloseDeadline(g, now))
+      if (overdue.length === 0) return
+      const ids = new Set(overdue.map((g) => g.id))
+      update(
+        (prev) => ({ ...prev, groups: prev.groups.map((g) => (ids.has(g.id) ? { ...g, isOpen: false } : g)) }),
+        {
+          label: `Приём анкет закрыт автоматически по дате закрытия (${AUTO_CLOSE_TIME}): ${overdue
+            .map((g) => `«${g.name}»`)
+            .join(', ')}`,
+        },
+      )
+    }
+    closeOverdue()
+    const timer = setInterval(closeOverdue, 30 * 1000)
+    return () => clearInterval(timer)
+  }, [ready, data.groups, update])
 
   const currentTrainer = data.trainers.find((t) => t.id === trainerId) || null
   trainerRef.current = currentTrainer

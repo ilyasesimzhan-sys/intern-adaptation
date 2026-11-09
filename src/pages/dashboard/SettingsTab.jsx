@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { uid } from '../../store/defaultData'
-import { groupsWithCounts, splitInternsByCity } from '../../lib/groups'
+import { groupsWithCounts, splitInternsByCity, isPastCloseDeadline, AUTO_CLOSE_TIME } from '../../lib/groups'
+import { formatDate } from '../../lib/date'
 import { GROUP_CAPACITY } from '../../lib/constants'
 import { isTrainerAdmin, activeVisibleGroups } from '../../lib/roles'
 
@@ -69,8 +70,11 @@ export default function SettingsTab() {
     patchGroup(groupId, { ownerId })
   }
 
+  // Будущая дата закрытия сохраняется (по ней приём закроется сам), прошедшая — сбрасывается,
+  // иначе группа закрылась бы сразу после открытия.
   function startGroup(group) {
-    patchGroup(group.id, { isOpen: true, startDate: group.startDate || today(), endDate: '' })
+    const endDate = isPastCloseDeadline(group) ? '' : group.endDate || ''
+    patchGroup(group.id, { isOpen: true, startDate: group.startDate || today(), endDate })
   }
 
   function stopGroup(group) {
@@ -150,7 +154,8 @@ export default function SettingsTab() {
         <h2 className="font-semibold">Группы</h2>
         <p className="text-sm text-navy-500 dark:text-navy-400">
           Можно вести сразу несколько групп — у каждой свой приём анкет, до {GROUP_CAPACITY} участников. Даты
-          открытия/закрытия приёма видны руководителям на главной странице. Отправить группу в архив можно во
+          открытия/закрытия приёма видны руководителям на главной странице. В дату закрытия приём анкет закрывается
+          автоматически в {AUTO_CLOSE_TIME} (время Казахстана). Отправить группу в архив можно во
           вкладке «Итоговый экзамен», когда всем стажёрам выставлен балл.
         </p>
 
@@ -230,6 +235,12 @@ export default function SettingsTab() {
                     )}
                     <div className="text-sm text-navy-500 dark:text-navy-400">
                       {g.count}/{GROUP_CAPACITY} участников
+                      {g.isOpen && g.endDate && !isPastCloseDeadline(g) && (
+                        <span className="text-success-600 dark:text-success-400">
+                          {' '}
+                          · приём закроется автоматически {formatDate(g.endDate)} в {AUTO_CLOSE_TIME}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <span

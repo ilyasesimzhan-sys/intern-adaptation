@@ -8,8 +8,29 @@ export function groupsWithCounts(groups, interns) {
   return groups.map((g) => ({ ...g, count: internCount(interns, g.id) }))
 }
 
+// Приём анкет закрывается автоматически в дату закрытия в 10:00 по времени Казахстана (UTC+5),
+// независимо от часового пояса компьютера, на котором открыт сайт.
+export const AUTO_CLOSE_TIME = '10:00'
+
+export function closeDeadline(group) {
+  if (!group?.endDate) return null
+  const d = new Date(`${group.endDate.slice(0, 10)}T${AUTO_CLOSE_TIME}:00+05:00`)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+export function isPastCloseDeadline(group, now = new Date()) {
+  const deadline = closeDeadline(group)
+  return Boolean(deadline && now >= deadline)
+}
+
+// Группа реально принимает анкеты: открыта вручную и срок закрытия ещё не наступил.
+export function isGroupOpen(group, now = new Date()) {
+  return Boolean(group?.isOpen) && !group.archived && !isPastCloseDeadline(group, now)
+}
+
 export function openGroupsWithSpace(groups, interns) {
-  return groupsWithCounts(groups, interns).filter((g) => g.isOpen && g.count < GROUP_CAPACITY)
+  const now = new Date()
+  return groupsWithCounts(groups, interns).filter((g) => isGroupOpen(g, now) && g.count < GROUP_CAPACITY)
 }
 
 function shuffle(list) {
