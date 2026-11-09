@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '../../store/StoreContext.jsx'
 import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
@@ -46,6 +46,32 @@ export default function ExamTab() {
   const bank = getQuestionBank(settings)
   const [bankMessage, setBankMessage] = useState(null)
   const [showBank, setShowBank] = useState(false)
+  const [showRules, setShowRules] = useState(false)
+  // Открытая карточка стажёра и порядок списка, из которого её открыли (для ← →).
+  const [opened, setOpened] = useState({ id: null, list: [] })
+  const openedIntern = opened.id ? allInterns.find((i) => i.id === opened.id) : null
+  const openedList = opened.list
+  const openedIdx = openedList.indexOf(opened.id)
+
+  function openIntern(id, list) {
+    setOpened({ id, list })
+  }
+
+  const closeIntern = useCallback(() => {
+    setOpened({ id: null, list: [] })
+    setEndingId(null)
+    setTrainingId(null)
+  }, [])
+
+  const stepIntern = useCallback((dir) => {
+    setOpened((o) => {
+      const idx = o.list.indexOf(o.id) + dir
+      if (idx < 0 || idx >= o.list.length) return o
+      return { ...o, id: o.list[idx] }
+    })
+    setEndingId(null)
+    setTrainingId(null)
+  }, [])
 
   async function uploadBank(e) {
     const file = e.target.files?.[0]
@@ -246,8 +272,13 @@ export default function ExamTab() {
       </div>
 
       <div className="card space-y-2">
-        <h2 className="font-semibold">{t('Правила экзамена')}</h2>
-        {admin ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-semibold">{t('Правила экзамена')}</h2>
+          <button onClick={() => setShowRules((v) => !v)} className="btn-secondary text-sm">
+            {showRules ? t('Скрыть правила') : t('Показать правила')}
+          </button>
+        </div>
+        {!showRules ? null : admin ? (
           <textarea
             className="field-input min-h-[160px] font-mono text-sm"
             value={settings.examRules}
@@ -356,8 +387,78 @@ export default function ExamTab() {
                   {visibleInterns.length === 0 && (
                     <p className="text-navy-400 dark:text-navy-500 text-sm">{t('Совпадений не найдено.')}</p>
                   )}
-                <div className="space-y-3">
-                  {visibleInterns.map((i) => {
+                  {visibleInterns.length > 0 && (
+                    <div className="rounded-xl border border-navy-100 dark:border-navy-700 overflow-hidden divide-y divide-navy-50 dark:divide-navy-800">
+                      <div className="hidden sm:grid grid-cols-[2rem_1fr_6.5rem_6.5rem_11rem_1rem] gap-3 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500 bg-navy-50 dark:bg-navy-800/60">
+                        <span>#</span>
+                        <span>{t('Стажёр')}</span>
+                        <span className="text-center">{t('Попытка 1')}</span>
+                        <span className="text-center">{t('Пересдача')}</span>
+                        <span>{t('Статус')}</span>
+                        <span />
+                      </div>
+                      {visibleInterns.map((i, n) => {
+                        const status = getInternExamStatus(i)
+                        const first = getExamAnswers(i)
+                        const retake = getRetakeAnswers(i)
+                        const noQuestions = !getExamQuestions(i).some((q) => q.trim())
+                        return (
+                          <button
+                            key={i.id}
+                            type="button"
+                            onClick={() => openIntern(i.id, visibleInterns.map((x) => x.id))}
+                            className="w-full text-left grid grid-cols-[2rem_1fr_auto] sm:grid-cols-[2rem_1fr_6.5rem_6.5rem_11rem_1rem] gap-3 items-center px-4 py-2.5 hover:bg-sky-50 dark:hover:bg-sky-500/10 transition-colors group"
+                          >
+                            <span className="text-sm text-navy-400">{n + 1}</span>
+                            <span className="min-w-0">
+                              <span className="block font-semibold truncate group-hover:text-sky-600 dark:group-hover:text-sky-400">
+                                {i.lastName} {i.firstName}
+                              </span>
+                              <span className="block text-xs text-navy-400 dark:text-navy-500 truncate">
+                                {[i.department, i.city].filter(Boolean).join(' · ')}
+                                {noQuestions && (
+                                  <span className="text-warning-600 dark:text-warning-500"> · {t('вопросы не выданы')}</span>
+                                )}
+                              </span>
+                            </span>
+                            <ScoreCell answers={first} />
+                            <ScoreCell answers={retake} />
+                            <span className="hidden sm:block">
+                              <span className={'inline-block px-2 py-1 rounded-full text-xs font-semibold ' + status.cls}>
+                                {t(status.label)}
+                              </span>
+                            </span>
+                            <span className="sm:hidden">
+                              <span className={'inline-block px-2 py-1 rounded-full text-[11px] font-semibold ' + status.cls}>
+                                {t(status.label)}
+                              </span>
+                            </span>
+                            <span className="hidden sm:block text-navy-300 group-hover:text-sky-500 text-lg leading-none">›</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )
+        })
+      )}
+
+      {openedIntern && (
+        <InternModal
+          intern={openedIntern}
+          group={data.groups.find((g) => g.id === openedIntern.groupId)}
+          trainers={trainers}
+          position={openedIdx}
+          total={openedList.length}
+          onPrev={() => stepIntern(-1)}
+          onNext={() => stepIntern(1)}
+          onClose={closeIntern}
+        >
+          {(() => {
+                    const i = openedIntern
                     const status = getInternExamStatus(i)
                     const questions = getExamQuestions(i)
                     const first = getExamAnswers(i)
@@ -365,18 +466,7 @@ export default function ExamTab() {
                     const canEnd = status.code === 'failed' || status.code === 'retake_failed'
 
                     return (
-                      <div
-                        key={i.id}
-                        className="border border-navy-100 dark:border-navy-700 rounded-xl p-3 sm:p-4 space-y-3"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="font-medium">
-                            {i.lastName} {i.firstName}
-                          </div>
-                          <span className={'px-2 py-1 rounded-full text-xs font-semibold ' + status.cls}>
-                            {t(status.label)}
-                          </span>
-                        </div>
+                      <div className="space-y-4">
 
                         {hasExamNotice(status) && (
                           <Link to={`/certificate/${i.id}`} target="_blank" rel="noreferrer" className="btn-secondary text-xs px-3 py-1.5 inline-flex">
@@ -516,14 +606,120 @@ export default function ExamTab() {
                         )}
                       </div>
                     )
-                  })}
-                </div>
-                </>
-              )}
-            </div>
-          )
-        })
+          })()}
+        </InternModal>
       )}
+    </div>
+  )
+}
+
+function ScoreCell({ answers }) {
+  if (!answers || !examStarted(answers)) {
+    return <span className="hidden sm:block text-center text-navy-300 dark:text-navy-600">—</span>
+  }
+  const pct = examPercent(answers)
+  const cls =
+    pct >= 90
+      ? 'text-success-600 dark:text-success-400'
+      : 'text-danger-500 dark:text-danger-400'
+  return (
+    <span className={'hidden sm:block text-center font-semibold ' + cls}>
+      {examCorrectCount(answers)}/{EXAM_QUESTION_COUNT}
+    </span>
+  )
+}
+
+// Карточка стажёра поверх страницы: данные, вопросы экзамена и решения. Листается ← →, закрывается Esc.
+function InternModal({ intern, group, trainers, position, total, onPrev, onNext, onClose, children }) {
+  const { t } = useI18n()
+  const status = getInternExamStatus(intern)
+  const trainer = trainers.find((x) => x.id === group?.ownerId)
+
+  useEffect(() => {
+    function onKey(e) {
+      const tag = e.target?.tagName
+      if (e.key === 'Escape') onClose()
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (e.key === 'ArrowLeft') onPrev()
+      if (e.key === 'ArrowRight') onNext()
+    }
+    window.addEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [onClose, onPrev, onNext])
+
+  const facts = [
+    [t('Подразделение'), intern.department],
+    [t('Должность'), intern.position],
+    [t('Регион'), intern.region],
+    [t('Город/район'), intern.city],
+    [t('Телефон'), intern.phone],
+    [t('Почта'), intern.email],
+    [t('Руководитель'), [intern.managerName, intern.managerContact].filter(Boolean).join(' · ')],
+    [t('Тренер группы'), trainer?.name],
+  ].filter(([, v]) => v)
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-0 sm:p-6" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm animate-fadein" onClick={onClose} />
+      <div className="relative w-full sm:max-w-3xl h-full sm:h-auto sm:max-h-[92vh] flex flex-col bg-white dark:bg-navy-900 sm:rounded-2xl shadow-2xl overflow-hidden animate-fadein">
+        {/* Шапка карточки */}
+        <div className="relative bg-gradient-to-br from-navy-700 via-navy-600 to-sky-500 text-white px-5 sm:px-6 pt-5 pb-4 shrink-0">
+          <div className="absolute -right-8 -top-10 w-36 h-36 rounded-full bg-white/10" aria-hidden />
+          <div className="relative flex items-start gap-4">
+            <div className="w-14 h-14 shrink-0 rounded-2xl bg-white/20 flex items-center justify-center font-display text-2xl font-extrabold">
+              {(intern.lastName || '?').charAt(0)}
+              {(intern.firstName || '').charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-white/70">{group?.name}</div>
+              <h2 className="font-display text-xl sm:text-2xl font-extrabold leading-tight">
+                {intern.lastName} {intern.firstName}
+              </h2>
+              <span className={'inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ' + status.cls}>
+                {t(status.label)}
+              </span>
+            </div>
+            <button
+              onClick={onClose}
+              className="shrink-0 w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-xl leading-none"
+              title={t('Закрыть')}
+              aria-label={t('Закрыть')}
+            >
+              ×
+            </button>
+          </div>
+          <div className="relative flex items-center justify-between mt-4 text-sm">
+            <button onClick={onPrev} disabled={position <= 0} className="px-3 py-1 rounded-lg bg-white/15 hover:bg-white/25 disabled:opacity-40">
+              ← {t('Предыдущий')}
+            </button>
+            <span className="text-white/80">
+              {position + 1} / {total}
+            </span>
+            <button onClick={onNext} disabled={position >= total - 1} className="px-3 py-1 rounded-lg bg-white/15 hover:bg-white/25 disabled:opacity-40">
+              {t('Следующий')} →
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-y-auto px-5 sm:px-6 py-5 space-y-5">
+          {facts.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+              {facts.map(([label, value]) => (
+                <div key={label} className="min-w-0">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">{label}</div>
+                  <div className="text-sm font-medium break-words">{value}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="border-t border-navy-100 dark:border-navy-800 pt-4">{children}</div>
+        </div>
+      </div>
     </div>
   )
 }
