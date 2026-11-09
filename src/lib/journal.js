@@ -1,52 +1,54 @@
 // Человекочитаемое описание записей журнала действий и проверка, можно ли их безопасно отменить.
+// Функции описания принимают t (перевод интерфейса); без него текст — на русском (так он сохраняется в журнал).
+import { msg, ru } from '../i18n/msg.js'
 
 const FIELD_LABELS = {
   groups: {
-    name: 'название',
-    ownerId: 'владелец',
-    isOpen: 'приём анкет',
-    startDate: 'дата открытия',
-    endDate: 'дата закрытия',
-    lessons: 'занятия',
-    archived: 'архив',
-    archivedAt: 'дата архивации',
+    name: msg('название'),
+    ownerId: msg('владелец'),
+    isOpen: msg('приём анкет'),
+    startDate: msg('дата открытия'),
+    endDate: msg('дата закрытия'),
+    lessons: msg('занятия'),
+    archived: msg('архив'),
+    archivedAt: msg('дата архивации'),
   },
   interns: {
-    lastName: 'фамилия',
-    firstName: 'имя',
-    email: 'email',
-    region: 'регион',
-    department: 'подразделение',
-    position: 'должность',
-    phone: 'телефон',
-    managerName: 'руководитель',
-    managerContact: 'контакты руководителя',
-    city: 'город/район',
-    groupId: 'группа',
-    attendance: 'посещаемость',
-    homework: 'ДЗ',
-    comments: 'комментарии',
-    examQuestions: 'вопросы экзамена',
-    examAnswers: 'ответы экзамена',
-    examDate: 'дата экзамена',
-    examRetakeQuestions: 'вопросы пересдачи',
-    examRetakeAnswers: 'пересдача',
-    examRetakeDate: 'дата пересдачи',
-    examFinalOutcome: 'итог экзамена',
-    examFinalComment: 'комментарий к итогу',
-    withdrawn: 'отказ от обучения',
-    withdrawnReason: 'причина отказа',
-    whatsappSentAt: 'сообщение стажёру',
-    whatsappManagerSentAt: 'сообщение руководителю',
+    lastName: msg('фамилия'),
+    firstName: msg('имя'),
+    email: msg('email'),
+    region: msg('регион'),
+    department: msg('подразделение'),
+    position: msg('должность'),
+    phone: msg('телефон'),
+    managerName: msg('руководитель'),
+    managerContact: msg('контакты руководителя'),
+    city: msg('город/район'),
+    groupId: msg('группа'),
+    attendance: msg('посещаемость'),
+    homework: msg('ДЗ'),
+    comments: msg('комментарии'),
+    examQuestions: msg('вопросы экзамена'),
+    examAnswers: msg('ответы экзамена'),
+    examDate: msg('дата экзамена'),
+    examRetakeQuestions: msg('вопросы пересдачи'),
+    examRetakeAnswers: msg('пересдача'),
+    examRetakeDate: msg('дата пересдачи'),
+    examFinalOutcome: msg('итог экзамена'),
+    examFinalComment: msg('комментарий к итогу'),
+    withdrawn: msg('отказ от обучения'),
+    withdrawnReason: msg('причина отказа'),
+    whatsappSentAt: msg('сообщение стажёру'),
+    whatsappManagerSentAt: msg('сообщение руководителю'),
   },
   settings: {
-    programName: 'название программы',
-    examRules: 'правила экзамена',
-    programRules: 'правила программы',
-    whatsappTemplate: 'шаблон WhatsApp стажёрам',
-    whatsappManagerTemplate: 'шаблон WhatsApp руководителям',
-    examQuestionBank: 'банк вопросов',
-    trainers: 'тренеры',
+    programName: msg('название программы'),
+    examRules: msg('правила экзамена'),
+    programRules: msg('правила программы'),
+    whatsappTemplate: msg('шаблон WhatsApp стажёрам'),
+    whatsappManagerTemplate: msg('шаблон WhatsApp руководителям'),
+    examQuestionBank: msg('банк вопросов'),
+    trainers: msg('тренеры'),
   },
 }
 
@@ -69,11 +71,11 @@ function same(a, b) {
   return stableStringify(a) === stableStringify(b)
 }
 
-export function entityName(change) {
+export function entityName(change, t = ru) {
   const item = change.after || change.before || {}
-  if (change.coll === 'groups') return `группа «${item.name || '—'}»`
-  if (change.coll === 'interns') return `стажёр ${[item.lastName, item.firstName].filter(Boolean).join(' ') || '—'}`
-  return 'настройки'
+  if (change.coll === 'groups') return t('группа «{name}»', { name: item.name || '—' })
+  if (change.coll === 'interns') return t('стажёр {name}', { name: [item.lastName, item.firstName].filter(Boolean).join(' ') || '—' })
+  return t('настройки')
 }
 
 function changedFields(change) {
@@ -91,25 +93,26 @@ function changedFields(change) {
   return [...keys].filter((k) => !HIDDEN_FIELDS.has(k) && !same(before[k], after[k]))
 }
 
-export function describeChange(change, groups) {
-  const name = entityName(change)
+export function describeChange(change, groups, t = ru) {
+  const name = entityName(change, t)
   const title = name[0].toUpperCase() + name.slice(1)
-  if (!change.before) return `Добавлен(а) ${name}`
-  if (!change.after) return `Удалён(а) ${name}`
+  if (!change.before) return t('Добавлен(а) {name}', { name })
+  if (!change.after) return t('Удалён(а) {name}', { name })
   const labels = FIELD_LABELS[change.coll] || {}
   const fields = changedFields(change)
   if (change.coll === 'interns' && fields.includes('groupId')) {
     const to = groups.find((g) => g.id === change.after.groupId)?.name
-    if (to) return `${title}: переведён(а) в группу «${to}»`
+    if (to) return t('{title}: переведён(а) в группу «{group}»', { title, group: to })
   }
-  if (fields.length === 0) return `Изменён(а) ${name}`
-  return `${title}: изменено — ${fields.map((f) => labels[f] || f).join(', ')}`
+  if (fields.length === 0) return t('Изменён(а) {name}', { name })
+  return t('{title}: изменено — {fields}', { title, fields: fields.map((f) => (labels[f] ? t(labels[f]) : f)).join(', ') })
 }
 
-export function describeEntry(entry, groups) {
+// entry.label — готовая подпись, сохранённая в журнале при действии (на русском), выводится как есть.
+export function describeEntry(entry, groups, t = ru) {
   if (entry.label) return entry.label
-  if (entry.changes.length === 1) return describeChange(entry.changes[0], groups)
-  return `Изменено записей: ${entry.changes.length}`
+  if (entry.changes.length === 1) return describeChange(entry.changes[0], groups, t)
+  return t('Изменено записей: {n}', { n: entry.changes.length })
 }
 
 function currentDoc(change, data) {
@@ -143,13 +146,13 @@ const EDITABLE_FIELDS = {
   },
 }
 
-function lessonTitle(lesson) {
-  return `«${lesson.name || 'занятие'}»`
+function lessonTitle(lesson, t) {
+  return `«${lesson.name || t('занятие')}»`
 }
 
 // Список полей записи журнала, которые можно откорректировать, с текущими значениями.
 // key — уникальный ключ поля, path — путь внутри записи: [field] | ['lessons', lessonId, 'name'|'date'] | ['comments', lessonId].
-export function correctableFields(entry, data) {
+export function correctableFields(entry, data, t = ru) {
   const result = []
   entry.changes.forEach((c) => {
     const editable = EDITABLE_FIELDS[c.coll]
@@ -158,7 +161,7 @@ export function correctableFields(entry, data) {
     if (!current) return
     const before = c.before || {}
     const after = c.after
-    const entity = entityName({ ...c, after: current })
+    const entity = entityName({ ...c, after: current }, t)
     const push = (path, label, type, trainerValue, beforeValue, currentValue) =>
       result.push({
         key: `${c.coll}/${c.id}/${path.join('/')}`,
@@ -176,7 +179,7 @@ export function correctableFields(entry, data) {
     Object.entries(editable).forEach(([field, type]) => {
       const touched = !c.before ? after[field] !== undefined : !same(before[field], after[field])
       if (!touched) return
-      push([field], FIELD_LABELS[c.coll][field], type, after[field], before[field], current[field])
+      push([field], t(FIELD_LABELS[c.coll][field]), type, after[field], before[field], current[field])
     })
 
     if (c.coll === 'groups') {
@@ -185,8 +188,8 @@ export function correctableFields(entry, data) {
         const now = (current.lessons || []).find((x) => x.id === l.id)
         if (!now) return
         const old = beforeLessons.find((x) => x.id === l.id)
-        if (!old || old.name !== l.name) push(['lessons', l.id, 'name'], `занятие ${lessonTitle(now)}: название`, 'text', l.name, old?.name, now.name)
-        if (!old || old.date !== l.date) push(['lessons', l.id, 'date'], `занятие ${lessonTitle(now)}: дата`, 'date', l.date, old?.date, now.date)
+        if (!old || old.name !== l.name) push(['lessons', l.id, 'name'], t('занятие {lesson}: название', { lesson: lessonTitle(now, t) }), 'text', l.name, old?.name, now.name)
+        if (!old || old.date !== l.date) push(['lessons', l.id, 'date'], t('занятие {lesson}: дата', { lesson: lessonTitle(now, t) }), 'date', l.date, old?.date, now.date)
       })
     }
 
@@ -195,7 +198,9 @@ export function correctableFields(entry, data) {
       Object.entries(after.comments || {}).forEach(([lessonId, text]) => {
         if ((before.comments || {})[lessonId] === text) return
         const lesson = lessons.find((l) => l.id === lessonId)
-        const label = `комментарий тренера${lesson ? ` к занятию ${lessonTitle(lesson)}` : ''}`
+        const label = lesson
+          ? t('комментарий тренера к занятию {lesson}', { lesson: lessonTitle(lesson, t) })
+          : t('комментарий тренера')
         push(['comments', lessonId], label, 'textarea', text, before.comments?.[lessonId], current.comments?.[lessonId])
       })
     }

@@ -16,8 +16,10 @@ import { formatDate, trainingPeriod } from '../lib/date'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 import CertificateSheet, { CERT_W, CERT_H, CERT_COLORS } from '../components/CertificateSheet.jsx'
 import { canManageGroup } from '../lib/roles'
+import { useI18n } from '../i18n/I18nContext.jsx'
 
 export default function CertificatePage() {
+  const { t } = useI18n()
   const { internId } = useParams()
   const { data, currentTrainer, archiveLoaded, requestArchive } = useStore()
   const intern = data.interns.find((i) => i.id === internId)
@@ -40,16 +42,19 @@ export default function CertificatePage() {
   }, [intern, requestArchive])
 
   if (!intern && !archiveLoaded) {
-    return <div className="min-h-screen flex items-center justify-center text-sm text-navy-400">Загрузка...</div>
+    return <div className="min-h-screen flex items-center justify-center text-sm text-navy-400">{t('Загрузка...')}</div>
   }
 
   if (!intern) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="relative min-h-screen flex items-center justify-center px-4">
+        <div className="absolute right-4 top-4">
+          <ThemeToggle />
+        </div>
         <div className="card max-w-md text-center">
-          <h1 className="text-xl font-bold mb-2">Стажёр не найден</h1>
+          <h1 className="text-xl font-bold mb-2">{t('Стажёр не найден')}</h1>
           <Link to="/" className="btn-secondary">
-            На главную
+            {t('На главную')}
           </Link>
         </div>
       </div>
@@ -58,18 +63,21 @@ export default function CertificatePage() {
 
   if (!canManageGroup(group, currentTrainer)) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="relative min-h-screen flex items-center justify-center px-4">
+        <div className="absolute right-4 top-4">
+          <ThemeToggle />
+        </div>
         <div className="card max-w-md text-center">
-          <h1 className="text-xl font-bold mb-2">Документ недоступен</h1>
+          <h1 className="text-xl font-bold mb-2">{t('Документ недоступен')}</h1>
           <p className="text-navy-500 dark:text-navy-400 mb-4">
-            Скачать уведомление о завершении АП может только тренер группы стажёра или администратор — войдите в кабинет тренера.
+            {t('Скачать уведомление о завершении АП может только тренер группы стажёра или администратор — войдите в кабинет тренера.')}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <Link to="/login" className="btn-primary">
-              Вход для тренеров
+              {t('Вход для тренеров')}
             </Link>
             <Link to={`/progress/${intern.id}`} className="btn-secondary">
-              К прогрессу стажёра
+              {t('К прогрессу стажёра')}
             </Link>
           </div>
         </div>
@@ -83,15 +91,17 @@ export default function CertificatePage() {
 
   if (!hasExamNotice(status)) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="relative min-h-screen flex items-center justify-center px-4">
+        <div className="absolute right-4 top-4">
+          <ThemeToggle />
+        </div>
         <div className="card max-w-md text-center">
-          <h1 className="text-xl font-bold mb-2">Документ недоступен</h1>
+          <h1 className="text-xl font-bold mb-2">{t('Документ недоступен')}</h1>
           <p className="text-navy-500 dark:text-navy-400 mb-4">
-            Уведомление о завершении АП или о результате появляется здесь только после того, как итоговый экзамен
-            оценён.
+            {t('Уведомление о завершении АП или о результате появляется здесь только после того, как итоговый экзамен оценён.')}
           </p>
           <Link to={`/progress/${intern.id}`} className="btn-secondary">
-            К прогрессу стажёра
+            {t('К прогрессу стажёра')}
           </Link>
         </div>
       </div>
@@ -146,12 +156,12 @@ export default function CertificatePage() {
             to={`/progress/${intern.id}`}
             className="text-sm text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200"
           >
-            ← К прогрессу стажёра
+            {t('← К прогрессу стажёра')}
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <button onClick={downloadPdf} disabled={downloading} className="btn-primary">
-              {downloading ? 'Формируем PDF…' : 'Скачать PDF'}
+              {downloading ? t('Формируем PDF…') : t('Скачать PDF')}
             </button>
           </div>
         </div>

@@ -19,12 +19,14 @@ import logo from '../assets/logo.jpeg'
 import { formatDate } from '../lib/date'
 import { firstLessonId, homeworkLessons } from '../lib/lessons'
 import { canManageGroup } from '../lib/roles'
+import { msg, useI18n } from '../i18n/I18nContext.jsx'
 
 function homeworkLabel(value) {
-  return HOMEWORK_STATUSES.find((h) => h.value === value)?.label || 'Не указано'
+  return HOMEWORK_STATUSES.find((h) => h.value === value)?.label || msg('Не указано')
 }
 
 export default function ProgressPage() {
+  const { t } = useI18n()
   const { internId } = useParams()
   const { data, currentTrainer, archiveLoaded, requestArchive } = useStore()
   const intern = data.interns.find((i) => i.id === internId)
@@ -36,17 +38,20 @@ export default function ProgressPage() {
   }, [intern, requestArchive])
 
   if (!intern && !archiveLoaded) {
-    return <div className="min-h-screen flex items-center justify-center text-sm text-navy-400">Загрузка...</div>
+    return <div className="min-h-screen flex items-center justify-center text-sm text-navy-400">{t('Загрузка...')}</div>
   }
 
   if (!intern) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="card max-w-md text-center">
-          <h1 className="text-xl font-bold mb-2">Стажёр не найден</h1>
-          <Link to="/" className="btn-secondary">
-            На главную
-          </Link>
+          <h1 className="text-xl font-bold mb-2">{t('Стажёр не найден')}</h1>
+          <div className="flex justify-center items-center gap-3">
+            <Link to="/" className="btn-secondary">
+              {t('На главную')}
+            </Link>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     )
@@ -73,7 +78,7 @@ export default function ProgressPage() {
       <div className="relative max-w-5xl mx-auto space-y-6 [&_.card]:!bg-white/45 dark:[&_.card]:!bg-navy-900/70 [&_.card]:backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <Link to="/" className="text-sm text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200">
-            ← На главную
+            {t('← На главную')}
           </Link>
           <ThemeToggle />
         </div>
@@ -83,11 +88,14 @@ export default function ProgressPage() {
             <div className="flex items-center gap-2 text-danger-600 dark:text-danger-400 font-semibold">
               <span aria-hidden="true">⛔</span>
               <span>
-                Стажёр отказался от обучения{intern.withdrawnAt ? ` · ${formatDate(intern.withdrawnAt)}` : ''}
+                {t('Стажёр отказался от обучения')}
+                {intern.withdrawnAt ? ` · ${formatDate(intern.withdrawnAt)}` : ''}
               </span>
             </div>
             {intern.withdrawnReason && (
-              <p className="text-sm text-navy-600 dark:text-navy-300 mt-1">Причина: {intern.withdrawnReason}</p>
+              <p className="text-sm text-navy-600 dark:text-navy-300 mt-1">
+                {t('Причина:')} {intern.withdrawnReason}
+              </p>
             )}
           </div>
         )}
@@ -98,19 +106,19 @@ export default function ProgressPage() {
               {intern.lastName} {intern.firstName}
             </h1>
             <span className={'px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap ' + status.cls}>
-              {status.label}
+              {t(status.label)}
             </span>
           </div>
           {hasExamNotice(status) && canManageGroup(group, currentTrainer) && (
             <Link to={`/certificate/${intern.id}`} className="btn-secondary text-base mb-4 inline-flex">
-              {status.code === 'passed' ? '🎓 Уведомление о завершении АП' : '📄 Уведомление о результате'}
+              {status.code === 'passed' ? t('🎓 Уведомление о завершении АП') : t('📄 Уведомление о результате')}
             </Link>
           )}
           <p className="text-navy-500 dark:text-navy-400 text-base mb-4">
             {intern.department} · {intern.position} · {intern.city}
           </p>
           <div className="text-base mb-4">
-            Группа: <span className="font-medium">{group?.name || '—'}</span>
+            {t('Группа:')} <span className="font-medium">{group?.name || '—'}</span>
           </div>
           <div className="grid grid-cols-2 gap-4 pt-4 border-t border-navy-100 dark:border-navy-800">
             <div>
@@ -123,7 +131,7 @@ export default function ProgressPage() {
                   </span>
                 )}
               </div>
-              <div className="text-sm text-navy-500 dark:text-navy-400">Посещаемость</div>
+              <div className="text-sm text-navy-500 dark:text-navy-400">{t('Посещаемость')}</div>
             </div>
             <div>
               <div className="text-2xl font-bold">
@@ -135,24 +143,24 @@ export default function ProgressPage() {
                   </span>
                 )}
               </div>
-              <div className="text-sm text-navy-500 dark:text-navy-400">ДЗ выполнено</div>
+              <div className="text-sm text-navy-500 dark:text-navy-400">{t('ДЗ выполнено')}</div>
             </div>
           </div>
         </div>
 
         <div className="card">
-          <h2 className="font-semibold mb-3">Посещаемость и домашние задания</h2>
+          <h2 className="font-semibold mb-3">{t('Посещаемость и домашние задания')}</h2>
           {lessons.length === 0 ? (
-            <p className="text-navy-400 dark:text-navy-500 text-base">Занятия ещё не добавлены.</p>
+            <p className="text-navy-400 dark:text-navy-500 text-base">{t('Занятия ещё не добавлены.')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-base min-w-[560px]">
                 <thead>
                   <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
-                    <th className="py-2.5 pr-4">Занятие</th>
-                    <th className="py-2.5 pr-4">Присутствие</th>
-                    <th className="py-2.5 pr-4">Домашнее задание</th>
-                    <th className="py-2.5 pr-4">Комментарий тренера</th>
+                    <th className="py-2.5 pr-4">{t('Занятие')}</th>
+                    <th className="py-2.5 pr-4">{t('Присутствие')}</th>
+                    <th className="py-2.5 pr-4">{t('Домашнее задание')}</th>
+                    <th className="py-2.5 pr-4">{t('Комментарий тренера')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -171,11 +179,11 @@ export default function ProgressPage() {
                               : 'bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400')
                           }
                         >
-                          {intern.attendance[l.id] ? 'Присутствовал' : 'Отсутствовал'}
+                          {intern.attendance[l.id] ? t('Присутствовал') : t('Отсутствовал')}
                         </span>
                       </td>
                       <td className="py-2.5 pr-4">
-                        {l.id === noHomeworkId ? 'Не задаётся (первый день)' : homeworkLabel(intern.homework[l.id])}
+                        {l.id === noHomeworkId ? t('Не задаётся (первый день)') : t(homeworkLabel(intern.homework[l.id]))}
                       </td>
                       <td className="py-2.5 pr-4">{intern.comments?.[l.id] || '—'}</td>
                     </tr>
@@ -187,7 +195,7 @@ export default function ProgressPage() {
         </div>
 
         <div className="card space-y-4">
-          <h2 className="font-semibold">Итоговый экзамен</h2>
+          <h2 className="font-semibold">{t('Итоговый экзамен')}</h2>
           {(() => {
             const first = getExamAnswers(intern)
             const retake = getRetakeAnswers(intern)
@@ -196,12 +204,12 @@ export default function ProgressPage() {
             return (
               <>
                 <p className="text-base">
-                  Итог: <span className="font-medium">{status.label}</span>
+                  {t('Итог:')} <span className="font-medium">{t(status.label)}</span>
                 </p>
 
                 <div className="space-y-1.5">
                   <div className="text-sm font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
-                    Первая попытка · {examCorrectCount(first)}/{EXAM_QUESTION_COUNT} ({examPercent(first)}%)
+                    {t('Первая попытка')} · {examCorrectCount(first)}/{EXAM_QUESTION_COUNT} ({examPercent(first)}%)
                   </div>
                   <ExamAnswerList questions={questions} answers={first} />
                 </div>
@@ -209,7 +217,7 @@ export default function ProgressPage() {
                 {retake && (
                   <div className="space-y-1.5">
                     <div className="text-sm font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
-                      Пересдача · {examCorrectCount(retake)}/{EXAM_QUESTION_COUNT} ({examPercent(retake)}%)
+                      {t('Пересдача')} · {examCorrectCount(retake)}/{EXAM_QUESTION_COUNT} ({examPercent(retake)}%)
                     </div>
                     <ExamAnswerList questions={getRetakeQuestions(intern)} answers={retake} />
                   </div>
@@ -218,7 +226,9 @@ export default function ProgressPage() {
                 {intern.examFinalComment && (
                   <div className="text-base bg-navy-50 dark:bg-navy-800 rounded-lg p-3">
                     <span className="font-medium">
-                      {status.code === 'training' ? 'Рекомендации к доп. обучению: ' : 'Комментарий по завершению экзамена: '}
+                      {status.code === 'training'
+                        ? t('Рекомендации к доп. обучению:')
+                        : t('Комментарий по завершению экзамена:')}{' '}
                     </span>
                     {intern.examFinalComment}
                   </div>
@@ -229,7 +239,7 @@ export default function ProgressPage() {
         </div>
 
         <div className="card">
-          <h2 className="font-semibold mb-1">Правила экзамена</h2>
+          <h2 className="font-semibold mb-1">{t('Правила экзамена')}</h2>
           <p className="text-base whitespace-pre-wrap text-navy-600 dark:text-navy-300">{data.settings.examRules}</p>
         </div>
       </div>

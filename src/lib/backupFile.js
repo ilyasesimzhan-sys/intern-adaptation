@@ -1,3 +1,4 @@
+import { msg } from '../i18n/msg.js'
 import * as XLSX from 'xlsx'
 import { getInternExamStatus, getExamDate, getRetakeDate } from './exam'
 import { formatDate } from './date'
@@ -29,7 +30,7 @@ export function parsePayload(json) {
   const payload = typeof json === 'string' ? JSON.parse(json) : json
   const d = payload?.data
   if (!d || !d.settings || !Array.isArray(d.trainers) || !Array.isArray(d.groups) || !Array.isArray(d.interns)) {
-    throw new Error('Это не резервная копия сайта адаптационной программы.')
+    throw new Error(msg('Это не резервная копия сайта адаптационной программы.'))
   }
   return { createdAt: payload.createdAt || '', data: d }
 }
@@ -146,7 +147,7 @@ export function downloadBackupWorkbook(payload) {
 export function readBackupWorkbook(buffer) {
   const workbook = XLSX.read(buffer, { type: 'array' })
   const sheet = workbook.Sheets[DATA_SHEET]
-  if (!sheet) throw new Error('В файле нет служебного листа резервной копии — выберите файл, скачанный с этого сайта.')
+  if (!sheet) throw new Error(msg('В файле нет служебного листа резервной копии — выберите файл, скачанный с этого сайта.'))
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false })
   return parsePayload(rows.map((r) => String(r?.[0] ?? '')).join(''))
 }

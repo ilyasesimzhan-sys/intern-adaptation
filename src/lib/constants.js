@@ -1,3 +1,5 @@
+import { msg } from '../i18n/msg.js'
+
 // Города и районы — список офисов из выгрузки пользователей (ноябрь 2026) дословно, по алфавиту.
 export const KZ_CITIES = [
   'Актау ЦАП',
@@ -246,19 +248,20 @@ export const KZ_CITIES = [
 export const DEPARTMENTS = ['ЦОО', 'ЦРК', 'ЦАП', 'СОЛиТ']
 
 // Региональные дирекции телекоммуникаций. В анкете хранится код (value).
+// Подписи (label) — на русском; в интерфейсе они переводятся через t(), в Excel-отчётах остаются русскими.
 export const REGIONS = [
-  { value: 'АРДТ', label: 'АРДТ — Алматы' },
-  { value: 'ЦРДТ', label: 'ЦРДТ — Центр' },
-  { value: 'ВРДТ', label: 'ВРДТ — Восток' },
-  { value: 'СРДТ', label: 'СРДТ — Север' },
-  { value: 'ЮРДТ', label: 'ЮРДТ — Юг' },
-  { value: 'ЗРДТ', label: 'ЗРДТ — Запад' },
+  { value: 'АРДТ', label: msg('АРДТ — Алматы') },
+  { value: 'ЦРДТ', label: msg('ЦРДТ — Центр') },
+  { value: 'ВРДТ', label: msg('ВРДТ — Восток') },
+  { value: 'СРДТ', label: msg('СРДТ — Север') },
+  { value: 'ЮРДТ', label: msg('ЮРДТ — Юг') },
+  { value: 'ЗРДТ', label: msg('ЗРДТ — Запад') },
 ]
 
 export const HOMEWORK_STATUSES = [
-  { value: 'done', label: 'Выполнено' },
-  { value: 'partial', label: 'Частично' },
-  { value: 'not_done', label: 'Не выполнено' },
+  { value: 'done', label: msg('Выполнено') },
+  { value: 'partial', label: msg('Частично') },
+  { value: 'not_done', label: msg('Не выполнено') },
 ]
 
 export const GROUP_CAPACITY = 30

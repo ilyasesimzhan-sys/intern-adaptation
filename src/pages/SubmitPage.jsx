@@ -7,6 +7,7 @@ import { openGroupsWithSpace } from '../lib/groups'
 import { emptyExamAnswers, emptyExamQuestions } from '../lib/exam'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 import SearchSelect from '../components/SearchSelect.jsx'
+import { msg, useI18n } from '../i18n/I18nContext.jsx'
 
 const EMPTY_FORM = {
   lastName: '',
@@ -23,9 +24,12 @@ const EMPTY_FORM = {
 }
 
 // Незаполненное поле подсвечивается красным (правило с data-field-error в index.css), под ним — эта подпись.
-const REQUIRED = 'Заполнение обязательно'
+// В errors хранится русский текст-ключ, а переводится он при отрисовке — так ошибки меняют язык вместе с интерфейсом.
+const REQUIRED = msg('Заполнение обязательно')
+const PHONE_ERROR = msg('Введите номер полностью, пример: +77077777777')
 
 export default function SubmitPage() {
+  const { t } = useI18n()
   const { data, update } = useStore()
   const [searchParams] = useSearchParams()
   const openGroups = openGroupsWithSpace(data.groups, data.interns)
@@ -66,13 +70,13 @@ export default function SubmitPage() {
       errs.cityOther = REQUIRED
     }
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      errs.email = 'Некорректный email'
+      errs.email = msg('Некорректный email')
     }
     if (form.phone && !/^\+7\d{10}$/.test(form.phone)) {
-      errs.phone = 'Введите номер полностью, пример: +77077777777'
+      errs.phone = PHONE_ERROR
     }
     if (form.managerContact && !/^\+7\d{10}$/.test(form.managerContact)) {
-      errs.managerContact = 'Введите номер полностью, пример: +77077777777'
+      errs.managerContact = PHONE_ERROR
     }
     if (!groupId) errs.groupId = REQUIRED
     return errs
@@ -93,7 +97,7 @@ export default function SubmitPage() {
     update((prev) => {
       const stillOpen = openGroupsWithSpace(prev.groups, prev.interns).some((g) => g.id === groupId)
       if (!stillOpen) {
-        setErrors({ groupId: 'Группа уже закрылась или заполнилась, выберите другую' })
+        setErrors({ groupId: msg('Группа уже закрылась или заполнилась, выберите другую') })
         return prev
       }
       const { cityOther, ...rest } = form
@@ -126,13 +130,16 @@ export default function SubmitPage() {
           <div className="w-12 h-12 rounded-full bg-navy-100 dark:bg-navy-800 flex items-center justify-center text-2xl mx-auto mb-4">
             🔒
           </div>
-          <h1 className="text-xl font-bold mb-2">Приём анкет закрыт</h1>
+          <h1 className="text-xl font-bold mb-2">{t('Приём анкет закрыт')}</h1>
           <p className="text-navy-500 dark:text-navy-400 mb-4">
-            Сейчас нет ни одной открытой группы. Обратитесь к тренеру за информацией о следующем наборе.
+            {t('Сейчас нет ни одной открытой группы. Обратитесь к тренеру за информацией о следующем наборе.')}
           </p>
-          <Link to="/" className="btn-secondary">
-            На главную
-          </Link>
+          <div className="flex justify-center items-center gap-3">
+            <Link to="/" className="btn-secondary">
+              {t('На главную')}
+            </Link>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     )
@@ -145,11 +152,14 @@ export default function SubmitPage() {
           <div className="w-12 h-12 rounded-full bg-success-50 dark:bg-success-500/10 flex items-center justify-center text-2xl mx-auto mb-4">
             ✅
           </div>
-          <h1 className="text-xl font-bold mb-2 text-success-600 dark:text-success-400">Анкета отправлена</h1>
-          <p className="text-navy-500 dark:text-navy-400 mb-4">Спасибо! Данные стажёра приняты.</p>
-          <Link to="/" className="btn-secondary">
-            На главную
-          </Link>
+          <h1 className="text-xl font-bold mb-2 text-success-600 dark:text-success-400">{t('Анкета отправлена')}</h1>
+          <p className="text-navy-500 dark:text-navy-400 mb-4">{t('Спасибо! Данные стажёра приняты.')}</p>
+          <div className="flex justify-center items-center gap-3">
+            <Link to="/" className="btn-secondary">
+              {t('На главную')}
+            </Link>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     )
@@ -165,7 +175,7 @@ export default function SubmitPage() {
           value={form[key]}
           onChange={(e) => handleChange(key, e.target.value)}
         />
-        {errors[key] && <p data-field-error className="text-danger-500 text-xs mt-1">{errors[key]}</p>}
+        {errors[key] && <p data-field-error className="text-danger-500 text-xs mt-1">{t(errors[key])}</p>}
       </div>
     )
   }
@@ -187,7 +197,7 @@ export default function SubmitPage() {
             placeholder="7077777777"
           />
         </div>
-        {errors[key] && <p data-field-error className="text-danger-500 text-xs mt-1">{errors[key]}</p>}
+        {errors[key] && <p data-field-error className="text-danger-500 text-xs mt-1">{t(errors[key])}</p>}
       </div>
     )
   }
@@ -208,111 +218,112 @@ export default function SubmitPage() {
       <div className="max-w-xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Link to="/" className="text-sm text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200">
-            ← На главную
+            {t('← На главную')}
           </Link>
           <ThemeToggle />
         </div>
-        <h1 className="text-2xl font-bold mb-1">Анкета стажёра</h1>
+        <h1 className="text-2xl font-bold mb-1">{t('Анкета стажёра')}</h1>
         <p className="text-navy-500 dark:text-navy-400 mb-6 text-sm">
-          Анкету заполняет руководитель стажёра. Все поля обязательны.
+          {t('Анкету заполняет руководитель стажёра. Все поля обязательны.')}
         </p>
 
         <form onSubmit={handleSubmit} className="card space-y-4">
           <div>
-            <label className="field-label">Группа</label>
+            <label className="field-label">{t('Группа')}</label>
             <select className="field-input" value={groupId} onChange={(e) => {
                 setGroupId(e.target.value)
                 clearError('groupId')
               }}
             >
-              <option value="">Выберите группу</option>
+              <option value="">{t('Выберите группу')}</option>
               {openGroups.map((g) => (
                 <option key={g.id} value={g.id}>
-                  {g.name} (осталось {GROUP_CAPACITY - g.count} мест)
+                  {g.name} ({t('осталось мест: {n}', { n: GROUP_CAPACITY - g.count })})
                 </option>
               ))}
             </select>
-            {errors.groupId && <p data-field-error className="text-danger-500 text-xs mt-1">{errors.groupId}</p>}
+            {errors.groupId && <p data-field-error className="text-danger-500 text-xs mt-1">{t(errors.groupId)}</p>}
           </div>
 
-          <SectionHeader icon="👤" title="Данные стажёра" />
+          <SectionHeader icon="👤" title={t('Данные стажёра')} />
           <div className="space-y-4 pl-8">
-            {renderField({ key: 'lastName', label: 'Фамилия' })}
-            {renderField({ key: 'firstName', label: 'Имя' })}
-            {renderField({ key: 'email', label: 'Электронная почта', type: 'email' })}
-            {renderPhoneField('phone', 'Контактный телефон')}
+            {renderField({ key: 'lastName', label: t('Фамилия') })}
+            {renderField({ key: 'firstName', label: t('Имя') })}
+            {renderField({ key: 'email', label: t('Электронная почта'), type: 'email' })}
+            {renderPhoneField('phone', t('Контактный телефон'))}
           </div>
 
           <div className="border-t border-navy-100 dark:border-navy-800" />
 
-          <SectionHeader icon="🏢" title="Регион, подразделение и город" />
+          <SectionHeader icon="🏢" title={t('Регион, подразделение и город')} />
           <div className="space-y-4 pl-8">
             <div>
-              <label className="field-label">Регион</label>
+              <label className="field-label">{t('Регион')}</label>
               <select className="field-input" value={form.region} onChange={(e) => handleChange('region', e.target.value)}>
-                <option value="">Выберите регион</option>
+                <option value="">{t('Выберите регион')}</option>
                 {REGIONS.map((r) => (
                   <option key={r.value} value={r.value}>
-                    {r.label}
+                    {t(r.label)}
                   </option>
                 ))}
               </select>
-              {errors.region && <p data-field-error className="text-danger-500 text-xs mt-1">{errors.region}</p>}
+              {errors.region && <p data-field-error className="text-danger-500 text-xs mt-1">{t(errors.region)}</p>}
             </div>
 
             <div>
-              <label className="field-label">Подразделение</label>
+              <label className="field-label">{t('Подразделение')}</label>
               <select
                 className="field-input"
                 value={form.department}
                 onChange={(e) => handleChange('department', e.target.value)}
               >
-                <option value="">Выберите подразделение</option>
+                <option value="">{t('Выберите подразделение')}</option>
                 {DEPARTMENTS.map((d) => (
                   <option key={d} value={d}>
                     {d}
                   </option>
                 ))}
               </select>
-              {errors.department && <p data-field-error className="text-danger-500 text-xs mt-1">{errors.department}</p>}
+              {errors.department && <p data-field-error className="text-danger-500 text-xs mt-1">{t(errors.department)}</p>}
             </div>
 
-            {renderField({ key: 'position', label: 'Должность' })}
+            {renderField({ key: 'position', label: t('Должность') })}
 
             <div>
-              <label className="field-label">Город/район</label>
+              <label className="field-label">{t('Город/район')}</label>
               <SearchSelect
                 value={form.city}
                 onChange={(city) => handleChange('city', city)}
                 options={KZ_CITIES}
-                placeholder="Выберите или начните вводить город/район"
+                optionLabel={(city) => (city === 'Другой' ? t('Другой') : city)}
+                placeholder={t('Выберите или начните вводить город/район')}
               />
-              {errors.city && <p data-field-error className="text-danger-500 text-xs mt-1">{errors.city}</p>}
+              {errors.city && <p data-field-error className="text-danger-500 text-xs mt-1">{t(errors.city)}</p>}
             </div>
 
             {form.city === 'Другой' && (
               <div>
-                <label className="field-label">Укажите город или село</label>
+                <label className="field-label">{t('Укажите город или село')}</label>
                 <input
                   className="field-input"
                   value={form.cityOther}
                   onChange={(e) => handleChange('cityOther', e.target.value)}
                 />
-                {errors.cityOther && <p data-field-error className="text-danger-500 text-xs mt-1">{errors.cityOther}</p>}
+                {errors.cityOther && <p data-field-error className="text-danger-500 text-xs mt-1">{t(errors.cityOther)}</p>}
               </div>
             )}
           </div>
 
           <div className="border-t border-navy-100 dark:border-navy-800" />
 
-          <SectionHeader icon="🧑‍💼" title="Руководитель" />
+          <SectionHeader icon="🧑‍💼" title={t('Руководитель')} />
           <div className="space-y-4 pl-8">
-            {renderField({ key: 'managerName', label: 'ФИО руководителя' })}
-            {renderPhoneField('managerContact', 'Контакты руководителя')}
+            {renderField({ key: 'managerName', label: t('ФИО руководителя') })}
+            {renderPhoneField('managerContact', t('Контакты руководителя'))}
           </div>
 
           <button type="submit" className="btn-primary w-full">
-            Отправить анкету
+            {t('Отправить анкету')}
           </button>
         </form>
       </div>

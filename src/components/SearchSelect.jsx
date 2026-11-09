@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
+import { useI18n } from '../i18n/I18nContext.jsx'
 
 const normalize = (s) => s.toLowerCase().replace(/ё/g, 'е')
+const asIs = (o) => o
 
 // Выпадающий список с поиском: можно пролистать весь список или начать печатать — варианты отфильтруются.
 // Выбрать можно только значение из списка (кликом, Enter или точным совпадением при уходе из поля).
-export default function SearchSelect({ value, onChange, options, placeholder }) {
+// optionLabel — как показывать вариант (например, перевод «Другой»); в значении остаётся исходная строка.
+export default function SearchSelect({ value, onChange, options, placeholder, optionLabel = asIs }) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [highlight, setHighlight] = useState(0)
@@ -12,10 +16,11 @@ export default function SearchSelect({ value, onChange, options, placeholder }) 
 
   // Сначала варианты, которые начинаются с введённого текста, затем — содержащие его.
   const q = normalize(query.trim())
+  const text = (o) => normalize(optionLabel(o))
   const filtered = q
     ? [
-        ...options.filter((o) => normalize(o).startsWith(q)),
-        ...options.filter((o) => !normalize(o).startsWith(q) && normalize(o).includes(q)),
+        ...options.filter((o) => text(o).startsWith(q)),
+        ...options.filter((o) => !text(o).startsWith(q) && text(o).includes(q)),
       ]
     : options
 
@@ -37,7 +42,7 @@ export default function SearchSelect({ value, onChange, options, placeholder }) 
   }
 
   function handleBlur() {
-    const exact = query && options.find((o) => normalize(o) === normalize(query.trim()))
+    const exact = query && options.find((o) => text(o) === normalize(query.trim()))
     if (exact) onChange(exact)
     setOpen(false)
     setQuery('')
@@ -68,8 +73,8 @@ export default function SearchSelect({ value, onChange, options, placeholder }) 
     <div className="relative">
       <input
         className="field-input pr-9"
-        value={open ? query : value}
-        placeholder={open && value ? value : placeholder}
+        value={open ? query : value ? optionLabel(value) : ''}
+        placeholder={open && value ? optionLabel(value) : placeholder}
         onFocus={openList}
         onClick={() => !open && openList()}
         onBlur={handleBlur}
@@ -93,7 +98,7 @@ export default function SearchSelect({ value, onChange, options, placeholder }) 
           className="absolute z-20 mt-1 w-full max-h-64 overflow-auto rounded-lg border border-navy-200 bg-white shadow-lg dark:bg-navy-800 dark:border-navy-600"
         >
           {filtered.length === 0 && (
-            <li className="px-3 py-2 text-sm text-navy-400 dark:text-navy-500">Ничего не найдено</li>
+            <li className="px-3 py-2 text-sm text-navy-400 dark:text-navy-500">{t('Ничего не найдено')}</li>
           )}
           {filtered.map((o, i) => (
             <li
@@ -115,7 +120,7 @@ export default function SearchSelect({ value, onChange, options, placeholder }) 
                 ' text-navy-800 dark:text-navy-100'
               }
             >
-              {o}
+              {optionLabel(o)}
             </li>
           ))}
         </ul>

@@ -7,24 +7,26 @@ import Avatar from '../../components/Avatar.jsx'
 import CreatorCard from '../../components/CreatorCard.jsx'
 import ThemeToggle from '../../components/ThemeToggle.jsx'
 import logo from '../../assets/logo.jpeg'
+import { msg, useI18n } from '../../i18n/I18nContext.jsx'
 
 const TABS = [
-  { to: 'overview', label: 'Обзор' },
-  { to: 'settings', label: 'Настройки сбора' },
-  { to: 'interns', label: 'Список стажёров' },
-  { to: 'whatsapp', label: 'Рассылка WhatsApp' },
-  { to: 'exam', label: 'Итоговый экзамен' },
-  { to: 'rules', label: 'Правила адаптационной программы' },
-  { to: 'trainers', label: 'Тренеры', adminOnly: true },
-  { to: 'reports', label: 'Отчёты' },
-  { to: 'archive', label: 'Архив' },
-  { to: 'ispring', label: 'Логины iSpring' },
-  { to: 'knowledge', label: 'База знаний' },
-  { to: 'journal', label: 'Журнал действий', adminOnly: true },
-  { to: 'backups', label: 'Резервные копии', adminOnly: true },
+  { to: 'overview', label: msg('Обзор') },
+  { to: 'settings', label: msg('Настройки сбора') },
+  { to: 'interns', label: msg('Список стажёров') },
+  { to: 'whatsapp', label: msg('Рассылка WhatsApp') },
+  { to: 'exam', label: msg('Итоговый экзамен') },
+  { to: 'rules', label: msg('Правила адаптационной программы') },
+  { to: 'trainers', label: msg('Тренеры'), adminOnly: true },
+  { to: 'reports', label: msg('Отчёты') },
+  { to: 'archive', label: msg('Архив') },
+  { to: 'ispring', label: msg('Логины iSpring') },
+  { to: 'knowledge', label: msg('База знаний') },
+  { to: 'journal', label: msg('Журнал действий'), adminOnly: true },
+  { to: 'backups', label: msg('Резервные копии'), adminOnly: true },
 ]
 
 export default function DashboardLayout() {
+  const { t } = useI18n()
   const { data, currentTrainer, logout } = useStore()
   const navigate = useNavigate()
   const location = useLocation()
@@ -50,7 +52,7 @@ export default function DashboardLayout() {
             aria-hidden="true"
             className="pointer-events-none select-none absolute -right-16 -top-16 w-[420px] max-w-none opacity-100 mix-blend-multiply saturate-[2.5] contrast-150 brightness-125"
           />
-          <div className="relative font-bold">Кабинет тренера</div>
+          <div className="relative font-bold">{t('Кабинет тренера')}</div>
           <NavLink
             to="profile"
             className={({ isActive }) =>
@@ -77,7 +79,7 @@ export default function DashboardLayout() {
                 (isActive ? 'bg-navy-700 font-semibold' : 'hover:bg-navy-700/60 text-navy-200')
               }
             >
-              {tab.label}
+              {t(tab.label)}
             </NavLink>
           ))}
         </nav>
@@ -85,7 +87,7 @@ export default function DashboardLayout() {
           <CreatorCard />
           <div className="flex items-center justify-between">
             <button onClick={handleLogout} className="text-sm text-navy-300 hover:text-white">
-              Выйти
+              {t('Выйти')}
             </button>
             <ThemeToggle className="!bg-navy-700 !border-navy-600 !text-navy-100 hover:!bg-navy-600" />
           </div>
@@ -105,7 +107,7 @@ export default function DashboardLayout() {
             onClick={handleLogout}
             className="text-sm text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200"
           >
-            Выйти
+            {t('Выйти')}
           </button>
         </div>
         <main className="relative z-10 flex-1 p-4 sm:p-6 max-w-[1600px] w-full mx-auto">

@@ -24,6 +24,7 @@ import { downloadGroupReport } from '../../lib/examReport'
 import { filterInternsBySearch } from '../../lib/internSearch'
 import ExamAnswerList from '../../components/ExamAnswerList.jsx'
 import { readQuestionsFromFile } from '../../lib/questionBankFile'
+import { msg, useI18n } from '../../i18n/I18nContext.jsx'
 
 function nextAnswerState(value) {
   if (value === null || value === undefined) return true
@@ -32,6 +33,7 @@ function nextAnswerState(value) {
 }
 
 export default function ExamTab() {
+  const { t } = useI18n()
   const { data, update, currentTrainer } = useStore()
   const { settings, interns: allInterns, trainers } = data
   const [endingId, setEndingId] = useState(null)
@@ -52,13 +54,17 @@ export default function ExamTab() {
     try {
       const questions = await readQuestionsFromFile(file)
       if (questions.length === 0) {
-        setBankMessage({ error: true, text: 'В файле не найдено ни одного вопроса — вопросы должны быть в первом столбце.' })
+        setBankMessage({ error: true, text: msg('В файле не найдено ни одного вопроса — вопросы должны быть в первом столбце.') })
         return
       }
       patchSettings({ examQuestionBank: questions })
-      setBankMessage({ error: false, text: `Загружено вопросов: ${questions.length} (из файла «${file.name}»).` })
+      setBankMessage({
+        error: false,
+        text: msg('Загружено вопросов: {n} (из файла «{file}»).'),
+        params: { n: questions.length, file: file.name },
+      })
     } catch {
-      setBankMessage({ error: true, text: 'Не удалось прочитать файл. Загрузите файл Excel (.xlsx).' })
+      setBankMessage({ error: true, text: msg('Не удалось прочитать файл. Загрузите файл Excel (.xlsx).') })
     }
   }
 
@@ -191,42 +197,43 @@ export default function ExamTab() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">Итоговый экзамен</h1>
+      <h1 className="text-xl font-bold">{t('Итоговый экзамен')}</h1>
       <p className="text-sm text-navy-500 dark:text-navy-400">
-        Загрузите файл с вопросами, затем у каждого стажёра нажмите «Выдать вопросы» — ему случайно достанутся{' '}
-        {EXAM_QUESTION_COUNT} вопросов из банка. При пересдаче вопросы, на которые стажёр ответил неверно, повторяются, а
-        верно отвеченные заменяются новыми. Текст вопроса можно поправить вручную прямо в списке.
+        {t(
+          'Загрузите файл с вопросами, затем у каждого стажёра нажмите «Выдать вопросы» — ему случайно достанутся {n} вопросов из банка. При пересдаче вопросы, на которые стажёр ответил неверно, повторяются, а верно отвеченные заменяются новыми. Текст вопроса можно поправить вручную прямо в списке.',
+          { n: EXAM_QUESTION_COUNT },
+        )}
       </p>
 
       <div className="card space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-semibold">Банк вопросов</h2>
+            <h2 className="font-semibold">{t('Банк вопросов')}</h2>
             <p className="text-sm text-navy-500 dark:text-navy-400">
-              {bank.length > 0 ? `В банке ${bank.length} вопросов.` : 'Банк вопросов пока пуст.'} Файл Excel: один вопрос
-              в строке, в первом столбце. Новый файл полностью заменяет прежний список.
+              {bank.length > 0 ? t('В банке {n} вопросов.', { n: bank.length }) : t('Банк вопросов пока пуст.')}{' '}
+              {t('Файл Excel: один вопрос в строке, в первом столбце. Новый файл полностью заменяет прежний список.')}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {bank.length > 0 && (
               <button onClick={() => setShowBank((v) => !v)} className="btn-secondary text-sm">
-                {showBank ? 'Скрыть вопросы' : 'Показать вопросы'}
+                {showBank ? t('Скрыть вопросы') : t('Показать вопросы')}
               </button>
             )}
             <label className="btn-primary text-sm cursor-pointer">
-              {bank.length > 0 ? 'Загрузить новый файл' : 'Загрузить файл'}
+              {bank.length > 0 ? t('Загрузить новый файл') : t('Загрузить файл')}
               <input type="file" accept=".xlsx,.xls" className="hidden" onChange={uploadBank} />
             </label>
           </div>
         </div>
         {bankMessage && (
           <p className={'text-sm ' + (bankMessage.error ? 'text-danger-500' : 'text-success-600 dark:text-success-400')}>
-            {bankMessage.text}
+            {t(bankMessage.text, bankMessage.params)}
           </p>
         )}
         {bank.length > 0 && bank.length < EXAM_QUESTION_COUNT && (
           <p className="text-sm text-warning-600 dark:text-warning-500">
-            Для выдачи нужно хотя бы {EXAM_QUESTION_COUNT} вопросов в банке.
+            {t('Для выдачи нужно хотя бы {n} вопросов в банке.', { n: EXAM_QUESTION_COUNT })}
           </p>
         )}
         {showBank && (
@@ -239,7 +246,7 @@ export default function ExamTab() {
       </div>
 
       <div className="card space-y-2">
-        <h2 className="font-semibold">Правила экзамена</h2>
+        <h2 className="font-semibold">{t('Правила экзамена')}</h2>
         {admin ? (
           <textarea
             className="field-input min-h-[160px] font-mono text-sm"
@@ -249,13 +256,13 @@ export default function ExamTab() {
         ) : (
           <>
             <p className="text-sm whitespace-pre-wrap text-navy-700 dark:text-navy-200">{settings.examRules}</p>
-            <p className="text-xs text-navy-400 dark:text-navy-500">Редактировать правила может только главный логин.</p>
+            <p className="text-xs text-navy-400 dark:text-navy-500">{t('Редактировать правила может только главный логин.')}</p>
           </>
         )}
       </div>
 
       {myGroups.length === 0 ? (
-        <p className="text-navy-400 dark:text-navy-500">Сначала создайте группу во вкладке «Настройки сбора».</p>
+        <p className="text-navy-400 dark:text-navy-500">{t('Сначала создайте группу во вкладке «Настройки сбора».')}</p>
       ) : (
         myGroups.map((group) => {
           const groupInterns = allInterns.filter((i) => i.groupId === group.id)
@@ -277,15 +284,15 @@ export default function ExamTab() {
                     disabled={groupInterns.length === 0}
                     className="btn-secondary text-sm"
                   >
-                    Выгрузить отчёт
+                    {t('Выгрузить отчёт')}
                   </button>
                   <button
                     onClick={() => setArchivingId(group.id)}
                     disabled={!allResolved}
-                    title={allResolved ? '' : 'Доступно, когда по каждому стажёру принято итоговое решение'}
+                    title={allResolved ? '' : t('Доступно, когда по каждому стажёру принято итоговое решение')}
                     className="btn-secondary text-sm"
                   >
-                    Отправить в архив
+                    {t('Отправить в архив')}
                   </button>
                 </div>
               </div>
@@ -293,37 +300,37 @@ export default function ExamTab() {
               {archivingId === group.id && (
                 <div className="flex flex-wrap items-center gap-3 text-sm">
                   <span className="font-semibold">
-                    Отправить группу в архив? Она пропадёт из активных, но данные сохранятся в разделе «Архив».
+                    {t('Отправить группу в архив? Она пропадёт из активных, но данные сохранятся в разделе «Архив».')}
                   </span>
                   <button onClick={() => archiveGroup(group.id)} className="btn-primary text-sm">
-                    Да, в архив
+                    {t('Да, в архив')}
                   </button>
                   <button onClick={() => setArchivingId(null)} className="btn-secondary text-sm">
-                    Отмена
+                    {t('Отмена')}
                   </button>
                 </div>
               )}
 
               <div className="flex flex-wrap gap-6 text-sm">
                 <div>
-                  Всего стажёров: <span className="font-semibold">{interns.length}</span>
+                  {t('Всего стажёров:')} <span className="font-semibold">{interns.length}</span>
                 </div>
                 <div>
-                  Сдали: <span className="font-semibold text-success-600 dark:text-success-400">{passedCount}</span>
+                  {t('Сдали:')} <span className="font-semibold text-success-600 dark:text-success-400">{passedCount}</span>
                 </div>
                 <div>
-                  Не прошли программу:{' '}
+                  {t('Не прошли программу:')}{' '}
                   <span className="font-semibold text-danger-500 dark:text-danger-400">{droppedCount}</span>
                 </div>
                 <div>
-                  В процессе:{' '}
+                  {t('В процессе:')}{' '}
                   <span className="font-semibold text-navy-700 dark:text-navy-200">
                     {interns.length - passedCount - droppedCount}
                   </span>
                 </div>
                 {groupInterns.length - interns.length > 0 && (
                   <div>
-                    Отказались:{' '}
+                    {t('Отказались:')}{' '}
                     <span className="font-semibold text-navy-400 dark:text-navy-500">
                       {groupInterns.length - interns.length}
                     </span>
@@ -332,23 +339,22 @@ export default function ExamTab() {
               </div>
               {!allResolved && interns.length > 0 && (
                 <p className="text-xs text-warning-600 dark:text-warning-500">
-                  В архив можно отправить, только когда по каждому стажёру принято итоговое решение (сдал, экзамен
-                  завершён или направлен на доп. обучение).
+                  {t('В архив можно отправить, только когда по каждому стажёру принято итоговое решение (сдал, экзамен завершён или направлен на доп. обучение).')}
                 </p>
               )}
 
               {interns.length === 0 ? (
-                <p className="text-navy-400 dark:text-navy-500 text-sm">В группе пока нет стажёров.</p>
+                <p className="text-navy-400 dark:text-navy-500 text-sm">{t('В группе пока нет стажёров.')}</p>
               ) : (
                 <>
                   <input
                     className="field-input max-w-xs"
-                    placeholder="Поиск по ФИО, email, телефону..."
+                    placeholder={t('Поиск по ФИО, email, телефону...')}
                     value={groupSearch}
                     onChange={(e) => setSearchByGroup((prev) => ({ ...prev, [group.id]: e.target.value }))}
                   />
                   {visibleInterns.length === 0 && (
-                    <p className="text-navy-400 dark:text-navy-500 text-sm">Совпадений не найдено.</p>
+                    <p className="text-navy-400 dark:text-navy-500 text-sm">{t('Совпадений не найдено.')}</p>
                   )}
                 <div className="space-y-3">
                   {visibleInterns.map((i) => {
@@ -368,20 +374,20 @@ export default function ExamTab() {
                             {i.lastName} {i.firstName}
                           </div>
                           <span className={'px-2 py-1 rounded-full text-xs font-semibold ' + status.cls}>
-                            {status.label}
+                            {t(status.label)}
                           </span>
                         </div>
 
                         {hasExamNotice(status) && (
                           <Link to={`/certificate/${i.id}`} target="_blank" rel="noreferrer" className="btn-secondary text-xs px-3 py-1.5 inline-flex">
-                            {status.code === 'passed' ? '🎓 Уведомление о завершении' : '📄 Уведомление о результате'}
+                            {status.code === 'passed' ? t('🎓 Уведомление о завершении') : t('📄 Уведомление о результате')}
                           </Link>
                         )}
 
                         <div className="space-y-1.5">
                           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
                             <span>
-                              Первая попытка · {examCorrectCount(first)}/{EXAM_QUESTION_COUNT} ({examPercent(first)}%)
+                              {t('Первая попытка')} · {examCorrectCount(first)}/{EXAM_QUESTION_COUNT} ({examPercent(first)}%)
                             </span>
                             <input
                               type="date"
@@ -394,7 +400,7 @@ export default function ExamTab() {
                                 onClick={() => assignQuestions(i.id)}
                                 className="btn-primary text-xs px-3 py-1 normal-case tracking-normal"
                               >
-                                {questions.some((q) => q.trim()) ? '🎲 Выдать другие вопросы' : '🎲 Выдать вопросы'}
+                                {questions.some((q) => q.trim()) ? t('🎲 Выдать другие вопросы') : t('🎲 Выдать вопросы')}
                               </button>
                             )}
                           </div>
@@ -410,7 +416,7 @@ export default function ExamTab() {
                           <div className="space-y-1.5">
                             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
                               <span>
-                                Пересдача · {examCorrectCount(retake)}/{EXAM_QUESTION_COUNT} ({examPercent(retake)}%)
+                                {t('Пересдача')} · {examCorrectCount(retake)}/{EXAM_QUESTION_COUNT} ({examPercent(retake)}%)
                               </span>
                               <input
                                 type="date"
@@ -431,7 +437,7 @@ export default function ExamTab() {
                         {i.examFinalComment && (status.code === 'ended' || status.code === 'training') && (
                           <div className="text-sm bg-navy-50 dark:bg-navy-800 rounded-lg p-3">
                             <span className="font-medium">
-                              {status.code === 'training' ? 'Рекомендации к доп. обучению: ' : 'Комментарий завершения: '}
+                              {status.code === 'training' ? t('Рекомендации к доп. обучению:') : t('Комментарий завершения:')}{' '}
                             </span>
                             {i.examFinalComment}
                           </div>
@@ -439,27 +445,26 @@ export default function ExamTab() {
 
                         {status.code === 'failed' && (
                           <button onClick={() => sendToRetake(i.id)} className="btn-secondary text-sm">
-                            Отправить на пересдачу
+                            {t('Отправить на пересдачу')}
                           </button>
                         )}
 
                         {status.code === 'retake_failed' && trainingId !== i.id && (
                           <button onClick={() => startTraining(i)} className="btn-secondary text-sm">
-                            Направить на доп. обучение
+                            {t('Направить на доп. обучение')}
                           </button>
                         )}
 
                         {trainingId === i.id && (
                           <div className="space-y-2 border border-warning-500/30 bg-warning-50 dark:bg-warning-500/10 rounded-lg p-3">
                             <label className="field-label">
-                              Рекомендации к доп. обучению (обязательно, будут видны стажёру в уведомлении) — какие
-                              вопросы не сдал и на чём делать акцент при повторном обучении
+                              {t('Рекомендации к доп. обучению (обязательно, будут видны стажёру в уведомлении) — какие вопросы не сдал и на чём делать акцент при повторном обучении')}
                             </label>
                             <textarea
                               className="field-input min-h-[80px]"
                               value={trainingComment}
                               onChange={(e) => setTrainingComment(e.target.value)}
-                              placeholder="Укажите, какие темы повторить и на что обратить внимание"
+                              placeholder={t('Укажите, какие темы повторить и на что обратить внимание')}
                               autoFocus
                             />
                             <div className="flex flex-wrap gap-2">
@@ -468,10 +473,10 @@ export default function ExamTab() {
                                 disabled={!trainingComment.trim()}
                                 className="btn-secondary text-sm"
                               >
-                                Подтвердить направление
+                                {t('Подтвердить направление')}
                               </button>
                               <button onClick={cancelTraining} className="btn-secondary text-sm">
-                                Отмена
+                                {t('Отмена')}
                               </button>
                             </div>
                           </div>
@@ -479,21 +484,20 @@ export default function ExamTab() {
 
                         {canEnd && endingId !== i.id && (
                           <button onClick={() => startEnding(i.id)} className="btn-danger text-sm">
-                            Завершение экзамена
+                            {t('Завершение экзамена')}
                           </button>
                         )}
 
                         {endingId === i.id && (
                           <div className="space-y-2 border border-danger-500/30 bg-danger-50 dark:bg-danger-500/10 rounded-lg p-3">
                             <label className="field-label">
-                              Комментарий к завершению экзамена (обязательно, будет виден стажёру и всем в
-                              прогрессе)
+                              {t('Комментарий к завершению экзамена (обязательно, будет виден стажёру и всем в прогрессе)')}
                             </label>
                             <textarea
                               className="field-input min-h-[80px]"
                               value={endComment}
                               onChange={(e) => setEndComment(e.target.value)}
-                              placeholder="Укажите причину завершения экзамена"
+                              placeholder={t('Укажите причину завершения экзамена')}
                               autoFocus
                             />
                             <div className="flex flex-wrap gap-2">
@@ -502,10 +506,10 @@ export default function ExamTab() {
                                 disabled={!endComment.trim()}
                                 className="btn-danger text-sm"
                               >
-                                Подтвердить завершение
+                                {t('Подтвердить завершение')}
                               </button>
                               <button onClick={cancelEnding} className="btn-secondary text-sm">
-                                Отмена
+                                {t('Отмена')}
                               </button>
                             </div>
                           </div>

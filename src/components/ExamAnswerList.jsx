@@ -1,4 +1,6 @@
-const LABEL = { null: '—', true: 'Верно', false: 'Неверно' }
+import { msg, useI18n } from '../i18n/I18nContext.jsx'
+
+const LABEL = { null: '—', true: msg('Верно'), false: msg('Неверно') }
 
 const BUTTON_CLASSES = {
   null: 'bg-white border-navy-200 text-navy-400 hover:border-navy-400 dark:bg-navy-800 dark:border-navy-600 dark:text-navy-400 dark:hover:border-sky-500',
@@ -20,6 +22,7 @@ function stateKey(value) {
 // без onToggle — только для чтения (публичная страница прогресса стажёра). onQuestionChange даёт
 // редактировать сам текст вопроса (тренер задаёт вопросы индивидуально для каждого стажёра).
 export default function ExamAnswerList({ questions, answers, onToggle, onQuestionChange }) {
+  const { t } = useI18n()
   return (
     <div className="divide-y divide-navy-50 dark:divide-navy-800 border border-navy-100 dark:border-navy-700 rounded-lg overflow-hidden">
       {answers.map((a, idx) => {
@@ -33,14 +36,14 @@ export default function ExamAnswerList({ questions, answers, onToggle, onQuestio
                 className="flex-1 min-w-0 border-none bg-transparent px-1 py-0.5 text-base focus:outline-none focus:ring-1 focus:ring-navy-300 dark:focus:ring-sky-500 rounded"
                 value={questions?.[idx] || ''}
                 onChange={(e) => onQuestionChange(idx, e.target.value)}
-                placeholder={`Текст вопроса ${idx + 1}`}
+                placeholder={t('Текст вопроса {n}', { n: idx + 1 })}
               />
             ) : (
               <div className="flex-1">
                 {questionText ? (
                   questionText
                 ) : (
-                  <span className="text-navy-300 dark:text-navy-500 italic">Вопрос не задан</span>
+                  <span className="text-navy-300 dark:text-navy-500 italic">{t('Вопрос не задан')}</span>
                 )}
               </div>
             )}
@@ -50,11 +53,11 @@ export default function ExamAnswerList({ questions, answers, onToggle, onQuestio
                 onClick={() => onToggle(idx)}
                 className={'shrink-0 px-3 py-1.5 rounded-md text-sm font-semibold border transition-colors ' + BUTTON_CLASSES[key]}
               >
-                {LABEL[key]}
+                {t(LABEL[key])}
               </button>
             ) : (
               <span className={'shrink-0 px-3 py-1.5 rounded-md text-sm font-semibold ' + READONLY_CLASSES[key]}>
-                {LABEL[key]}
+                {t(LABEL[key])}
               </span>
             )}
           </div>

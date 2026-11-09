@@ -12,6 +12,7 @@ import { copyText } from '../../lib/clipboard'
 import { filterInternsBySearch, internMatchesQuery } from '../../lib/internSearch'
 import Avatar from '../../components/Avatar.jsx'
 import EmptyState from '../../components/EmptyState.jsx'
+import { msg, useI18n } from '../../i18n/I18nContext.jsx'
 
 const EMPTY_MANUAL_FORM = {
   lastName: '',
@@ -28,19 +29,20 @@ const EMPTY_MANUAL_FORM = {
 }
 
 const COLUMNS = [
-  { key: 'lastName', label: 'Фамилия' },
-  { key: 'firstName', label: 'Имя' },
-  { key: 'email', label: 'Email' },
-  { key: 'region', label: 'Регион', options: REGIONS },
-  { key: 'department', label: 'Подразделение' },
-  { key: 'position', label: 'Должность' },
-  { key: 'phone', label: 'Телефон' },
-  { key: 'managerName', label: 'Руководитель' },
-  { key: 'managerContact', label: 'Контакты руководителя' },
-  { key: 'city', label: 'Город/район' },
+  { key: 'lastName', label: msg('Фамилия') },
+  { key: 'firstName', label: msg('Имя') },
+  { key: 'email', label: msg('Email') },
+  { key: 'region', label: msg('Регион'), options: REGIONS },
+  { key: 'department', label: msg('Подразделение') },
+  { key: 'position', label: msg('Должность') },
+  { key: 'phone', label: msg('Телефон') },
+  { key: 'managerName', label: msg('Руководитель') },
+  { key: 'managerContact', label: msg('Контакты руководителя') },
+  { key: 'city', label: msg('Город/район') },
 ]
 
 export default function InternsTab() {
+  const { t } = useI18n()
   const { data, update, currentTrainer } = useStore()
   const { groups, interns, trainers } = data
   const admin = isTrainerAdmin(currentTrainer)
@@ -118,7 +120,7 @@ export default function InternsTab() {
   }
 
   async function copyTable() {
-    const header = COLUMNS.map((c) => c.label).join('\t')
+    const header = COLUMNS.map((c) => t(c.label)).join('\t')
     const rows = filtered.map((i) => COLUMNS.map((c) => i[c.key] ?? '').join('\t'))
     const text = [header, ...rows].join('\n')
     const ok = await copyText(text)
@@ -136,11 +138,11 @@ export default function InternsTab() {
   if (sortedGroups.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold">Список стажёров</h1>
+        <h1 className="text-xl font-bold">{t('Список стажёров')}</h1>
         <EmptyState
           icon="👥"
-          title="Сначала создайте группу"
-          description="Группа создаётся во вкладке «Настройки сбора» — после этого здесь появится список её стажёров."
+          title={t('Сначала создайте группу')}
+          description={t('Группа создаётся во вкладке «Настройки сбора» — после этого здесь появится список её стажёров.')}
         />
       </div>
     )
@@ -149,13 +151,13 @@ export default function InternsTab() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold">Список стажёров</h1>
+        <h1 className="text-xl font-bold">{t('Список стажёров')}</h1>
         <select className="field-input max-w-md" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
           {sortedGroups.map((g) => {
             const owner = trainers.find((t) => t.id === g.ownerId)
             return (
               <option key={g.id} value={g.id}>
-                {g.name} — {owner ? owner.name : 'без тренера'} {g.isOpen ? '(открыта)' : '(закрыта)'}
+                {g.name} — {owner ? owner.name : t('без тренера')} {g.isOpen ? t('(открыта)') : t('(закрыта)')}
               </option>
             )
           })}
@@ -167,30 +169,29 @@ export default function InternsTab() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <input
           className="field-input max-w-xs"
-          placeholder="Поиск по ФИО, email, телефону..."
+          placeholder={t('Поиск по ФИО, email, телефону...')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <div className="flex gap-2 shrink-0">
           <button onClick={() => setAddingManually((v) => !v)} className="btn-secondary">
-            {addingManually ? 'Отмена' : '+ Добавить стажёра'}
+            {addingManually ? t('Отмена') : t('+ Добавить стажёра')}
           </button>
           <button onClick={copyTable} className="btn-secondary">
-            {copied === 'success' ? 'Скопировано!' : copied === 'error' ? 'Не удалось скопировать' : 'Копировать таблицу'}
+            {copied === 'success' ? t('Скопировано!') : copied === 'error' ? t('Не удалось скопировать') : t('Копировать таблицу')}
           </button>
         </div>
       </div>
 
       {addingManually && (
         <form onSubmit={addInternManually} className="card space-y-3">
-          <h2 className="font-semibold">Добавить стажёра вручную</h2>
+          <h2 className="font-semibold">{t('Добавить стажёра вручную')}</h2>
           <p className="text-xs text-navy-400 dark:text-navy-500">
-            Будет отмечен как добавленный тренером. Посещаемость и ДЗ будут учитываться в сводке группы только начиная
-            с сегодняшней даты — прошедшие занятия на его статистику не повлияют.
+            {t('Будет отмечен как добавленный тренером. Посещаемость и ДЗ будут учитываться в сводке группы только начиная с сегодняшней даты — прошедшие занятия на его статистику не повлияют.')}
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div>
-              <label className="field-label">Фамилия</label>
+              <label className="field-label">{t('Фамилия')}</label>
               <input
                 className="field-input"
                 value={manualForm.lastName}
@@ -199,7 +200,7 @@ export default function InternsTab() {
               />
             </div>
             <div>
-              <label className="field-label">Имя</label>
+              <label className="field-label">{t('Имя')}</label>
               <input
                 className="field-input"
                 value={manualForm.firstName}
@@ -208,7 +209,7 @@ export default function InternsTab() {
               />
             </div>
             <div>
-              <label className="field-label">Email</label>
+              <label className="field-label">{t('Email')}</label>
               <input
                 type="email"
                 className="field-input"
@@ -217,28 +218,28 @@ export default function InternsTab() {
               />
             </div>
             <div>
-              <label className="field-label">Регион</label>
+              <label className="field-label">{t('Регион')}</label>
               <select
                 className="field-input"
                 value={manualForm.region}
                 onChange={(e) => setManualForm((f) => ({ ...f, region: e.target.value }))}
               >
-                <option value="">Выберите регион</option>
+                <option value="">{t('Выберите регион')}</option>
                 {REGIONS.map((r) => (
                   <option key={r.value} value={r.value}>
-                    {r.label}
+                    {t(r.label)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="field-label">Подразделение</label>
+              <label className="field-label">{t('Подразделение')}</label>
               <select
                 className="field-input"
                 value={manualForm.department}
                 onChange={(e) => setManualForm((f) => ({ ...f, department: e.target.value }))}
               >
-                <option value="">Выберите подразделение</option>
+                <option value="">{t('Выберите подразделение')}</option>
                 {DEPARTMENTS.map((d) => (
                   <option key={d} value={d}>
                     {d}
@@ -247,7 +248,7 @@ export default function InternsTab() {
               </select>
             </div>
             <div>
-              <label className="field-label">Должность</label>
+              <label className="field-label">{t('Должность')}</label>
               <input
                 className="field-input"
                 value={manualForm.position}
@@ -255,7 +256,7 @@ export default function InternsTab() {
               />
             </div>
             <div>
-              <label className="field-label">Телефон</label>
+              <label className="field-label">{t('Телефон')}</label>
               <input
                 className="field-input"
                 value={manualForm.phone}
@@ -263,7 +264,7 @@ export default function InternsTab() {
               />
             </div>
             <div>
-              <label className="field-label">ФИО руководителя</label>
+              <label className="field-label">{t('ФИО руководителя')}</label>
               <input
                 className="field-input"
                 value={manualForm.managerName}
@@ -271,7 +272,7 @@ export default function InternsTab() {
               />
             </div>
             <div>
-              <label className="field-label">Контакты руководителя</label>
+              <label className="field-label">{t('Контакты руководителя')}</label>
               <input
                 className="field-input"
                 value={manualForm.managerContact}
@@ -279,17 +280,18 @@ export default function InternsTab() {
               />
             </div>
             <div>
-              <label className="field-label">Город/район</label>
+              <label className="field-label">{t('Город/район')}</label>
               <SearchSelect
                 value={manualForm.city}
                 onChange={(city) => setManualForm((f) => ({ ...f, city }))}
                 options={KZ_CITIES}
-                placeholder="Выберите или начните вводить город/район"
+                optionLabel={(city) => (city === 'Другой' ? t('Другой') : city)}
+                placeholder={t('Выберите или начните вводить город/район')}
               />
             </div>
             {manualForm.city === 'Другой' && (
               <div>
-                <label className="field-label">Укажите город или село</label>
+                <label className="field-label">{t('Укажите город или село')}</label>
                 <input
                   className="field-input"
                   value={manualForm.cityOther}
@@ -300,7 +302,7 @@ export default function InternsTab() {
           </div>
           <div className="flex gap-2">
             <button type="submit" className="btn-primary">
-              Добавить
+              {t('Добавить')}
             </button>
             <button
               type="button"
@@ -310,7 +312,7 @@ export default function InternsTab() {
               }}
               className="btn-secondary"
             >
-              Отмена
+              {t('Отмена')}
             </button>
           </div>
         </form>
@@ -318,7 +320,7 @@ export default function InternsTab() {
 
       {crossMatches.length > 0 && (
         <div className="text-sm bg-navy-50 dark:bg-navy-800 rounded-lg p-3 space-y-2">
-          <div className="text-xs font-semibold text-navy-500 dark:text-navy-400">Найдено в других группах:</div>
+          <div className="text-xs font-semibold text-navy-500 dark:text-navy-400">{t('Найдено в других группах:')}</div>
           {crossMatches.map((i) => {
             const g = groups.find((gr) => gr.id === i.groupId)
             return (
@@ -333,7 +335,7 @@ export default function InternsTab() {
                     setSearch('')
                   }}
                 >
-                  Показать
+                  {t('Показать')}
                 </button>
               </div>
             )
@@ -347,7 +349,7 @@ export default function InternsTab() {
             <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
               {COLUMNS.map((c) => (
                 <th key={c.key} className="py-2 pr-3 whitespace-nowrap">
-                  {c.label}
+                  {t(c.label)}
                 </th>
               ))}
               <th className="py-2 pr-3" />
@@ -369,7 +371,7 @@ export default function InternsTab() {
                         <option value="">—</option>
                         {c.options.map((o) => (
                           <option key={o.value} value={o.value}>
-                            {o.label}
+                            {t(o.label)}
                           </option>
                         ))}
                       </select>
@@ -386,9 +388,9 @@ export default function InternsTab() {
                   {intern.addedByTrainer && (
                     <span
                       className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400"
-                      title={intern.joinedAt ? `Добавлен тренером · ${formatDate(intern.joinedAt)}` : 'Добавлен тренером'}
+                      title={t('Добавлен тренером') + (intern.joinedAt ? ' · ' + formatDate(intern.joinedAt) : '')}
                     >
-                      Добавлен тренером
+                      {t('Добавлен тренером')}
                     </span>
                   )}
                 </td>
@@ -397,22 +399,22 @@ export default function InternsTab() {
                     onClick={() => copyLink(intern.id)}
                     className="btn-secondary text-xs px-2 py-1 whitespace-nowrap"
                   >
-                    {linkCopiedId === intern.id ? 'Скопировано!' : 'Ссылка'}
+                    {linkCopiedId === intern.id ? t('Скопировано!') : t('Ссылка')}
                   </button>
                 </td>
                 {admin && (
                   <td className="py-1.5 pr-3">
                     {deletingId === intern.id ? (
                       <div className="flex items-center gap-2 text-xs whitespace-nowrap">
-                        <span className="text-danger-500 font-semibold">Удалить анкету?</span>
+                        <span className="text-danger-500 font-semibold">{t('Удалить анкету?')}</span>
                         <button
                           onClick={() => deleteIntern(intern.id)}
                           className="px-2 py-1 rounded-lg bg-danger-500 hover:bg-danger-600 text-white font-semibold"
                         >
-                          Да
+                          {t('Да')}
                         </button>
                         <button onClick={() => setDeletingId(null)} className="btn-secondary text-xs px-2 py-1">
-                          Отмена
+                          {t('Отмена')}
                         </button>
                       </div>
                     ) : (
@@ -420,7 +422,7 @@ export default function InternsTab() {
                         onClick={() => setDeletingId(intern.id)}
                         className="text-danger-500 hover:text-danger-600 text-xs whitespace-nowrap"
                       >
-                        Удалить
+                        {t('Удалить')}
                       </button>
                     )}
                   </td>
@@ -433,7 +435,7 @@ export default function InternsTab() {
                   colSpan={COLUMNS.length + 2 + (admin ? 1 : 0)}
                   className="py-6 text-center text-navy-400 dark:text-navy-500"
                 >
-                  Анкет не найдено
+                  {t('Анкет не найдено')}
                 </td>
               </tr>
             )}
@@ -446,7 +448,7 @@ export default function InternsTab() {
       )}
       {group && group.isOpen && (
         <p className="text-sm text-navy-400 dark:text-navy-500">
-          Посещаемость и домашние задания станут доступны здесь после закрытия группы.
+          {t('Посещаемость и домашние задания станут доступны здесь после закрытия группы.')}
         </p>
       )}
     </div>
@@ -463,21 +465,22 @@ function Stat({ label, value }) {
 }
 
 function GroupSummary({ group, interns }) {
+  const { t } = useI18n()
   const stats = useMemo(() => computeGroupStats(group, interns), [group, interns])
 
   return (
     <div className="card">
-      <h2 className="font-semibold mb-4">Сводка по группе</h2>
+      <h2 className="font-semibold mb-4">{t('Сводка по группе')}</h2>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Stat
-          label="Стажёров"
+          label={t('Стажёров')}
           value={
             stats.withdrawnCount > 0 ? (
               <>
                 {stats.internCount}
                 <span className="text-sm font-normal text-navy-400 dark:text-navy-500">
                   {' '}
-                  (+{stats.withdrawnCount} отказались)
+                  {t('(+{n} отказались)', { n: stats.withdrawnCount })}
                 </span>
               </>
             ) : (
@@ -485,16 +488,16 @@ function GroupSummary({ group, interns }) {
             )
           }
         />
-        <Stat label="Посещаемость" value={stats.attendancePct === null ? '—' : `${stats.attendancePct}%`} />
-        <Stat label="ДЗ выполнено" value={stats.homeworkPct === null ? '—' : `${stats.homeworkPct}%`} />
+        <Stat label={t('Посещаемость')} value={stats.attendancePct === null ? '—' : `${stats.attendancePct}%`} />
+        <Stat label={t('ДЗ выполнено')} value={stats.homeworkPct === null ? '—' : `${stats.homeworkPct}%`} />
         <Stat
-          label="Экзамен"
+          label={t('Экзамен')}
           value={
             <span className="text-sm font-normal space-x-2">
-              <span className="text-success-600 dark:text-success-400 font-semibold">{stats.exam.passed} сдали</span>
-              <span className="text-warning-600 dark:text-warning-500 font-semibold">{stats.exam.retake} пересдача</span>
-              <span className="text-danger-500 font-semibold">{stats.exam.failed} не сдали</span>
-              <span className="text-navy-400 dark:text-navy-500 font-semibold">{stats.exam.notStarted} не начат</span>
+              <span className="text-success-600 dark:text-success-400 font-semibold">{t('{n} сдали', { n: stats.exam.passed })}</span>
+              <span className="text-warning-600 dark:text-warning-500 font-semibold">{t('{n} пересдача', { n: stats.exam.retake })}</span>
+              <span className="text-danger-500 font-semibold">{t('{n} не сдали', { n: stats.exam.failed })}</span>
+              <span className="text-navy-400 dark:text-navy-500 font-semibold">{t('{n} не начат', { n: stats.exam.notStarted })}</span>
             </span>
           }
         />
@@ -504,6 +507,7 @@ function GroupSummary({ group, interns }) {
 }
 
 function GroupProgress({ group, interns, totalCount, update }) {
+  const { t } = useI18n()
   const [newLessonName, setNewLessonName] = useState('')
   const [newLessonDate, setNewLessonDate] = useState('')
   const [removingLessonId, setRemovingLessonId] = useState(null)
@@ -591,20 +595,20 @@ function GroupProgress({ group, interns, totalCount, update }) {
 
   return (
     <div className="card space-y-4">
-      <h2 className="font-semibold">Прогресс — {group.name}</h2>
+      <h2 className="font-semibold">{t('Прогресс — {name}', { name: group.name })}</h2>
 
       <div className="flex flex-wrap gap-2 items-end">
         <div>
-          <label className="field-label">Название занятия</label>
+          <label className="field-label">{t('Название занятия')}</label>
           <input
             className="field-input"
             value={newLessonName}
             onChange={(e) => setNewLessonName(e.target.value)}
-            placeholder="Например, Занятие 1"
+            placeholder={t('Например, Занятие 1')}
           />
         </div>
         <div>
-          <label className="field-label">Дата</label>
+          <label className="field-label">{t('Дата')}</label>
           <input
             type="date"
             className="field-input"
@@ -613,23 +617,23 @@ function GroupProgress({ group, interns, totalCount, update }) {
           />
         </div>
         <button onClick={addLesson} className="btn-primary">
-          Добавить занятие
+          {t('Добавить занятие')}
         </button>
       </div>
 
       {interns.length === 0 ? (
         <p className="text-navy-400 dark:text-navy-500">
-          {totalCount > 0 ? 'Совпадений не найдено.' : 'В группе нет стажёров.'}
+          {totalCount > 0 ? t('Совпадений не найдено.') : t('В группе нет стажёров.')}
         </p>
       ) : group.lessons.length === 0 ? (
-        <p className="text-navy-400 dark:text-navy-500">Добавьте занятие, чтобы отмечать посещаемость.</p>
+        <p className="text-navy-400 dark:text-navy-500">{t('Добавьте занятие, чтобы отмечать посещаемость.')}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="text-sm border-separate border-spacing-0">
             <thead>
               <tr className="text-left text-navy-500 dark:text-navy-400">
                 <th className="sticky left-0 z-10 bg-white dark:bg-navy-900 py-2 pr-3 whitespace-nowrap border-b border-navy-100 dark:border-navy-700">
-                  ФИО
+                  {t('ФИО')}
                 </th>
                 {group.lessons.map((l) => (
                   <th
@@ -644,7 +648,7 @@ function GroupProgress({ group, interns, totalCount, update }) {
                       <span
                         onClick={() => setRemovingLessonId(l.id)}
                         className="opacity-60 hover:opacity-100 cursor-pointer shrink-0"
-                        title="Удалить занятие"
+                        title={t('Удалить занятие')}
                       >
                         ✕
                       </span>
@@ -652,20 +656,20 @@ function GroupProgress({ group, interns, totalCount, update }) {
                     {removingLessonId === l.id && (
                       <div className="mt-2 space-y-1.5 font-normal text-xs">
                         <p className="text-danger-500 font-semibold whitespace-normal">
-                          Удалить занятие? Отметки посещаемости и ДЗ по нему будут потеряны.
+                          {t('Удалить занятие? Отметки посещаемости и ДЗ по нему будут потеряны.')}
                         </p>
                         <div className="flex gap-2">
                           <button
                             onClick={() => removeLesson(l.id)}
                             className="px-2 py-1 rounded-lg bg-danger-500 hover:bg-danger-600 text-white font-semibold"
                           >
-                            Да, удалить
+                            {t('Да, удалить')}
                           </button>
                           <button
                             onClick={() => setRemovingLessonId(null)}
                             className="btn-secondary text-xs px-2 py-1"
                           >
-                            Отмена
+                            {t('Отмена')}
                           </button>
                         </div>
                       </div>
@@ -694,16 +698,18 @@ function GroupProgress({ group, interns, totalCount, update }) {
                           <div className="mt-1">
                             <span
                               className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400"
-                              title="Добавлен тренером, не через анкету"
+                              title={t('Добавлен тренером, не через анкету')}
                             >
-                              Добавлен тренером{i.joinedAt ? ` · ${formatDate(i.joinedAt)}` : ''}
+                              {t('Добавлен тренером')}
+                              {i.joinedAt ? ` · ${formatDate(i.joinedAt)}` : ''}
                             </span>
                           </div>
                         )}
                         {i.withdrawn ? (
                           <div className="mt-1 space-y-0.5">
                             <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400">
-                              Отказался{i.withdrawnAt ? ` · ${formatDate(i.withdrawnAt)}` : ''}
+                              {t('Отказался')}
+                              {i.withdrawnAt ? ` · ${formatDate(i.withdrawnAt)}` : ''}
                             </span>
                             {i.withdrawnReason && (
                               <p className="text-[11px] text-navy-400 dark:text-navy-500 max-w-[160px] whitespace-normal">
@@ -712,19 +718,19 @@ function GroupProgress({ group, interns, totalCount, update }) {
                             )}
                             {restoringId === i.id ? (
                               <div className="space-y-1 text-[11px] font-normal">
-                                <p className="whitespace-normal max-w-[180px]">Вернуть стажёра в активное обучение?</p>
+                                <p className="whitespace-normal max-w-[180px]">{t('Вернуть стажёра в активное обучение?')}</p>
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => restoreIntern(i.id)}
                                     className="btn-primary text-[11px] px-2 py-1"
                                   >
-                                    Да, вернуть
+                                    {t('Да, вернуть')}
                                   </button>
                                   <button
                                     onClick={() => setRestoringId(null)}
                                     className="btn-secondary text-[11px] px-2 py-1"
                                   >
-                                    Отмена
+                                    {t('Отмена')}
                                   </button>
                                 </div>
                               </div>
@@ -733,19 +739,18 @@ function GroupProgress({ group, interns, totalCount, update }) {
                                 onClick={() => setRestoringId(i.id)}
                                 className="block text-[11px] text-navy-400 hover:text-success-600 dark:hover:text-success-400 underline"
                               >
-                                Восстановить
+                                {t('Восстановить')}
                               </button>
                             )}
                           </div>
                         ) : withdrawing.id === i.id ? (
                           <div className="mt-1 space-y-1.5 text-[11px] font-normal max-w-[220px]">
                             <p className="whitespace-normal">
-                              Отметить как отказавшегося? Стажёр будет исключён из статистики группы, но останется в
-                              списке.
+                              {t('Отметить как отказавшегося? Стажёр будет исключён из статистики группы, но останется в списке.')}
                             </p>
                             <input
                               className="field-input text-xs py-1"
-                              placeholder="Причина (необязательно)"
+                              placeholder={t('Причина (необязательно)')}
                               value={withdrawing.reason}
                               onChange={(e) => setWithdrawing((w) => ({ ...w, reason: e.target.value }))}
                               autoFocus
@@ -755,13 +760,13 @@ function GroupProgress({ group, interns, totalCount, update }) {
                                 onClick={() => withdrawIntern(i.id)}
                                 className="px-2 py-1 rounded-lg bg-danger-500 hover:bg-danger-600 text-white font-semibold"
                               >
-                                Подтвердить
+                                {t('Подтвердить')}
                               </button>
                               <button
                                 onClick={() => setWithdrawing({ id: null, reason: '' })}
                                 className="btn-secondary text-[11px] px-2 py-1"
                               >
-                                Отмена
+                                {t('Отмена')}
                               </button>
                             </div>
                           </div>
@@ -770,7 +775,7 @@ function GroupProgress({ group, interns, totalCount, update }) {
                             onClick={() => setWithdrawing({ id: i.id, reason: '' })}
                             className="block mt-1 text-[11px] text-navy-400 hover:text-danger-500 dark:hover:text-danger-400 underline font-normal"
                           >
-                            Отказался от обучения
+                            {t('Отказался от обучения')}
                           </button>
                         )}
                       </div>
@@ -783,9 +788,9 @@ function GroupProgress({ group, interns, totalCount, update }) {
                         {beforeJoin ? (
                           <div
                             className="text-xs text-navy-400 dark:text-navy-500 italic py-1"
-                            title="Стажёр добавлен позже этого занятия — не учитывается в статистике"
+                            title={t('Стажёр добавлен позже этого занятия — не учитывается в статистике')}
                           >
-                            До добавления
+                            {t('До добавления')}
                           </div>
                         ) : (
                           <div className="space-y-1.5">
@@ -798,11 +803,11 @@ function GroupProgress({ group, interns, totalCount, update }) {
                                   : 'bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400')
                               }
                             >
-                              {i.attendance[l.id] ? 'Присутствовал' : 'Отсутствовал'}
+                              {i.attendance[l.id] ? t('Присутствовал') : t('Отсутствовал')}
                             </button>
                             {l.id === noHomeworkId ? (
                               <div className="text-xs text-navy-400 dark:text-navy-500 italic py-1.5 text-center">
-                                Первый день — без ДЗ
+                                {t('Первый день — без ДЗ')}
                               </div>
                             ) : (
                               <select
@@ -810,17 +815,17 @@ function GroupProgress({ group, interns, totalCount, update }) {
                                 value={i.homework[l.id] || ''}
                                 onChange={(e) => setHomework(i.id, l.id, e.target.value)}
                               >
-                                <option value="">ДЗ: не указано</option>
+                                <option value="">{t('ДЗ: не указано')}</option>
                                 {HOMEWORK_STATUSES.map((h) => (
                                   <option key={h.value} value={h.value}>
-                                    {h.label}
+                                    {t(h.label)}
                                   </option>
                                 ))}
                               </select>
                             )}
                             <input
                               className="field-input text-xs py-1"
-                              placeholder="Комментарий"
+                              placeholder={t('Комментарий')}
                               value={i.comments?.[l.id] || ''}
                               onChange={(e) => setComment(i.id, l.id, e.target.value)}
                             />

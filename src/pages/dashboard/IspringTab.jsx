@@ -3,17 +3,19 @@ import { useStore } from '../../store/StoreContext.jsx'
 import { activeVisibleGroups, isTrainerAdmin } from '../../lib/roles'
 import { downloadIspringReport } from '../../lib/ispringReport'
 import { filterInternsBySearch } from '../../lib/internSearch'
+import { msg, useI18n } from '../../i18n/I18nContext.jsx'
 
 const COLUMNS = [
-  { key: 'lastName', label: 'Фамилия' },
-  { key: 'firstName', label: 'Имя' },
-  { key: 'email', label: 'Электронная почта' },
-  { key: 'department', label: 'Подразделение' },
-  { key: 'position', label: 'Должность' },
-  { key: 'city', label: 'Город/район' },
+  { key: 'lastName', label: msg('Фамилия') },
+  { key: 'firstName', label: msg('Имя') },
+  { key: 'email', label: msg('Электронная почта') },
+  { key: 'department', label: msg('Подразделение') },
+  { key: 'position', label: msg('Должность') },
+  { key: 'city', label: msg('Город/район') },
 ]
 
 export default function IspringTab() {
+  const { t } = useI18n()
   const { data, update, currentTrainer } = useStore()
   const { groups, interns: allInterns } = data
   const admin = isTrainerAdmin(currentTrainer)
@@ -34,15 +36,17 @@ export default function IspringTab() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">Логины iSpring</h1>
+      <h1 className="text-xl font-bold">{t('Логины iSpring')}</h1>
       <p className="text-sm text-navy-500 dark:text-navy-400">
-        Анкетные данные подтягиваются автоматически из списка стажёров группы после начала обучения. Логин и пароль
-        iSpring {admin ? 'заполняет только главный логин.' : 'заполняет главный логин — здесь они доступны для просмотра.'}
+        {t('Анкетные данные подтягиваются автоматически из списка стажёров группы после начала обучения.')}{' '}
+        {admin
+          ? t('Логин и пароль iSpring заполняет только главный логин.')
+          : t('Логин и пароль iSpring заполняет главный логин — здесь они доступны для просмотра.')}
       </p>
 
       {startedGroups.length === 0 ? (
         <p className="text-navy-400 dark:text-navy-500">
-          Пока нет групп, начавших обучение — раздел заполнится, когда закроется сбор анкет хотя бы одной группы.
+          {t('Пока нет групп, начавших обучение — раздел заполнится, когда закроется сбор анкет хотя бы одной группы.')}
         </p>
       ) : (
         <div className="space-y-6">
@@ -59,17 +63,17 @@ export default function IspringTab() {
                     disabled={interns.length === 0}
                     className="btn-secondary text-sm"
                   >
-                    Скачать Excel
+                    {t('Скачать Excel')}
                   </button>
                 </div>
 
                 {interns.length === 0 ? (
-                  <p className="text-navy-400 dark:text-navy-500 text-sm">В группе пока нет стажёров.</p>
+                  <p className="text-navy-400 dark:text-navy-500 text-sm">{t('В группе пока нет стажёров.')}</p>
                 ) : (
                   <>
                     <input
                       className="field-input max-w-xs"
-                      placeholder="Поиск по ФИО, email..."
+                      placeholder={t('Поиск по ФИО, email...')}
                       value={groupSearch}
                       onChange={(e) => setSearchByGroup((prev) => ({ ...prev, [group.id]: e.target.value }))}
                     />
@@ -79,11 +83,11 @@ export default function IspringTab() {
                         <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
                           {COLUMNS.map((c) => (
                             <th key={c.key} className="py-2 pr-3 whitespace-nowrap">
-                              {c.label}
+                              {t(c.label)}
                             </th>
                           ))}
-                          <th className="py-2 pr-3 whitespace-nowrap">Логин iSpring</th>
-                          <th className="py-2 pr-3 whitespace-nowrap">Пароль iSpring</th>
+                          <th className="py-2 pr-3 whitespace-nowrap">{t('Логин iSpring')}</th>
+                          <th className="py-2 pr-3 whitespace-nowrap">{t('Пароль iSpring')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -93,7 +97,7 @@ export default function IspringTab() {
                               colSpan={COLUMNS.length + 2}
                               className="py-4 text-center text-navy-400 dark:text-navy-500"
                             >
-                              Совпадений не найдено
+                              {t('Совпадений не найдено')}
                             </td>
                           </tr>
                         )}

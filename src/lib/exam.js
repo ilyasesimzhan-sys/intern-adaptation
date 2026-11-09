@@ -1,3 +1,5 @@
+import { msg } from '../i18n/msg.js'
+
 export const EXAM_QUESTION_COUNT = 10
 export const PASS_THRESHOLD = 9
 
@@ -107,45 +109,46 @@ export function getWeakTopics(intern) {
   return questions.filter((q, idx) => answers[idx] === false && q.trim())
 }
 
+// label — русский текст; в интерфейсе выводится через t(status.label), в Excel-отчётах — как есть.
 const STATUS = {
   ungraded: {
     code: 'ungraded',
-    label: 'Не оценён',
+    label: msg('Не оценён'),
     cls: 'bg-navy-100 text-navy-500 dark:bg-navy-800 dark:text-navy-400',
   },
   passed: {
     code: 'passed',
-    label: 'Сдан',
+    label: msg('Сдан'),
     cls: 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400',
   },
   passedRetake: {
     code: 'passed',
-    label: 'Сдан (пересдача)',
+    label: msg('Сдан (пересдача)'),
     cls: 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400',
   },
   failed: {
     code: 'failed',
-    label: 'Не сдан',
+    label: msg('Не сдан'),
     cls: 'bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400',
   },
   retakePending: {
     code: 'retake_pending',
-    label: 'Идёт пересдача',
+    label: msg('Идёт пересдача'),
     cls: 'bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-500',
   },
   retakeFailed: {
     code: 'retake_failed',
-    label: 'Пересдача не сдана',
+    label: msg('Пересдача не сдана'),
     cls: 'bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400',
   },
   ended: {
     code: 'ended',
-    label: 'Экзамен завершён',
+    label: msg('Экзамен завершён'),
     cls: 'bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400',
   },
   training: {
     code: 'training',
-    label: 'Направлен на доп. обучение',
+    label: msg('Направлен на доп. обучение'),
     cls: 'bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-500',
   },
 }

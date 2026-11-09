@@ -1,7 +1,9 @@
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
+import { useI18n } from '../../i18n/I18nContext.jsx'
 
 export default function KnowledgeBaseTab() {
+  const { t } = useI18n()
   const { data, update, currentTrainer } = useStore()
   const admin = isTrainerAdmin(currentTrainer)
   const { knowledgeBaseUrl, knowledgeBaseNote } = data.settings
@@ -12,12 +14,12 @@ export default function KnowledgeBaseTab() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">База знаний</h1>
+      <h1 className="text-xl font-bold">{t('База знаний')}</h1>
 
       {admin && (
         <div className="card space-y-4">
           <div>
-            <label className="field-label">Ссылка на базу знаний</label>
+            <label className="field-label">{t('Ссылка на базу знаний')}</label>
             <input
               className="field-input"
               value={knowledgeBaseUrl || ''}
@@ -26,12 +28,12 @@ export default function KnowledgeBaseTab() {
             />
           </div>
           <div>
-            <label className="field-label">Описание (необязательно)</label>
+            <label className="field-label">{t('Описание (необязательно)')}</label>
             <input
               className="field-input"
               value={knowledgeBaseNote || ''}
               onChange={(e) => patchSettings({ knowledgeBaseNote: e.target.value })}
-              placeholder="Например: презентации, шаблоны и записи занятий"
+              placeholder={t('Например: презентации, шаблоны и записи занятий')}
             />
           </div>
         </div>
@@ -44,14 +46,14 @@ export default function KnowledgeBaseTab() {
               <p className="text-sm text-navy-500 dark:text-navy-400">{knowledgeBaseNote}</p>
             )}
             <a href={knowledgeBaseUrl} target="_blank" rel="noreferrer" className="btn-primary inline-flex">
-              Открыть базу знаний
+              {t('Открыть базу знаний')}
             </a>
           </>
         ) : (
           <p className="text-navy-400 dark:text-navy-500">
             {admin
-              ? 'Вставьте ссылку выше, чтобы она стала доступна остальным тренерам.'
-              : 'Ссылка ещё не добавлена главным логином.'}
+              ? t('Вставьте ссылку выше, чтобы она стала доступна остальным тренерам.')
+              : t('Ссылка ещё не добавлена главным логином.')}
           </p>
         )}
       </div>

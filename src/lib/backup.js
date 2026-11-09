@@ -1,3 +1,4 @@
+import { msg } from '../i18n/msg.js'
 import { arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore'
 import { getDb, hasFirebaseConfig } from './firebase'
 import { backupPayload, parsePayload } from './backupFile'
@@ -13,9 +14,9 @@ const KEEP_DAILY = 30
 const KEEP_OTHER = 20
 
 export const BACKUP_KIND_LABELS = {
-  auto: 'Ежедневная',
-  manual: 'Вручную',
-  'pre-restore': 'Перед восстановлением',
+  auto: msg('Ежедневная'),
+  manual: msg('Вручную'),
+  'pre-restore': msg('Перед восстановлением'),
 }
 
 function localDay(date = new Date()) {
@@ -67,7 +68,7 @@ export async function loadBackup(meta) {
   let json = ''
   for (let n = 0; n < meta.parts; n++) {
     const snap = await getDoc(doc(db, 'app', `${PART_PREFIX}${meta.id}_${n}`))
-    if (!snap.exists()) throw new Error('Часть резервной копии не найдена.')
+    if (!snap.exists()) throw new Error(msg('Часть резервной копии не найдена.'))
     json += snap.data().json
   }
   return parsePayload(json)

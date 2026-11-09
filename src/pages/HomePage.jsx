@@ -11,50 +11,54 @@ import ThemeToggle from '../components/ThemeToggle.jsx'
 import Avatar from '../components/Avatar.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import { formatDate } from '../lib/date'
+import { msg, useI18n } from '../i18n/I18nContext.jsx'
 
-function formatWindow(g) {
+function formatWindow(g, t) {
+  const from = formatDate(g.startDate)
+  const to = formatDate(g.endDate)
+  const time = AUTO_CLOSE_TIME
   if (g.isOpen) {
-    if (g.startDate && g.endDate)
-      return `Открыта с ${formatDate(g.startDate)} по ${formatDate(g.endDate)} (до ${AUTO_CLOSE_TIME})`
-    if (g.startDate) return `Открыта с ${formatDate(g.startDate)}`
-    if (g.endDate) return `Открыта до ${formatDate(g.endDate)} ${AUTO_CLOSE_TIME}`
-    return 'Открыта'
+    if (g.startDate && g.endDate) return t('Открыта с {from} по {to} (до {time})', { from, to, time })
+    if (g.startDate) return t('Открыта с {from}', { from })
+    if (g.endDate) return t('Открыта до {to} {time}', { to, time })
+    return t('Открыта')
   }
-  if (g.endDate) return `Закрыта ${formatDate(g.endDate)}`
-  if (g.startDate) return `Была открыта с ${formatDate(g.startDate)}`
-  return 'Закрыта'
+  if (g.endDate) return t('Закрыта {to}', { to })
+  if (g.startDate) return t('Была открыта с {from}', { from })
+  return t('Закрыта')
 }
 
 const INFO_CARDS = [
   {
     emoji: '📝',
     color: 'bg-sky-500',
-    title: 'Анкета стажёра',
-    text: 'Анкету заполняет руководитель стажёра, а не сам стажёр — это ускоряет и упрощает сбор данных.',
+    title: msg('Анкета стажёра'),
+    text: msg('Анкету заполняет руководитель стажёра, а не сам стажёр — это ускоряет и упрощает сбор данных.'),
     to: '/submit',
   },
   {
     emoji: '⚖️',
     color: 'bg-violet-500',
-    title: 'Честное деление',
-    text: 'Группы формируются автоматически и равномерно, с учётом подразделения и города каждого стажёра.',
+    title: msg('Честное деление'),
+    text: msg('Группы формируются автоматически и равномерно, с учётом подразделения и города каждого стажёра.'),
   },
   {
     emoji: '💬',
     color: 'bg-success-500',
-    title: 'Уведомление в WhatsApp',
-    text: 'После формирования группы каждый стажёр получает приглашение и информацию через WhatsApp.',
+    title: msg('Уведомление в WhatsApp'),
+    text: msg('После формирования группы каждый стажёр получает приглашение и информацию через WhatsApp.'),
   },
   {
     emoji: '📋',
     color: 'bg-navy-700',
-    title: 'Правила адаптационной программы',
-    text: 'Полные правила программы доступны руководителям и стажёрам без входа в систему.',
+    title: msg('Правила адаптационной программы'),
+    text: msg('Полные правила программы доступны руководителям и стажёрам без входа в систему.'),
     to: '/rules',
   },
 ]
 
 export default function HomePage() {
+  const { t } = useI18n()
   const { data, archiveLoaded, requestArchive } = useStore()
   const { settings, groups, interns, trainers } = data
   const [search, setSearch] = useState('')
@@ -100,17 +104,18 @@ export default function HomePage() {
             <ThemeToggle className="!bg-white/10 !border-white/30 !text-white hover:!bg-white/20" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">{settings.programName}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold pr-32">{t(settings.programName)}</h1>
             <p className="text-navy-100 mt-2 max-w-2xl">
-              Единое место сбора анкет, формирования учебных групп и сопровождения стажёров на протяжении всей
-              программы адаптации.
+              {t(
+                'Единое место сбора анкет, формирования учебных групп и сопровождения стажёров на протяжении всей программы адаптации.',
+              )}
             </p>
             <div className="flex flex-wrap items-center gap-4 mt-4">
               <Link to="/submit" className="btn bg-white text-navy-800 hover:bg-sky-50">
-                Заполнить анкету стажёра
+                {t('Заполнить анкету стажёра')}
               </Link>
               <Link to="/login" className="text-sm text-navy-100 underline hover:text-white">
-                Вход для тренеров
+                {t('Вход для тренеров')}
               </Link>
             </div>
           </div>
@@ -130,14 +135,16 @@ export default function HomePage() {
                   'inline-block w-2.5 h-2.5 rounded-full ' + (collectionOpen ? 'bg-success-500' : 'bg-danger-500')
                 }
               />
-              <span className="font-semibold">{collectionOpen ? 'Сбор анкет открыт' : 'Сбор анкет закрыт'}</span>
+              <span className="font-semibold">{collectionOpen ? t('Сбор анкет открыт') : t('Сбор анкет закрыт')}</span>
             </div>
             <p className="text-sm text-navy-500 dark:text-navy-400 mt-1">
-              {collectionOpen ? `Открыто групп: ${openGroups.length}` : 'Сейчас нет открытых групп для приёма анкет.'}
+              {collectionOpen
+                ? t('Открыто групп: {n}', { n: openGroups.length })
+                : t('Сейчас нет открытых групп для приёма анкет.')}
             </p>
           </div>
           <Link to="/submit" className="btn-primary">
-            Заполнить анкету
+            {t('Заполнить анкету')}
           </Link>
         </section>
 
@@ -150,8 +157,8 @@ export default function HomePage() {
                     {c.emoji}
                   </span>
                 </div>
-                <h3 className="font-semibold mb-2">{c.title}</h3>
-                <p className="text-sm text-navy-500 dark:text-navy-400">{c.text}</p>
+                <h3 className="font-semibold mb-2">{t(c.title)}</h3>
+                <p className="text-sm text-navy-500 dark:text-navy-400">{t(c.text)}</p>
               </>
             )
             return c.to ? (
@@ -171,27 +178,28 @@ export default function HomePage() {
         </section>
 
         <section className="card">
-          <h2 className="text-lg font-bold mb-1">Группы и прогресс стажёров</h2>
+          <h2 className="text-lg font-bold mb-1">{t('Группы и прогресс стажёров')}</h2>
           <p className="text-sm text-navy-500 dark:text-navy-400 mb-4">
-            Здесь видно, когда каждая группа открылась и закроется. Руководитель может открыть карточку своего
-            стажёра и посмотреть посещаемость, домашние задания и результат экзамена — без входа в систему.
+            {t(
+              'Здесь видно, когда каждая группа открылась и закроется. Руководитель может открыть карточку своего стажёра и посмотреть посещаемость, домашние задания и результат экзамена — без входа в систему.',
+            )}
           </p>
           {groupsInfo.length === 0 ? (
             <EmptyState
               icon="🗂️"
-              title={archivedCount > 0 ? 'Сейчас нет текущих групп' : 'Пока нет ни одной группы'}
-              description="Как только тренер создаст группу и откроет приём анкет, она появится здесь."
+              title={archivedCount > 0 ? t('Сейчас нет текущих групп') : t('Пока нет ни одной группы')}
+              description={t('Как только тренер создаст группу и откроет приём анкет, она появится здесь.')}
             />
           ) : (
             <>
               <input
                 className="field-input max-w-xs mb-4"
-                placeholder="Поиск стажёра по ФИО, городу, подразделению..."
+                placeholder={t('Поиск стажёра по ФИО, городу, подразделению...')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               {groupRows.length === 0 ? (
-                <p className="text-sm text-navy-400 dark:text-navy-500">Совпадений не найдено.</p>
+                <p className="text-sm text-navy-400 dark:text-navy-500">{t('Совпадений не найдено.')}</p>
               ) : (
                 <div className="space-y-5">
                   {groupRows.map(({ group: g, members, visibleMembers }) => {
@@ -223,14 +231,18 @@ export default function HomePage() {
                             : 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400')
                         }
                       >
-                        {g.archived ? 'обучение завершено' : g.isOpen ? 'приём открыт' : 'сбор закрыт — идёт обучение'}
+                        {g.archived
+                          ? t('обучение завершено')
+                          : g.isOpen
+                            ? t('приём открыт')
+                            : t('сбор закрыт — идёт обучение')}
                       </span>
-                      <span className="text-xs text-navy-400 dark:text-navy-500 font-normal">{formatWindow(g)}</span>
+                      <span className="text-xs text-navy-400 dark:text-navy-500 font-normal">{formatWindow(g, t)}</span>
                     </h3>
                     <p className="text-xs text-navy-500 dark:text-navy-400 mb-2">
-                      Тренер:{' '}
+                      {t('Тренер:')}{' '}
                       <span className="font-medium text-navy-700 dark:text-navy-200">
-                        {owner?.name || 'без владельца'}
+                        {owner?.name || t('без владельца')}
                       </span>
                       {owner?.phone && <> · {owner.phone}</>}
                       {owner?.email && <> · {owner.email}</>}
@@ -238,24 +250,24 @@ export default function HomePage() {
                     {hasProgress && (
                       <div className="flex flex-wrap items-center gap-3 mb-3 text-xs">
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-navy-50 dark:bg-navy-800 px-2.5 py-1">
-                          <span className="text-navy-400 dark:text-navy-500">Посещаемость</span>
+                          <span className="text-navy-400 dark:text-navy-500">{t('Посещаемость')}</span>
                           <span className="font-semibold text-navy-700 dark:text-navy-100">{stats.attendancePct}%</span>
                         </span>
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-navy-50 dark:bg-navy-800 px-2.5 py-1">
-                          <span className="text-navy-400 dark:text-navy-500">ДЗ</span>
+                          <span className="text-navy-400 dark:text-navy-500">{t('ДЗ')}</span>
                           <span className="font-semibold text-navy-700 dark:text-navy-100">{stats.homeworkPct}%</span>
                         </span>
                         {stats.exam.passed > 0 && (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-success-50 dark:bg-success-500/10 px-2.5 py-1">
                             <span className="font-semibold text-success-600 dark:text-success-400">
-                              {stats.exam.passed}/{members.length} сдали экзамен
+                              {t('{passed}/{total} сдали экзамен', { passed: stats.exam.passed, total: members.length })}
                             </span>
                           </span>
                         )}
                       </div>
                     )}
                     {members.length === 0 ? (
-                      <p className="text-sm text-navy-400 dark:text-navy-500">Пока нет стажёров в этой группе.</p>
+                      <p className="text-sm text-navy-400 dark:text-navy-500">{t('Пока нет стажёров в этой группе.')}</p>
                     ) : (
                       <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         {visibleMembers.map((i) => (
@@ -274,7 +286,7 @@ export default function HomePage() {
                                 </span>
                                 {i.withdrawn && (
                                   <span className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-danger-50 text-danger-500 dark:bg-danger-500/10 dark:text-danger-400">
-                                    Отказался
+                                    {t('Отказался')}
                                   </span>
                                 )}
                               </span>
@@ -294,10 +306,10 @@ export default function HomePage() {
           {archivedCount > 0 && (
             <button onClick={toggleArchive} className="btn-secondary text-sm mt-5">
               {!showArchive
-                ? `Показать завершённые группы (${archivedCount})`
+                ? t('Показать завершённые группы ({n})', { n: archivedCount })
                 : archiveLoaded
-                  ? 'Скрыть завершённые группы'
-                  : 'Загрузка...'}
+                  ? t('Скрыть завершённые группы')
+                  : t('Загрузка...')}
             </button>
           )}
         </section>

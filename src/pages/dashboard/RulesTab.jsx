@@ -1,7 +1,9 @@
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
+import { useI18n } from '../../i18n/I18nContext.jsx'
 
 export default function RulesTab() {
+  const { t } = useI18n()
   const { data, update, currentTrainer } = useStore()
   const admin = isTrainerAdmin(currentTrainer)
 
@@ -11,11 +13,11 @@ export default function RulesTab() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">Правила адаптационной программы</h1>
+      <h1 className="text-xl font-bold">{t('Правила адаптационной программы')}</h1>
       <p className="text-sm text-navy-500 dark:text-navy-400">
         {admin
-          ? 'Свободный текст с правилами адаптационной программы. Виден руководителям и стажёрам на странице прогресса и на главной странице сайта.'
-          : 'Правила адаптационной программы. Редактировать их может только главный логин.'}
+          ? t('Свободный текст с правилами адаптационной программы. Виден руководителям и стажёрам на странице прогресса и на главной странице сайта.')
+          : t('Правила адаптационной программы. Редактировать их может только главный логин.')}
       </p>
       <div className="card">
         {admin ? (

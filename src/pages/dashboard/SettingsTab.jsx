@@ -5,12 +5,13 @@ import { groupsWithCounts, splitInternsByCity, isPastCloseDeadline, AUTO_CLOSE_T
 import { formatDate } from '../../lib/date'
 import { GROUP_CAPACITY } from '../../lib/constants'
 import { isTrainerAdmin, activeVisibleGroups } from '../../lib/roles'
+import { msg, useI18n } from '../../i18n/I18nContext.jsx'
 
 const COLUMNS = [
-  { key: 'lastName', label: 'Фамилия' },
-  { key: 'firstName', label: 'Имя' },
-  { key: 'department', label: 'Подразделение' },
-  { key: 'city', label: 'Город/район' },
+  { key: 'lastName', label: msg('Фамилия') },
+  { key: 'firstName', label: msg('Имя') },
+  { key: 'department', label: msg('Подразделение') },
+  { key: 'city', label: msg('Город/район') },
 ]
 
 function today() {
@@ -18,6 +19,7 @@ function today() {
 }
 
 export default function SettingsTab() {
+  const { t: tr } = useI18n()
   const { data, update, currentTrainer } = useStore()
   const { settings, groups, interns, trainers } = data
   const [newGroupName, setNewGroupName] = useState('')
@@ -47,7 +49,7 @@ export default function SettingsTab() {
     const name = newGroupName.trim()
     if (!name) return
     if (admin && !newGroupOwnerId) {
-      setCreateError('Назначьте владельца группы — себя или любого другого тренера.')
+      setCreateError(msg('Назначьте владельца группы — себя или любого другого тренера.'))
       return
     }
     setCreateError('')
@@ -137,11 +139,11 @@ export default function SettingsTab() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">Настройки сбора</h1>
+      <h1 className="text-xl font-bold">{tr('Настройки сбора')}</h1>
 
       <div className="card space-y-4">
         <div>
-          <label className="field-label">Название программы</label>
+          <label className="field-label">{tr('Название программы')}</label>
           <input
             className="field-input"
             value={settings.programName}
@@ -151,50 +153,50 @@ export default function SettingsTab() {
       </div>
 
       <div className="card space-y-4">
-        <h2 className="font-semibold">Группы</h2>
+        <h2 className="font-semibold">{tr('Группы')}</h2>
         <p className="text-sm text-navy-500 dark:text-navy-400">
-          Можно вести сразу несколько групп — у каждой свой приём анкет, до {GROUP_CAPACITY} участников. Даты
-          открытия/закрытия приёма видны руководителям на главной странице. В дату закрытия приём анкет закрывается
-          автоматически в {AUTO_CLOSE_TIME} (время Казахстана). Отправить группу в архив можно во
-          вкладке «Итоговый экзамен», когда всем стажёрам выставлен балл.
+          {tr(
+            'Можно вести сразу несколько групп — у каждой свой приём анкет, до {capacity} участников. Даты открытия/закрытия приёма видны руководителям на главной странице. В дату закрытия приём анкет закрывается автоматически в {time} (время Казахстана). Отправить группу в архив можно во вкладке «Итоговый экзамен», когда всем стажёрам выставлен балл.',
+            { capacity: GROUP_CAPACITY, time: AUTO_CLOSE_TIME },
+          )}
         </p>
 
         <div className="flex flex-wrap gap-2 items-end">
           <div className="flex-1 min-w-[200px]">
-            <label className="field-label">Название новой группы</label>
+            <label className="field-label">{tr('Название новой группы')}</label>
             <input
               className="field-input"
               value={newGroupName}
               onChange={(e) => setNewGroupName(e.target.value)}
-              placeholder="Например, Стажёры — июль 2026"
+              placeholder={tr('Например, Стажёры — июль 2026')}
             />
           </div>
           {admin && (
             <div className="min-w-[180px]">
-              <label className="field-label">Владелец группы</label>
+              <label className="field-label">{tr('Владелец группы')}</label>
               <select
                 className="field-input"
                 value={newGroupOwnerId}
                 onChange={(e) => setNewGroupOwnerId(e.target.value)}
               >
-                <option value="">Выберите тренера</option>
+                <option value="">{tr('Выберите тренера')}</option>
                 {trainers.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
-                    {t.id === currentTrainer.id ? ' (я)' : ''}
+                    {t.id === currentTrainer.id ? ' ' + tr('(я)') : ''}
                   </option>
                 ))}
               </select>
             </div>
           )}
           <button onClick={createGroup} className="btn-primary shrink-0">
-            Создать группу
+            {tr('Создать группу')}
           </button>
         </div>
-        {createError && <p className="text-sm text-danger-500">{createError}</p>}
+        {createError && <p className="text-sm text-danger-500">{tr(createError)}</p>}
 
         <div className="space-y-3">
-          {groupsInfo.length === 0 && <p className="text-navy-400 dark:text-navy-500">Групп пока нет.</p>}
+          {groupsInfo.length === 0 && <p className="text-navy-400 dark:text-navy-500">{tr('Групп пока нет.')}</p>}
           {groupsInfo.map((g) => {
             const members = interns.filter((i) => i.groupId === g.id)
             return (
@@ -214,10 +216,10 @@ export default function SettingsTab() {
                           }}
                         />
                         <button onClick={saveRename} disabled={!rename.value.trim()} className="btn-primary text-sm">
-                          Сохранить
+                          {tr('Сохранить')}
                         </button>
                         <button onClick={() => setRename({ id: null, value: '' })} className="btn-secondary text-sm">
-                          Отмена
+                          {tr('Отмена')}
                         </button>
                       </div>
                     ) : (
@@ -228,17 +230,17 @@ export default function SettingsTab() {
                             onClick={() => setRename({ id: g.id, value: g.name })}
                             className="text-xs text-sky-600 hover:text-sky-700 dark:text-sky-400"
                           >
-                            Переименовать
+                            {tr('Переименовать')}
                           </button>
                         )}
                       </div>
                     )}
                     <div className="text-sm text-navy-500 dark:text-navy-400">
-                      {g.count}/{GROUP_CAPACITY} участников
+                      {tr('{count}/{capacity} участников', { count: g.count, capacity: GROUP_CAPACITY })}
                       {g.isOpen && g.endDate && !isPastCloseDeadline(g) && (
                         <span className="text-success-600 dark:text-success-400">
                           {' '}
-                          · приём закроется автоматически {formatDate(g.endDate)} в {AUTO_CLOSE_TIME}
+                          · {tr('приём закроется автоматически {date} в {time}', { date: formatDate(g.endDate), time: AUTO_CLOSE_TIME })}
                         </span>
                       )}
                     </div>
@@ -251,14 +253,14 @@ export default function SettingsTab() {
                         : 'bg-navy-100 text-navy-500 dark:bg-navy-800 dark:text-navy-400')
                     }
                   >
-                    {g.isOpen ? 'Открыта' : 'Закрыта'}
+                    {g.isOpen ? tr('Открыта') : tr('Закрыта')}
                   </span>
                 </div>
 
                 <div className="border-t border-navy-100 dark:border-navy-700 p-4 space-y-3">
                   <div className="flex flex-wrap items-end gap-3">
                     <div>
-                      <label className="field-label">Дата открытия приёма</label>
+                      <label className="field-label">{tr('Дата открытия приёма')}</label>
                       <input
                         type="date"
                         className="field-input max-w-[170px]"
@@ -267,7 +269,7 @@ export default function SettingsTab() {
                       />
                     </div>
                     <div>
-                      <label className="field-label">Дата закрытия приёма</label>
+                      <label className="field-label">{tr('Дата закрытия приёма')}</label>
                       <input
                         type="date"
                         className="field-input max-w-[170px]"
@@ -277,17 +279,17 @@ export default function SettingsTab() {
                     </div>
                     {admin && (
                       <div>
-                        <label className="field-label">Владелец группы</label>
+                        <label className="field-label">{tr('Владелец группы')}</label>
                         <select
                           className="field-input min-w-[160px]"
                           value={g.ownerId || ''}
                           onChange={(e) => reassignOwner(g.id, e.target.value)}
                         >
-                          <option value="">Без владельца</option>
+                          <option value="">{tr('Без владельца')}</option>
                           {trainers.map((t) => (
                             <option key={t.id} value={t.id}>
                               {t.name}
-                              {t.id === currentTrainer.id ? ' (я)' : ''}
+                              {t.id === currentTrainer.id ? ' ' + tr('(я)') : ''}
                             </option>
                           ))}
                         </select>
@@ -295,16 +297,16 @@ export default function SettingsTab() {
                     )}
                     {g.isOpen ? (
                       <button onClick={() => stopGroup(g)} className="btn-secondary text-sm">
-                        Закрыть приём
+                        {tr('Закрыть приём')}
                       </button>
                     ) : (
                       <button onClick={() => startGroup(g)} className="btn-success text-sm">
-                        Открыть приём
+                        {tr('Открыть приём')}
                       </button>
                     )}
                     {!g.isOpen && members.length >= 2 && split?.groupId !== g.id && (
                       <button onClick={() => previewSplit(g.id)} className="btn-secondary text-sm">
-                        Поделить на 2
+                        {tr('Поделить на 2')}
                       </button>
                     )}
                     {deleteState.id !== g.id && (
@@ -312,7 +314,7 @@ export default function SettingsTab() {
                         onClick={() => askDeleteGroup(g.id)}
                         className="text-danger-500 hover:text-danger-600 text-xs ml-auto"
                       >
-                        Удалить
+                        {tr('Удалить')}
                       </button>
                     )}
                   </div>
@@ -320,28 +322,28 @@ export default function SettingsTab() {
                   {deleteState.id === g.id &&
                     (deleteState.blocked ? (
                       <div className="flex flex-wrap items-center gap-3 text-sm text-danger-500">
-                        В этой группе есть стажёры — сначала перенесите или удалите их в «Списке стажёров».
+                        {tr('В этой группе есть стажёры — сначала перенесите или удалите их в «Списке стажёров».')}
                         <button
                           onClick={() => setDeleteState({ id: null, blocked: false })}
                           className="btn-secondary text-sm"
                         >
-                          Понятно
+                          {tr('Понятно')}
                         </button>
                       </div>
                     ) : (
                       <div className="flex flex-wrap items-center gap-3 text-sm">
-                        <span className="text-danger-500 font-semibold">Удалить группу «{g.name}»?</span>
+                        <span className="text-danger-500 font-semibold">{tr('Удалить группу «{name}»?', { name: g.name })}</span>
                         <button
                           onClick={() => deleteGroup(g.id)}
                           className="text-sm px-3 py-1.5 rounded-lg bg-danger-500 hover:bg-danger-600 text-white font-semibold"
                         >
-                          Да, удалить
+                          {tr('Да, удалить')}
                         </button>
                         <button
                           onClick={() => setDeleteState({ id: null, blocked: false })}
                           className="btn-secondary text-sm"
                         >
-                          Отмена
+                          {tr('Отмена')}
                         </button>
                       </div>
                     ))}
@@ -349,17 +351,16 @@ export default function SettingsTab() {
                   {split?.groupId === g.id && (
                     <div className="rounded-xl border border-sky-200 dark:border-sky-800 p-3 space-y-3">
                       <div className="text-sm">
-                        <span className="font-semibold">Предпросмотр деления.</span>{' '}
+                        <span className="font-semibold">{tr('Предпросмотр деления.')}</span>{' '}
                         <span className="text-navy-500 dark:text-navy-400">
-                          Стажёры распределены случайно, каждый город/район — поровну между группами. Можно
-                          перемешать ещё раз.
+                          {tr('Стажёры распределены случайно, каждый город/район — поровну между группами. Можно перемешать ещё раз.')}
                         </span>
                       </div>
                       <div className="grid sm:grid-cols-2 gap-3">
                         {split.parts.map((part, idx) => (
                           <div key={idx} className="rounded-lg bg-navy-50 dark:bg-navy-800/60 p-3">
                             <div className="font-semibold text-sm mb-2">
-                              {g.name} ({idx + 1}) — {part.length} чел.
+                              {g.name} ({idx + 1}) — {tr('{n} чел.', { n: part.length })}
                             </div>
                             <ul className="text-sm space-y-0.5">
                               {[...part]
@@ -367,7 +368,7 @@ export default function SettingsTab() {
                                 .map((i) => (
                                   <li key={i.id}>
                                     {i.lastName} {i.firstName}
-                                    <span className="text-navy-400 dark:text-navy-500"> · {i.city || 'город не указан'}</span>
+                                    <span className="text-navy-400 dark:text-navy-500"> · {i.city || tr('город не указан')}</span>
                                   </li>
                                 ))}
                             </ul>
@@ -375,13 +376,13 @@ export default function SettingsTab() {
                         ))}
                       </div>
                       <div>
-                        <label className="field-label">Тренер для группы «{g.name} (2)»</label>
+                        <label className="field-label">{tr('Тренер для группы «{name}»', { name: g.name + ' (2)' })}</label>
                         <select
                           className="field-input max-w-sm"
                           value={split.ownerId}
                           onChange={(e) => setSplit((s) => ({ ...s, ownerId: e.target.value }))}
                         >
-                          <option value="">Выберите тренера</option>
+                          <option value="">{tr('Выберите тренера')}</option>
                           {trainers
                             .filter((t) => t.id !== g.ownerId)
                             .map((t) => (
@@ -392,19 +393,19 @@ export default function SettingsTab() {
                         </select>
                         <p className="text-xs text-navy-400 dark:text-navy-500 mt-1">
                           {admin
-                            ? 'Вторая группа перейдёт выбранному тренеру. Сменить тренера позже можно в поле «Владелец группы».'
-                            : 'Вторая группа перейдёт выбранному тренеру и пропадёт из вашего кабинета.'}
+                            ? tr('Вторая группа перейдёт выбранному тренеру. Сменить тренера позже можно в поле «Владелец группы».')
+                            : tr('Вторая группа перейдёт выбранному тренеру и пропадёт из вашего кабинета.')}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button onClick={() => confirmSplit(g)} disabled={!split.ownerId} className="btn-primary text-sm">
-                          Поделить
+                          {tr('Поделить')}
                         </button>
                         <button onClick={() => previewSplit(g.id)} className="btn-secondary text-sm">
-                          Перемешать ещё раз
+                          {tr('Перемешать ещё раз')}
                         </button>
                         <button onClick={() => setSplit(null)} className="btn-secondary text-sm">
-                          Отмена
+                          {tr('Отмена')}
                         </button>
                       </div>
                     </div>
@@ -412,14 +413,14 @@ export default function SettingsTab() {
 
                   <div className="overflow-x-auto pt-2 border-t border-navy-50 dark:border-navy-800">
                     {members.length === 0 ? (
-                      <p className="text-navy-400 dark:text-navy-500 text-sm">В группе пока нет стажёров.</p>
+                      <p className="text-navy-400 dark:text-navy-500 text-sm">{tr('В группе пока нет стажёров.')}</p>
                     ) : (
                       <table className="w-full text-sm min-w-[400px]">
                         <thead>
                           <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
                             {COLUMNS.map((c) => (
                               <th key={c.key} className="py-1.5 pr-3">
-                                {c.label}
+                                {tr(c.label)}
                               </th>
                             ))}
                           </tr>

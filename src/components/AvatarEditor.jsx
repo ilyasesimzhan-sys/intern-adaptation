@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { fileToResizedDataUrl } from '../lib/image'
 import Avatar from './Avatar.jsx'
+import { msg, useI18n } from '../i18n/I18nContext.jsx'
 
 const CENTER = { x: 50, y: 50 }
 
@@ -11,6 +12,7 @@ function clamp(v) {
 // Аватар с загрузкой фото и перетаскиванием внутри круга, чтобы выбрать видимый центр
 // (photoPosition хранится в процентах и применяется как CSS object-position).
 export default function AvatarEditor({ photo, position, name, onPhotoChange, onPositionChange, onRemove, size = 128 }) {
+  const { t } = useI18n()
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
   const dragRef = useRef(null)
@@ -22,7 +24,7 @@ export default function AvatarEditor({ photo, position, name, onPhotoChange, onP
     e.target.value = ''
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      setError('Выберите файл изображения.')
+      setError(msg('Выберите файл изображения.'))
       return
     }
     try {
@@ -31,7 +33,7 @@ export default function AvatarEditor({ photo, position, name, onPhotoChange, onP
       onPositionChange(CENTER)
       setError('')
     } catch {
-      setError('Не удалось загрузить фото, попробуйте другой файл.')
+      setError(msg('Не удалось загрузить фото, попробуйте другой файл.'))
     }
   }
 
@@ -82,19 +84,19 @@ export default function AvatarEditor({ photo, position, name, onPhotoChange, onP
       <div className="space-y-2">
         <div className="flex flex-wrap gap-2">
           <label className="btn-secondary text-sm cursor-pointer">
-            Загрузить фото
+            {t('Загрузить фото')}
             <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           </label>
           {photo && (
             <button type="button" onClick={onRemove} className="text-sm text-danger-500 hover:text-danger-600">
-              Удалить фото
+              {t('Удалить фото')}
             </button>
           )}
         </div>
         {photo && (
-          <p className="text-xs text-navy-400 dark:text-navy-500">Перетащите фото внутри круга, чтобы выбрать центр.</p>
+          <p className="text-xs text-navy-400 dark:text-navy-500">{t('Перетащите фото внутри круга, чтобы выбрать центр.')}</p>
         )}
-        {error && <p className="text-xs text-danger-500">{error}</p>}
+        {error && <p className="text-xs text-danger-500">{t(error)}</p>}
       </div>
     </div>
   )

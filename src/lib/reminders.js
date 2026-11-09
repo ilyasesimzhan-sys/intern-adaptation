@@ -1,3 +1,5 @@
+import { msg } from '../i18n/msg.js'
+
 function daysSince(dateStr) {
   if (!dateStr) return null
   const then = new Date(dateStr.slice(0, 10))
@@ -11,6 +13,7 @@ const STALE_LESSONS_DAYS = 7
 const NO_LESSONS_GRACE_DAYS = 3
 
 // Напоминания тренеру на основе уже имеющихся данных — без новых полей в схеме.
+// text — русский шаблон, params — подстановки; в интерфейсе выводится как t(text, params).
 export function computeReminders(groups) {
   const reminders = []
 
@@ -21,7 +24,8 @@ export function computeReminders(groups) {
         reminders.push({
           id: `${g.id}-overdue-open`,
           groupId: g.id,
-          text: `«${g.name}» — дата закрытия приёма уже прошла (${overdue} дн. назад), но группа всё ещё открыта для анкет.`,
+          text: msg('«{name}» — дата закрытия приёма уже прошла ({days} дн. назад), но группа всё ещё открыта для анкет.'),
+          params: { name: g.name, days: overdue },
         })
       }
       return
@@ -36,7 +40,8 @@ export function computeReminders(groups) {
         reminders.push({
           id: `${g.id}-no-lessons`,
           groupId: g.id,
-          text: `«${g.name}» — приём закрыт ${sinceClose} дн. назад, но ни одного занятия ещё не добавлено.`,
+          text: msg('«{name}» — приём закрыт {days} дн. назад, но ни одного занятия ещё не добавлено.'),
+          params: { name: g.name, days: sinceClose },
         })
       }
       return
@@ -49,7 +54,8 @@ export function computeReminders(groups) {
       reminders.push({
         id: `${g.id}-stale`,
         groupId: g.id,
-        text: `«${g.name}» — последнее занятие отмечено ${gap} дн. назад. Стоит обновить посещаемость.`,
+        text: msg('«{name}» — последнее занятие отмечено {days} дн. назад. Стоит обновить посещаемость.'),
+        params: { name: g.name, days: gap },
       })
     }
   })

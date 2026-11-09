@@ -7,18 +7,19 @@ import { filterInternsBySearch } from '../../lib/internSearch'
 import { REGIONS } from '../../lib/constants'
 import { groupInPeriod } from '../../lib/periodReport'
 import { countOutcomes, downloadArchiveReport } from '../../lib/archiveReport'
+import { msg, useI18n } from '../../i18n/I18nContext.jsx'
 
 const COLUMNS = [
-  { key: 'lastName', label: 'Фамилия' },
-  { key: 'firstName', label: 'Имя' },
-  { key: 'email', label: 'Email' },
-  { key: 'region', label: 'Регион' },
-  { key: 'department', label: 'Подразделение' },
-  { key: 'position', label: 'Должность' },
-  { key: 'phone', label: 'Телефон' },
-  { key: 'managerName', label: 'Руководитель' },
-  { key: 'managerContact', label: 'Контакты руководителя' },
-  { key: 'city', label: 'Город/район' },
+  { key: 'lastName', label: msg('Фамилия') },
+  { key: 'firstName', label: msg('Имя') },
+  { key: 'email', label: msg('Email') },
+  { key: 'region', label: msg('Регион') },
+  { key: 'department', label: msg('Подразделение') },
+  { key: 'position', label: msg('Должность') },
+  { key: 'phone', label: msg('Телефон') },
+  { key: 'managerName', label: msg('Руководитель') },
+  { key: 'managerContact', label: msg('Контакты руководителя') },
+  { key: 'city', label: msg('Город/район') },
 ]
 
 const NO_REGION = 'none'
@@ -34,6 +35,7 @@ function Stat({ label, value, cls = '' }) {
 
 // Отчёт по архиву: сколько стажёров прошло обучение за период и в каком регионе, с выгрузкой в Excel.
 function ArchiveReport({ archived, interns, trainers }) {
+  const { t } = useI18n()
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [region, setRegion] = useState('')
@@ -45,42 +47,43 @@ function ArchiveReport({ archived, interns, trainers }) {
   )
   const counts = countOutcomes(people)
 
+  // periodText и regionText идут в шапку Excel-отчёта, который остаётся на русском.
   const periodText = from || to ? `${from ? formatDate(from) : '…'} — ${to ? formatDate(to) : '…'}` : 'за всё время'
   const regionText =
     region === NO_REGION ? 'регион не указан' : REGIONS.find((r) => r.value === region)?.label || 'все регионы'
 
   return (
     <div className="card space-y-4">
-      <h2 className="font-semibold text-lg">Отчёт: сколько стажёров прошло обучение</h2>
+      <h2 className="font-semibold text-lg">{t('Отчёт: сколько стажёров прошло обучение')}</h2>
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
-          <label className="field-label">Период обучения с</label>
+          <label className="field-label">{t('Период обучения с')}</label>
           <input type="date" className="field-input" value={from} onChange={(e) => setFrom(e.target.value)} />
         </div>
         <div>
-          <label className="field-label">по</label>
+          <label className="field-label">{t('по')}</label>
           <input type="date" className="field-input" value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
         <div>
-          <label className="field-label">Регион</label>
+          <label className="field-label">{t('Регион')}</label>
           <select className="field-input" value={region} onChange={(e) => setRegion(e.target.value)}>
-            <option value="">Все регионы</option>
+            <option value="">{t('Все регионы')}</option>
             {REGIONS.map((r) => (
               <option key={r.value} value={r.value}>
-                {r.label}
+                {t(r.label)}
               </option>
             ))}
-            <option value={NO_REGION}>Регион не указан</option>
+            <option value={NO_REGION}>{t('Регион не указан')}</option>
           </select>
         </div>
       </div>
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-5">
-        <Stat label="Групп" value={groups.length} />
-        <Stat label="Всего стажёров" value={counts.total} />
-        <Stat label="Прошли обучение" value={counts.passed} cls="text-success-600 dark:text-success-400" />
-        <Stat label="Не прошли" value={counts.failed} cls="text-danger-500" />
-        <Stat label="Отказались" value={counts.withdrawn} cls="text-warning-600 dark:text-warning-500" />
+        <Stat label={t('Групп')} value={groups.length} />
+        <Stat label={t('Всего стажёров')} value={counts.total} />
+        <Stat label={t('Прошли обучение')} value={counts.passed} cls="text-success-600 dark:text-success-400" />
+        <Stat label={t('Не прошли')} value={counts.failed} cls="text-danger-500" />
+        <Stat label={t('Отказались')} value={counts.withdrawn} cls="text-warning-600 dark:text-warning-500" />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -89,10 +92,10 @@ function ArchiveReport({ archived, interns, trainers }) {
           onClick={() => downloadArchiveReport({ groups, interns: people, trainers, periodText, regionText })}
           className="btn-primary"
         >
-          ⬇ Скачать отчёт в Excel
+          {t('⬇ Скачать отчёт в Excel')}
         </button>
         <span className="text-xs text-navy-400 dark:text-navy-500">
-          В файле: итоги, разбивка по регионам и группам, список стажёров со всеми данными.
+          {t('В файле: итоги, разбивка по регионам и группам, список стажёров со всеми данными.')}
         </span>
       </div>
     </div>
@@ -100,6 +103,7 @@ function ArchiveReport({ archived, interns, trainers }) {
 }
 
 export default function ArchiveTab() {
+  const { t } = useI18n()
   const { data, update, currentTrainer, archiveLoaded, requestArchive } = useStore()
   const { groups, interns, trainers } = data
   const admin = isTrainerAdmin(currentTrainer)
@@ -124,22 +128,23 @@ export default function ArchiveTab() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">Архив</h1>
+      <h1 className="text-xl font-bold">{t('Архив')}</h1>
       <p className="text-sm text-navy-500 dark:text-navy-400">
-        Группы, прошедшие весь путь обучения и итоговый экзамен. Доступно всем тренерам на просмотр
-        {admin ? '; главный логин может вернуть группу из архива.' : '.'}
+        {admin
+          ? t('Группы, прошедшие весь путь обучения и итоговый экзамен. Доступно всем тренерам на просмотр; главный логин может вернуть группу из архива.')
+          : t('Группы, прошедшие весь путь обучения и итоговый экзамен. Доступно всем тренерам на просмотр.')}
       </p>
 
       {!archiveLoaded ? (
-        <p className="text-navy-400 dark:text-navy-500">Загрузка архива...</p>
+        <p className="text-navy-400 dark:text-navy-500">{t('Загрузка архива...')}</p>
       ) : archived.length === 0 ? (
-        <p className="text-navy-400 dark:text-navy-500">В архиве пока пусто.</p>
+        <p className="text-navy-400 dark:text-navy-500">{t('В архиве пока пусто.')}</p>
       ) : (
         <div className="space-y-6">
           <ArchiveReport archived={archived} interns={interns} trainers={trainers} />
           {archived.map((g) => {
             const members = interns.filter((i) => i.groupId === g.id)
-            const ownerName = trainers.find((t) => t.id === g.ownerId)?.name || 'без владельца'
+            const ownerName = trainers.find((tr) => tr.id === g.ownerId)?.name || t('без владельца')
             const statuses = members.map((i) => getInternExamStatus(i))
             const passed = statuses.filter((s) => s.code === 'passed')
             const groupSearch = searchByGroup[g.id] || ''
@@ -151,39 +156,39 @@ export default function ArchiveTab() {
                   <div>
                     <h2 className="font-semibold text-lg">{g.name}</h2>
                     <div className="text-sm text-navy-500 dark:text-navy-400 space-y-0.5 mt-1">
-                      <div>Тренер: {ownerName}</div>
-                      <div>Группа создана: {g.createdAt ? formatDate(g.createdAt) : '—'}</div>
+                      <div>{t('Тренер:')} {ownerName}</div>
+                      <div>{t('Группа создана:')} {g.createdAt ? formatDate(g.createdAt) : '—'}</div>
                       <div>
-                        Приём анкет: {g.startDate ? formatDate(g.startDate) : '—'} —{' '}
+                        {t('Приём анкет:')} {g.startDate ? formatDate(g.startDate) : '—'} —{' '}
                         {g.endDate ? formatDate(g.endDate) : '—'}
                       </div>
-                      <div>Отправлена в архив: {g.archivedAt ? formatDate(g.archivedAt) : '—'}</div>
+                      <div>{t('Отправлена в архив:')} {g.archivedAt ? formatDate(g.archivedAt) : '—'}</div>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <div className="text-sm text-navy-500 dark:text-navy-400">
-                      Стажёров: <span className="font-semibold text-navy-700 dark:text-navy-200">{members.length}</span> ·
-                      Сдали экзамен:{' '}
+                      {t('Стажёров:')} <span className="font-semibold text-navy-700 dark:text-navy-200">{members.length}</span> ·
+                      {t('Сдали экзамен:')}{' '}
                       <span className="font-semibold text-success-600 dark:text-success-400">{passed.length}</span>/
                       {members.length}
                     </div>
                     {admin &&
                       (unarchivingId === g.id ? (
                         <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
-                          <span className="font-semibold">Вернуть группу в активные?</span>
+                          <span className="font-semibold">{t('Вернуть группу в активные?')}</span>
                           <button onClick={() => unarchive(g.id)} className="btn-primary text-xs px-3 py-1.5">
-                            Да, вернуть
+                            {t('Да, вернуть')}
                           </button>
                           <button
                             onClick={() => setUnarchivingId(null)}
                             className="btn-secondary text-xs px-3 py-1.5"
                           >
-                            Отмена
+                            {t('Отмена')}
                           </button>
                         </div>
                       ) : (
                         <button onClick={() => setUnarchivingId(g.id)} className="btn-secondary text-xs px-3 py-1.5">
-                          Вернуть из архива
+                          {t('Вернуть из архива')}
                         </button>
                       ))}
                   </div>
@@ -192,7 +197,7 @@ export default function ArchiveTab() {
                 {members.length > 0 && (
                   <input
                     className="field-input max-w-xs"
-                    placeholder="Поиск по ФИО, email, телефону..."
+                    placeholder={t('Поиск по ФИО, email, телефону...')}
                     value={groupSearch}
                     onChange={(e) => setSearchByGroup((prev) => ({ ...prev, [g.id]: e.target.value }))}
                   />
@@ -204,11 +209,11 @@ export default function ArchiveTab() {
                       <tr className="text-left text-navy-500 dark:text-navy-400 border-b border-navy-100 dark:border-navy-700">
                         {COLUMNS.map((c) => (
                           <th key={c.key} className="py-1.5 pr-3 whitespace-nowrap">
-                            {c.label}
+                            {t(c.label)}
                           </th>
                         ))}
-                        <th className="py-1.5 pr-3 whitespace-nowrap">Правильных ответов</th>
-                        <th className="py-1.5 pr-3 whitespace-nowrap">Статус экзамена</th>
+                        <th className="py-1.5 pr-3 whitespace-nowrap">{t('Правильных ответов')}</th>
+                        <th className="py-1.5 pr-3 whitespace-nowrap">{t('Статус экзамена')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -225,7 +230,7 @@ export default function ArchiveTab() {
                             <td className="py-1.5 pr-3">{examPercent(answers)}%</td>
                             <td className="py-1.5 pr-3">
                               <span className={'px-2 py-1 rounded-full text-xs font-semibold ' + status.cls}>
-                                {status.label}
+                                {t(status.label)}
                               </span>
                             </td>
                           </tr>
@@ -237,7 +242,7 @@ export default function ArchiveTab() {
                             colSpan={COLUMNS.length + 2}
                             className="py-4 text-center text-navy-400 dark:text-navy-500"
                           >
-                            В группе не было стажёров
+                            {t('В группе не было стажёров')}
                           </td>
                         </tr>
                       )}
@@ -247,7 +252,7 @@ export default function ArchiveTab() {
                             colSpan={COLUMNS.length + 2}
                             className="py-4 text-center text-navy-400 dark:text-navy-500"
                           >
-                            Совпадений не найдено
+                            {t('Совпадений не найдено')}
                           </td>
                         </tr>
                       )}

@@ -3,8 +3,10 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/StoreContext.jsx'
 import logo from '../assets/logo.jpeg'
 import ThemeToggle from '../components/ThemeToggle.jsx'
+import { msg, useI18n } from '../i18n/I18nContext.jsx'
 
 export default function LoginPage() {
+  const { t } = useI18n()
   const { login, currentTrainer } = useStore()
   const navigate = useNavigate()
   const [loginValue, setLoginValue] = useState('')
@@ -18,7 +20,7 @@ export default function LoginPage() {
     if (login(loginValue.trim(), password)) {
       navigate('/dashboard')
     } else {
-      setError('Неверный логин или пароль')
+      setError(msg('Неверный логин или пароль'))
     }
   }
 
@@ -34,11 +36,11 @@ export default function LoginPage() {
         <ThemeToggle />
       </div>
       <div className="relative card w-full max-w-sm !bg-white/45 dark:!bg-navy-900/70 backdrop-blur-sm">
-        <h1 className="text-xl font-bold mb-1">Вход для тренеров</h1>
-        <p className="text-navy-500 dark:text-navy-400 text-sm mb-6">Введите ваш логин и пароль.</p>
+        <h1 className="text-xl font-bold mb-1">{t('Вход для тренеров')}</h1>
+        <p className="text-navy-500 dark:text-navy-400 text-sm mb-6">{t('Введите ваш логин и пароль.')}</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="field-label">Логин</label>
+            <label className="field-label">{t('Логин')}</label>
             <input
               className="field-input"
               value={loginValue}
@@ -47,7 +49,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="field-label">Пароль</label>
+            <label className="field-label">{t('Пароль')}</label>
             <input
               type="password"
               className="field-input"
@@ -55,16 +57,16 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {error && <p className="text-danger-500 text-sm">{error}</p>}
+          {error && <p className="text-danger-500 text-sm">{t(error)}</p>}
           <button type="submit" className="btn-primary w-full">
-            Войти
+            {t('Войти')}
           </button>
         </form>
         <Link
           to="/"
           className="block text-center text-sm text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200 mt-4"
         >
-          ← На главную
+          {t('← На главную')}
         </Link>
       </div>
     </div>

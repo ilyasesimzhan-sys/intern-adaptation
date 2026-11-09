@@ -9,20 +9,14 @@ import { formatDate } from '../../lib/date'
 import { REGIONS, DEPARTMENTS, GROUP_CAPACITY } from '../../lib/constants'
 import Avatar from '../../components/Avatar.jsx'
 import EmptyState from '../../components/EmptyState.jsx'
-
-const MONTHS = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
-const MONTHS_FULL = [
-  'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
-  'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
-]
-const WEEKDAYS = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб']
+import { msg, useI18n } from '../../i18n/I18nContext.jsx'
 
 // Итог экзамена — статусные цвета (зелёный/красный/синий/жёлтый) всегда идут вместе с подписью.
 const OUTCOMES = [
-  { key: 'passed', label: 'Сдали экзамен', color: '#1fa971', dot: 'bg-success-500' },
-  { key: 'failed', label: 'Не сдали', color: '#e0413a', dot: 'bg-danger-500' },
-  { key: 'progress', label: 'Ещё обучаются', color: '#1e9fe0', dot: 'bg-sky-500' },
-  { key: 'withdrawn', label: 'Отказались', color: '#e8a916', dot: 'bg-warning-500' },
+  { key: 'passed', label: msg('Сдали экзамен'), color: '#1fa971', dot: 'bg-success-500' },
+  { key: 'failed', label: msg('Не сдали'), color: '#e0413a', dot: 'bg-danger-500' },
+  { key: 'progress', label: msg('Ещё обучаются'), color: '#1e9fe0', dot: 'bg-sky-500' },
+  { key: 'withdrawn', label: msg('Отказались'), color: '#e8a916', dot: 'bg-warning-500' },
 ]
 
 function todayIso() {
@@ -32,10 +26,10 @@ function todayIso() {
 
 function greeting() {
   const h = new Date().getHours()
-  if (h < 5) return 'Доброй ночи'
-  if (h < 12) return 'Доброе утро'
-  if (h < 18) return 'Добрый день'
-  return 'Добрый вечер'
+  if (h < 5) return msg('Доброй ночи')
+  if (h < 12) return msg('Доброе утро')
+  if (h < 18) return msg('Добрый день')
+  return msg('Добрый вечер')
 }
 
 // В системе ФИО записывается как «Фамилия Имя» — для приветствия берём имя.
@@ -46,14 +40,6 @@ function firstName(name) {
 
 function pct(part, total) {
   return total ? Math.round((part / total) * 100) : null
-}
-
-function plural(n, one, few, many) {
-  const m10 = n % 10
-  const m100 = n % 100
-  if (m10 === 1 && m100 !== 11) return one
-  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few
-  return many
 }
 
 function outcomeOf(intern) {
@@ -117,7 +103,7 @@ function buildStats(groups, interns, trainers) {
     if (slot) slot.count += 1
   })
 
-  const byRegion = [...REGIONS.map((r) => ({ key: r.value, label: r.label })), { key: '', label: 'Не указан' }]
+  const byRegion = [...REGIONS.map((r) => ({ key: r.value, label: r.label })), { key: '', label: msg('Не указан') }]
     .map((r) => ({ ...r, count: people.filter((i) => (i.region || '') === r.key).length }))
     .filter((r) => r.key || r.count > 0)
 
@@ -222,6 +208,7 @@ function CardTitle({ children, sub }) {
 
 // Кольцевая диаграмма итогов экзамена с легендой (цвет никогда не единственный носитель смысла).
 function OutcomeDonut({ outcomes, passRate }) {
+  const { t } = useI18n()
   const [hover, setHover] = useState(null)
   const total = OUTCOMES.reduce((s, o) => s + outcomes[o.key], 0)
   const size = 180
@@ -265,12 +252,12 @@ function OutcomeDonut({ outcomes, passRate }) {
           {shown ? (
             <>
               <div className="text-3xl font-display font-bold">{outcomes[shown.key]}</div>
-              <div className="text-xs text-navy-500 dark:text-navy-400 px-6 leading-tight">{shown.label}</div>
+              <div className="text-xs text-navy-500 dark:text-navy-400 px-6 leading-tight">{t(shown.label)}</div>
             </>
           ) : (
             <>
               <div className="text-3xl font-display font-bold">{passRate === null ? '—' : `${passRate}%`}</div>
-              <div className="text-xs text-navy-500 dark:text-navy-400 px-6 leading-tight">успешно сдали</div>
+              <div className="text-xs text-navy-500 dark:text-navy-400 px-6 leading-tight">{t('успешно сдали')}</div>
             </>
           )}
         </div>
@@ -287,7 +274,7 @@ function OutcomeDonut({ outcomes, passRate }) {
             }
           >
             <span className={'w-3 h-3 rounded-full shrink-0 ' + o.dot} />
-            <span className="flex-1 text-navy-600 dark:text-navy-300">{o.label}</span>
+            <span className="flex-1 text-navy-600 dark:text-navy-300">{t(o.label)}</span>
             <span className="font-semibold">{outcomes[o.key]}</span>
             <span className="w-10 text-right text-xs text-navy-400 dark:text-navy-500">
               {total ? `${pct(outcomes[o.key], total)}%` : '—'}
@@ -301,6 +288,7 @@ function OutcomeDonut({ outcomes, passRate }) {
 
 // Столбики «новые стажёры по месяцам» с подсказкой при наведении.
 function MonthlyChart({ months }) {
+  const { t, tp, monthShort, monthYear } = useI18n()
   const [hover, setHover] = useState(null)
   const max = Math.max(1, ...months.map((m) => m.count))
   const total = months.reduce((s, m) => s + m.count, 0)
@@ -324,10 +312,10 @@ function MonthlyChart({ months }) {
             {hover === idx && (
               <div className="absolute z-10 bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-navy-900 text-white dark:bg-white dark:text-navy-900 text-xs px-2.5 py-1.5 shadow-lg">
                 <div className="font-semibold capitalize">
-                  {MONTHS_FULL[m.m]} {m.y}
+                  {monthYear(m.m, m.y)}
                 </div>
                 <div>
-                  {m.count} {plural(m.count, 'стажёр', 'стажёра', 'стажёров')}
+                  {m.count} {tp(m.count, 'стажёр', 'стажёра', 'стажёров')}
                 </div>
               </div>
             )}
@@ -350,13 +338,13 @@ function MonthlyChart({ months }) {
       <div className="flex gap-1.5 sm:gap-2.5 mt-1.5">
         {months.map((m) => (
           <div key={m.key} className="flex-1 text-center text-[11px] text-navy-400 dark:text-navy-500">
-            {MONTHS[m.m]}
+            {monthShort(m.m)}
           </div>
         ))}
       </div>
       <div className="text-xs text-navy-400 dark:text-navy-500 mt-3">
-        За 12 месяцев: <span className="font-semibold text-navy-600 dark:text-navy-300">{total}</span>{' '}
-        {plural(total, 'стажёр', 'стажёра', 'стажёров')}
+        {t('За 12 месяцев:')} <span className="font-semibold text-navy-600 dark:text-navy-300">{total}</span>{' '}
+        {tp(total, 'стажёр', 'стажёра', 'стажёров')}
       </div>
     </div>
   )
@@ -364,6 +352,7 @@ function MonthlyChart({ months }) {
 
 // Горизонтальные полосы — одна серия, один цвет.
 function HBars({ rows, barClass = 'bg-sky-500' }) {
+  const { t } = useI18n()
   const max = Math.max(1, ...rows.map((r) => r.count))
   const total = rows.reduce((s, r) => s + r.count, 0)
   return (
@@ -371,7 +360,7 @@ function HBars({ rows, barClass = 'bg-sky-500' }) {
       {rows.map((r) => (
         <div key={r.key || 'none'} className="group">
           <div className="flex items-center justify-between text-sm mb-1">
-            <span className="truncate pr-2 text-navy-600 dark:text-navy-300">{r.label}</span>
+            <span className="truncate pr-2 text-navy-600 dark:text-navy-300">{t(r.label)}</span>
             <span className="shrink-0 font-semibold">
               {r.count}
               <span className="ml-1.5 text-xs font-normal text-navy-400 dark:text-navy-500">
@@ -392,12 +381,13 @@ function HBars({ rows, barClass = 'bg-sky-500' }) {
 }
 
 function groupStage(g) {
-  if (g.isOpen) return { label: 'Приём анкет', cls: 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400' }
-  if ((g.lessons || []).length === 0) return { label: 'Формирование', cls: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400' }
-  return { label: 'Идёт обучение', cls: 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400' }
+  if (g.isOpen) return { label: msg('Приём анкет'), cls: 'bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400' }
+  if ((g.lessons || []).length === 0) return { label: msg('Формирование'), cls: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400' }
+  return { label: msg('Идёт обучение'), cls: 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400' }
 }
 
 function GroupCard({ group, interns, stats, ownerName }) {
+  const { t } = useI18n()
   const stage = groupStage(group)
   const today = todayIso()
   const lessons = (group.lessons || []).filter((l) => l.date)
@@ -405,10 +395,10 @@ function GroupCard({ group, interns, stats, ownerName }) {
   const exam = stats.exam
   const examTotal = exam.passed + exam.failed + exam.retake + exam.notStarted
   const parts = [
-    { key: 'p', n: exam.passed, cls: 'bg-success-500', label: 'сдали' },
-    { key: 'f', n: exam.failed, cls: 'bg-danger-500', label: 'не сдали' },
-    { key: 'r', n: exam.retake, cls: 'bg-warning-500', label: 'пересдача' },
-    { key: 'n', n: exam.notStarted, cls: 'bg-navy-200 dark:bg-navy-700', label: 'не оценены' },
+    { key: 'p', n: exam.passed, cls: 'bg-success-500', label: msg('сдали') },
+    { key: 'f', n: exam.failed, cls: 'bg-danger-500', label: msg('не сдали') },
+    { key: 'r', n: exam.retake, cls: 'bg-warning-500', label: msg('пересдача') },
+    { key: 'n', n: exam.notStarted, cls: 'bg-navy-200 dark:bg-navy-700', label: msg('не оценены') },
   ]
   return (
     <div className="rounded-2xl border border-navy-100 dark:border-navy-800 p-4 hover:border-sky-400/60 hover:shadow-md transition-all bg-white/60 dark:bg-navy-900/60">
@@ -419,15 +409,15 @@ function GroupCard({ group, interns, stats, ownerName }) {
           </div>
           {ownerName && <div className="text-xs text-navy-400 dark:text-navy-500 truncate">{ownerName}</div>}
         </div>
-        <span className={'text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ' + stage.cls}>{stage.label}</span>
+        <span className={'text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ' + stage.cls}>{t(stage.label)}</span>
       </div>
 
       <div className="mt-3">
         <div className="flex justify-between text-xs text-navy-500 dark:text-navy-400 mb-1">
-          <span>Стажёров</span>
+          <span>{t('Стажёров')}</span>
           <span className="font-semibold text-navy-700 dark:text-navy-200">
             {stats.internCount}
-            {stats.withdrawnCount > 0 && <span className="font-normal text-warning-600"> (+{stats.withdrawnCount} отказ)</span>} / {GROUP_CAPACITY}
+            {stats.withdrawnCount > 0 && <span className="font-normal text-warning-600"> {t('(+{n} отказ)', { n: stats.withdrawnCount })}</span>} / {GROUP_CAPACITY}
           </span>
         </div>
         <div className="h-1.5 rounded-full bg-navy-100 dark:bg-navy-800 overflow-hidden">
@@ -436,15 +426,15 @@ function GroupCard({ group, interns, stats, ownerName }) {
       </div>
 
       <div className="flex justify-around mt-4">
-        <Ring value={stats.attendancePct} label="Посещаемость" color="#1e9fe0" size={58} stroke={6} />
-        <Ring value={stats.homeworkPct} label="Домашние задания" color="#7c4fd4" size={58} stroke={6} />
+        <Ring value={stats.attendancePct} label={t('Посещаемость')} color="#1e9fe0" size={58} stroke={6} />
+        <Ring value={stats.homeworkPct} label={t('Домашние задания')} color="#7c4fd4" size={58} stroke={6} />
       </div>
 
       <div className="mt-4">
         <div className="flex justify-between text-xs text-navy-500 dark:text-navy-400 mb-1">
-          <span>Экзамен</span>
+          <span>{t('Экзамен')}</span>
           <span>
-            {lessons.length > 0 ? `занятий ${done}/${lessons.length}` : 'занятий нет'}
+            {lessons.length > 0 ? t('занятий {done}/{total}', { done, total: lessons.length }) : t('занятий нет')}
           </span>
         </div>
         <div className="flex h-2 rounded-full overflow-hidden gap-0.5 bg-navy-100 dark:bg-navy-800">
@@ -452,7 +442,7 @@ function GroupCard({ group, interns, stats, ownerName }) {
             parts
               .filter((p) => p.n > 0)
               .map((p) => (
-                <div key={p.key} className={p.cls} style={{ width: `${(p.n / examTotal) * 100}%` }} title={`${p.label}: ${p.n}`} />
+                <div key={p.key} className={p.cls} style={{ width: `${(p.n / examTotal) * 100}%` }} title={`${t(p.label)}: ${p.n}`} />
               ))}
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-navy-500 dark:text-navy-400">
@@ -461,7 +451,7 @@ function GroupCard({ group, interns, stats, ownerName }) {
             .map((p) => (
               <span key={p.key} className="inline-flex items-center gap-1">
                 <span className={'w-2 h-2 rounded-full ' + p.cls} />
-                {p.label} {p.n}
+                {t(p.label)} {p.n}
               </span>
             ))}
         </div>
@@ -472,6 +462,7 @@ function GroupCard({ group, interns, stats, ownerName }) {
 
 // ---------- Страница ----------
 export default function OverviewTab() {
+  const { t, tp, formatDateLong, monthShort, weekdayShort } = useI18n()
   const { data, currentTrainer, archiveLoaded, requestArchive } = useStore()
   const { groups, interns, trainers } = data
   const admin = isTrainerAdmin(currentTrainer)
@@ -491,7 +482,7 @@ export default function OverviewTab() {
   const trainerName = (id) => trainers.find((t) => t.id === id)?.name || ''
 
   const today = new Date()
-  const dateText = today.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const dateText = formatDateLong(today)
 
   return (
     <div className="space-y-6">
@@ -507,21 +498,21 @@ export default function OverviewTab() {
             <div className="min-w-0">
               <div className="text-sm text-sky-100/80 first-letter:uppercase">{dateText}</div>
               <h1 className="text-2xl sm:text-3xl font-bold mt-0.5">
-                {greeting()}, {firstName(currentTrainer?.name)}!
+                {t(greeting())}, {firstName(currentTrainer?.name)}!
               </h1>
               <div className="flex flex-wrap items-center gap-2 mt-2 text-sm">
                 <span className="px-2.5 py-0.5 rounded-full bg-white/15 font-medium">
-                  {admin ? 'Администратор · бизнес-тренер' : 'Бизнес-тренер'}
+                  {admin ? t('Администратор · бизнес-тренер') : t('Бизнес-тренер')}
                 </span>
-                {s.since && <span className="text-sky-100/80">в программе с {formatDate(s.since)}</span>}
+                {s.since && <span className="text-sky-100/80">{t('в программе с {date}', { date: formatDate(s.since) })}</span>}
               </div>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 sm:gap-6 xl:min-w-[440px]">
             {[
-              { v: s.totalGroups, l: plural(s.totalGroups, 'группа', 'группы', 'групп'), sub: 'за всё время' },
-              { v: s.people, l: plural(s.people, 'стажёр', 'стажёра', 'стажёров'), sub: 'прошли через программу' },
-              { v: s.outcomes.passed, l: 'обучено', sub: 'сдали итоговый экзамен' },
+              { v: s.totalGroups, l: tp(s.totalGroups, 'группа', 'группы', 'групп'), sub: t('за всё время') },
+              { v: s.people, l: tp(s.people, 'стажёр', 'стажёра', 'стажёров'), sub: t('прошли через программу') },
+              { v: s.outcomes.passed, l: t('обучено'), sub: t('сдали итоговый экзамен') },
             ].map((x) => (
               <div key={x.l + x.sub} className="rounded-2xl bg-white/10 backdrop-blur-sm px-3 py-3 sm:px-4 text-center">
                 <div className="text-3xl sm:text-4xl font-display font-bold">{archiveLoaded ? x.v : '…'}</div>
@@ -536,8 +527,8 @@ export default function OverviewTab() {
       {admin && (
         <div className="inline-flex rounded-xl bg-white dark:bg-navy-900 border border-navy-100 dark:border-navy-800 p-1 text-sm">
           {[
-            { v: 'mine', l: 'Мои группы' },
-            { v: 'all', l: 'Все тренеры' },
+            { v: 'mine', l: t('Мои группы') },
+            { v: 'all', l: t('Все тренеры') },
           ].map((o) => (
             <button
               key={o.v}
@@ -558,29 +549,29 @@ export default function OverviewTab() {
       {s.totalGroups === 0 ? (
         <EmptyState
           icon="📊"
-          title="Пока нет групп"
-          description="Статистика появится, как только вы создадите хотя бы одну группу во вкладке «Настройки сбора»."
+          title={t('Пока нет групп')}
+          description={t('Статистика появится, как только вы создадите хотя бы одну группу во вкладке «Настройки сбора».')}
         />
       ) : (
         <>
           {/* Ключевые показатели */}
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <Kpi icon="👥" value={s.activeCount} label="Активных групп" hint={`ещё ${s.archivedCount} в архиве`} accent="bg-navy-600" />
-            <Kpi icon="🎓" value={s.inTraining} label="Сейчас обучаются" hint="в активных группах" accent="bg-violet-500" />
-            <Kpi icon="🏆" value={s.passRate === null ? '—' : `${s.passRate}%`} label="Успешность" hint="сдали из получивших итог" accent="bg-success-500" />
-            <Kpi icon="📝" value={s.avgScore === null ? '—' : `${s.avgScore}%`} label="Средний балл" hint={s.firstTryRate === null ? 'по итоговому экзамену' : `${s.firstTryRate}% сдали с 1-й попытки`} accent="bg-sky-500" />
-            <Kpi icon="📅" value={s.attendance === null ? '—' : `${s.attendance}%`} label="Посещаемость" hint="средняя по активным группам" accent="bg-warning-500" />
-            <Kpi icon="📚" value={s.lessonsDone} label="Занятий проведено" hint={s.homework === null ? 'за всё время' : `ДЗ выполнено ${s.homework}%`} accent="bg-danger-500" />
+            <Kpi icon="👥" value={s.activeCount} label={t('Активных групп')} hint={t('ещё {n} в архиве', { n: s.archivedCount })} accent="bg-navy-600" />
+            <Kpi icon="🎓" value={s.inTraining} label={t('Сейчас обучаются')} hint={t('в активных группах')} accent="bg-violet-500" />
+            <Kpi icon="🏆" value={s.passRate === null ? '—' : `${s.passRate}%`} label={t('Успешность')} hint={t('сдали из получивших итог')} accent="bg-success-500" />
+            <Kpi icon="📝" value={s.avgScore === null ? '—' : `${s.avgScore}%`} label={t('Средний балл')} hint={s.firstTryRate === null ? t('по итоговому экзамену') : t('{n}% сдали с 1-й попытки', { n: s.firstTryRate })} accent="bg-sky-500" />
+            <Kpi icon="📅" value={s.attendance === null ? '—' : `${s.attendance}%`} label={t('Посещаемость')} hint={t('средняя по активным группам')} accent="bg-warning-500" />
+            <Kpi icon="📚" value={s.lessonsDone} label={t('Занятий проведено')} hint={s.homework === null ? t('за всё время') : t('ДЗ выполнено {n}%', { n: s.homework })} accent="bg-danger-500" />
           </div>
 
           {reminders.length > 0 && (
             <div className="card !p-5 space-y-2 border-warning-500/40 bg-warning-50/60 dark:bg-warning-500/5">
-              <h2 className="font-semibold text-warning-600 dark:text-warning-500">Напоминания</h2>
+              <h2 className="font-semibold text-warning-600 dark:text-warning-500">{t('Напоминания')}</h2>
               <ul className="space-y-1.5 text-sm">
                 {reminders.map((r) => (
                   <li key={r.id} className="flex items-start gap-2">
                     <span aria-hidden="true">⚠️</span>
-                    <span>{r.text}</span>
+                    <span>{t(r.text, r.params)}</span>
                   </li>
                 ))}
               </ul>
@@ -589,22 +580,22 @@ export default function OverviewTab() {
 
           <div className="grid gap-6 lg:grid-cols-5">
             <div className="card lg:col-span-2">
-              <CardTitle sub="Все стажёры за всё время">Итоги обучения</CardTitle>
+              <CardTitle sub={t('Все стажёры за всё время')}>{t('Итоги обучения')}</CardTitle>
               {archiveLoaded ? (
                 <OutcomeDonut outcomes={s.outcomes} passRate={s.passRate} />
               ) : (
-                <p className="text-sm text-navy-400">Загрузка...</p>
+                <p className="text-sm text-navy-400">{t('Загрузка...')}</p>
               )}
             </div>
             <div className="card lg:col-span-3">
-              <CardTitle sub="Сколько анкет поступило по месяцам">Набор стажёров</CardTitle>
+              <CardTitle sub={t('Сколько анкет поступило по месяцам')}>{t('Набор стажёров')}</CardTitle>
               <MonthlyChart months={s.months} />
             </div>
           </div>
 
           {s.activeStats.length > 0 && (
             <div className="card">
-              <CardTitle sub="Состав, посещаемость, домашние задания и экзамен">Активные группы</CardTitle>
+              <CardTitle sub={t('Состав, посещаемость, домашние задания и экзамен')}>{t('Активные группы')}</CardTitle>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {s.activeStats.map(({ group, interns: gi, stats }) => (
                   <GroupCard
@@ -621,17 +612,17 @@ export default function OverviewTab() {
 
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="card">
-              <CardTitle sub="Региональные дирекции">Стажёры по регионам</CardTitle>
+              <CardTitle sub={t('Региональные дирекции')}>{t('Стажёры по регионам')}</CardTitle>
               <HBars rows={s.byRegion} barClass="bg-sky-500" />
             </div>
             <div className="card">
-              <CardTitle sub="Подразделения стажёров">По подразделениям</CardTitle>
+              <CardTitle sub={t('Подразделения стажёров')}>{t('По подразделениям')}</CardTitle>
               <HBars rows={s.byDept} barClass="bg-violet-500" />
             </div>
             <div className="card">
-              <CardTitle sub="Ближайшие даты по активным группам">Ближайшие занятия</CardTitle>
+              <CardTitle sub={t('Ближайшие даты по активным группам')}>{t('Ближайшие занятия')}</CardTitle>
               {s.upcoming.length === 0 ? (
-                <p className="text-sm text-navy-400 dark:text-navy-500">Запланированных занятий нет.</p>
+                <p className="text-sm text-navy-400 dark:text-navy-500">{t('Запланированных занятий нет.')}</p>
               ) : (
                 <ul className="space-y-2.5">
                   {s.upcoming.map((l) => {
@@ -647,13 +638,13 @@ export default function OverviewTab() {
                         >
                           <div className="text-lg font-bold leading-none font-display">{d.getDate()}</div>
                           <div className={'text-[10px] uppercase ' + (isToday ? 'text-white/90' : 'text-navy-400')}>
-                            {MONTHS[d.getMonth()]} · {WEEKDAYS[d.getDay()]}
+                            {monthShort(d.getMonth())} · {weekdayShort(d.getDay())}
                           </div>
                         </div>
                         <div className="min-w-0">
-                          <div className="text-sm font-medium truncate">{l.name || 'Занятие'}</div>
+                          <div className="text-sm font-medium truncate">{l.name || t('Занятие')}</div>
                           <div className="text-xs text-navy-400 dark:text-navy-500 truncate">
-                            {isToday ? 'Сегодня · ' : ''}
+                            {isToday ? t('Сегодня') + ' · ' : ''}
                             {l.group.name}
                           </div>
                         </div>
@@ -667,17 +658,17 @@ export default function OverviewTab() {
 
           {admin && scope === 'all' && s.leaderboard.length > 0 && (
             <div className="card">
-              <CardTitle sub="По числу стажёров, сдавших итоговый экзамен">Рейтинг тренеров</CardTitle>
+              <CardTitle sub={t('По числу стажёров, сдавших итоговый экзамен')}>{t('Рейтинг тренеров')}</CardTitle>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[560px]">
                   <thead>
                     <tr className="text-left text-xs text-navy-400 dark:text-navy-500 border-b border-navy-100 dark:border-navy-800">
                       <th className="py-2 pr-3 w-8">#</th>
-                      <th className="py-2 pr-3">Тренер</th>
-                      <th className="py-2 pr-3 text-right">Групп</th>
-                      <th className="py-2 pr-3 text-right">Стажёров</th>
-                      <th className="py-2 pr-3 text-right">Обучено</th>
-                      <th className="py-2 pr-3 w-48">Успешность</th>
+                      <th className="py-2 pr-3">{t('Тренер')}</th>
+                      <th className="py-2 pr-3 text-right">{t('Групп')}</th>
+                      <th className="py-2 pr-3 text-right">{t('Стажёров')}</th>
+                      <th className="py-2 pr-3 text-right">{t('Обучено')}</th>
+                      <th className="py-2 pr-3 w-48">{t('Успешность')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -711,7 +702,7 @@ export default function OverviewTab() {
 
           <div className="text-center">
             <Link to="../reports" className="text-sm text-sky-600 hover:underline dark:text-sky-400">
-              Подробные отчёты в Excel →
+              {t('Подробные отчёты в Excel →')}
             </Link>
           </div>
         </>

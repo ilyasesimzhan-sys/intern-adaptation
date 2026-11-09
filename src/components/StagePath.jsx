@@ -1,8 +1,10 @@
+import { msg, useI18n } from '../i18n/I18nContext.jsx'
+
 const STAGES = [
-  { key: 'form', label: 'Анкета' },
-  { key: 'grouping', label: 'Формирование группы' },
-  { key: 'learning', label: 'Обучение и адаптация' },
-  { key: 'exam', label: 'Итоговый экзамен' },
+  { key: 'form', label: msg('Анкета') },
+  { key: 'grouping', label: msg('Формирование группы') },
+  { key: 'learning', label: msg('Обучение и адаптация') },
+  { key: 'exam', label: msg('Итоговый экзамен') },
 ]
 
 // Волна идёт по кругам и соединяющим линиям слева направо и зацикливается —
@@ -11,6 +13,7 @@ const STEP_DELAY = 0.7
 const CYCLE = STAGES.length * STEP_DELAY
 
 export default function StagePath({ current }) {
+  const { t } = useI18n()
   const currentIdx = STAGES.findIndex((s) => s.key === current)
 
   return (
@@ -38,7 +41,7 @@ export default function StagePath({ current }) {
                   (active ? 'text-navy-900 dark:text-navy-50' : 'text-navy-400 dark:text-navy-500')
                 }
               >
-                {stage.label}
+                {t(stage.label)}
               </span>
             </div>
             {idx < STAGES.length - 1 && (

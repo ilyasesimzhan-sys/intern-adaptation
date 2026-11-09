@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { useStore } from '../../store/StoreContext.jsx'
 import { isTrainerAdmin } from '../../lib/roles'
 import AvatarEditor from '../../components/AvatarEditor.jsx'
+import { useI18n } from '../../i18n/I18nContext.jsx'
 
 export default function TrainersTab() {
+  const { t: tr } = useI18n()
   const { data, update, currentTrainer } = useStore()
   const [visiblePasswords, setVisiblePasswords] = useState({})
 
@@ -21,19 +23,17 @@ export default function TrainersTab() {
   if (!isTrainerAdmin(currentTrainer)) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold">Тренеры</h1>
-        <p className="text-navy-400 dark:text-navy-500">Этот раздел доступен только главному логину.</p>
+        <h1 className="text-xl font-bold">{tr('Тренеры')}</h1>
+        <p className="text-navy-400 dark:text-navy-500">{tr('Этот раздел доступен только главному логину.')}</p>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold">Тренеры</h1>
+      <h1 className="text-xl font-bold">{tr('Тренеры')}</h1>
       <p className="text-sm text-navy-500 dark:text-navy-400">
-        До 10 именных аккаунтов тренеров. Пароль — простая защита от случайного входа, не полноценная система
-        безопасности. Главный логин видит и может редактировать все группы и данные всех тренеров, остальные —
-        только свои (во вкладке «Мой профиль»).
+        {tr('До 10 именных аккаунтов тренеров. Пароль — простая защита от случайного входа, не полноценная система безопасности. Главный логин видит и может редактировать все группы и данные всех тренеров, остальные — только свои (во вкладке «Мой профиль»).')}
       </p>
 
       <div className="space-y-4">
@@ -51,7 +51,7 @@ export default function TrainersTab() {
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label className="field-label">Имя</label>
+                <label className="field-label">{tr('Имя')}</label>
                 <input
                   className="field-input"
                   value={t.name}
@@ -59,7 +59,7 @@ export default function TrainersTab() {
                 />
               </div>
               <div>
-                <label className="field-label">Почта</label>
+                <label className="field-label">{tr('Почта')}</label>
                 <input
                   type="email"
                   className="field-input"
@@ -69,7 +69,7 @@ export default function TrainersTab() {
                 />
               </div>
               <div>
-                <label className="field-label">Телефон</label>
+                <label className="field-label">{tr('Телефон')}</label>
                 <input
                   type="tel"
                   className="field-input"
@@ -79,7 +79,7 @@ export default function TrainersTab() {
                 />
               </div>
               <div>
-                <label className="field-label">Логин</label>
+                <label className="field-label">{tr('Логин')}</label>
                 <input
                   className="field-input"
                   value={t.login}
@@ -87,7 +87,7 @@ export default function TrainersTab() {
                 />
               </div>
               <div>
-                <label className="field-label">Пароль</label>
+                <label className="field-label">{tr('Пароль')}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type={visiblePasswords[t.id] ? 'text' : 'password'}
@@ -100,7 +100,7 @@ export default function TrainersTab() {
                     onClick={() => togglePassword(t.id)}
                     className="text-xs text-navy-500 hover:text-navy-700 dark:text-navy-400 dark:hover:text-navy-200 shrink-0"
                   >
-                    {visiblePasswords[t.id] ? 'Скрыть' : 'Показать'}
+                    {visiblePasswords[t.id] ? tr('Скрыть') : tr('Показать')}
                   </button>
                 </div>
               </div>
@@ -112,7 +112,7 @@ export default function TrainersTab() {
                     onChange={(e) => patchTrainer(t.id, { isAdmin: e.target.checked })}
                     className="w-4 h-4"
                   />
-                  Главный логин
+                  {tr('Главный логин')}
                 </label>
               </div>
             </div>
